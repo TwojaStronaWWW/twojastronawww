@@ -10,8 +10,10 @@ Nowoczesna, bezkompromisowo szybka strona firmowa oraz niezawodny, bezpieczny si
 - [x] Wdrożenie reguł `.gitignore` oraz `.gitattributes` (normalizacja LF).
 - [x] Utworzenie `AGENTS.md` i `GEMINI.md` z wytycznymi bezpieczeństwa ISO 27001.
 - [x] Wdrożenie git hooks (`.githooks/pre-commit` i `commit-msg`).
-- [x] Konfiguracja `package.json` z bezbibliotecznymi testami `node:test` oraz serwerem `scripts/serve.js`.
+- [x] Konfiguracja package.json z bezbibliotecznymi testami `node:test` oraz serwerem `scripts/serve.js`.
+- [x] Wdrożenie potoku GitHub Actions CI/CD (`.github/workflows/deploy.yml`) z Quality Gate (`test`, `audit`, `deploy`, `concurrency`).
 - [x] Wdrożenie testów integralności HTML5 oraz higieny repozytorium.
+- [x] Dodanie odznak statusowych w `README.md` (Pipeline, Tests, Coverage, Lighthouse, Dependabot, ISO 27001).
 - [x] Dodanie szablonów zgłoszeń GitHub (`.github/ISSUE_TEMPLATE`) i Dependabot.
 
 ---
