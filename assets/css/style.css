@@ -1469,4 +1469,504 @@ footer {
     }
 }
 
+/* ================================================= */
+/* 1. BESPOKE BROWSER MOCKUP & PORTFOLIO SHOWCASE   */
+/* ================================================= */
+
+.portfolio-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+}
+
+@media (max-width: 900px) {
+    .portfolio-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.portfolio-card {
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.4) 100%);
+    border: 1px solid var(--glass-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 20px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.55);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.portfolio-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(52, 211, 153, 0.45);
+    box-shadow: 0 20px 40px -10px rgba(16, 185, 129, 0.18);
+}
+
+.browser-mockup {
+    background: #090e1a;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.browser-header {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.browser-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.browser-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+}
+.browser-dot.dot-red { background: #ef4444; }
+.browser-dot.dot-yellow { background: #f59e0b; }
+.browser-dot.dot-green { background: #10b981; }
+
+.browser-url {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.browser-body {
+    padding: 22px 18px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);
+    position: relative;
+}
+
+.browser-preview-tag {
+    font-size: 0.76rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    color: var(--accent-mint);
+    margin-bottom: 8px;
+}
+
+.browser-preview-headline {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+}
+
+.pagespeed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(52, 211, 153, 0.3);
+    color: #34d399;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    width: fit-content;
+    margin-top: 12px;
+}
+
+.pagespeed-circle {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #34d399;
+    box-shadow: 0 0 8px #34d399;
+    display: inline-block;
+}
+
+.portfolio-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.portfolio-card h3 {
+    font-size: 1.25rem;
+    color: #ffffff;
+    margin: 0;
+}
+
+.portfolio-result-box {
+    margin: 14px 0 20px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: rgba(16, 185, 129, 0.06);
+    border-left: 3px solid var(--accent-mint);
+    font-size: 0.88rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+}
+
+.portfolio-result-box strong {
+    color: var(--accent-mint);
+}
+
+/* ================================================= */
+/* 2. ASYMMETRIC BENTO GRID (BENEFITS)               */
+/* ================================================= */
+
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+}
+
+.bento-card {
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.35) 100%);
+    border: 1px solid var(--glass-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 20px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.bento-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(52, 211, 153, 0.4);
+    box-shadow: 0 16px 36px rgba(16, 185, 129, 0.15);
+}
+
+.bento-col-8 {
+    grid-column: span 8;
+}
+
+.bento-col-4 {
+    grid-column: span 4;
+}
+
+@media (max-width: 900px) {
+    .bento-col-8,
+    .bento-col-4 {
+        grid-column: span 12;
+    }
+}
+
+.bento-tag {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent-mint);
+    margin-bottom: 12px;
+    display: inline-block;
+}
+
+.bento-card h3 {
+    font-size: 1.35rem;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+.bento-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.bento-big-stat {
+    font-size: 3.2rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #ffffff;
+    margin: 12px 0 6px 0;
+}
+
+.bento-big-stat span {
+    color: var(--accent-mint);
+}
+
+.bento-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    font-size: 0.84rem;
+}
+
+.bento-flow-step {
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 6px;
+    color: #e2e8f0;
+}
+
+.bento-flow-arrow {
+    color: var(--accent-mint);
+    font-weight: bold;
+}
+
+/* ================================================= */
+/* 3. INTERACTIVE ARCHITECTURE COMPARISON            */
+/* ================================================= */
+
+.comparison-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-top: 36px;
+}
+
+@media (max-width: 800px) {
+    .comparison-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+.compare-card {
+    border-radius: 20px;
+    padding: 32px 28px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.compare-card--legacy {
+    background: rgba(30, 20, 20, 0.4);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.compare-card--modern {
+    background: rgba(10, 30, 25, 0.45);
+    border: 1px solid rgba(52, 211, 153, 0.35);
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.12);
+}
+
+.compare-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    width: fit-content;
+}
+
+.compare-badge--red {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.compare-badge--green {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.compare-list {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.compare-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.compare-icon-bad {
+    color: #ef4444;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+.compare-icon-good {
+    color: #34d399;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 1.1rem;
+}
+
+/* ================================================= */
+/* 4. HUMAN ANCHOR & AUTHOR SECTION                  */
+/* ================================================= */
+
+.author-box {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(10, 18, 32, 0.8) 100%);
+    border: 1px solid var(--glass-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 24px;
+    padding: 44px 36px;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 36px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+@media (max-width: 860px) {
+    .author-box {
+        grid-template-columns: 1fr;
+        padding: 32px 24px;
+    }
+}
+
+.author-lead {
+    font-size: 1.15rem;
+    color: #ffffff;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.author-manifesto {
+    color: var(--text-muted);
+    font-size: 0.96rem;
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+.author-card-side {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.author-signature {
+    font-family: var(--font-mono);
+    color: var(--accent-mint);
+    font-size: 0.88rem;
+    margin-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 14px;
+}
+
+.author-badge {
+    margin-bottom: 16px;
+}
+
+.author-title {
+    font-size: 2rem;
+    margin-bottom: 16px;
+}
+
+.author-principles-title {
+    font-size: 1.15rem;
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+.author-principles-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.author-principles-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.author-check {
+    color: var(--accent-mint);
+    font-weight: bold;
+}
+
+/* Pricing, Form & Utility SoC Classes */
+.pricing-card-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.pricing-sla-title {
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.pricing-sla-desc {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.honeypot-field {
+    display: none !important;
+}
+
+.form-feedback {
+    display: none;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.form-feedback-error {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.form-feedback-success {
+    color: #27c93f;
+    background: rgba(39, 201, 63, 0.1);
+    border: 1px solid rgba(39, 201, 63, 0.2);
+}
+
+.btn-full-width {
+    width: 100%;
+}
+
+.contact-subtext {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-top: 15px;
+}
+
+.footer-links {
+    margin-top: 8px;
+}
+
+
 

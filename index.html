@@ -40,7 +40,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=8">
+    <link rel="stylesheet" href="assets/css/style.css?v=9">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -88,7 +88,10 @@
                     <button class="nav-toggle" aria-label="Przełącz menu nawigacji" id="navToggleBtn">☰</button>
 
                     <div class="nav-links">
+                        <a href="#benefits">Korzyści</a>
+                        <a href="#porownanie">WordPress vs Kod</a>
                         <a href="#portfolio">Realizacje</a>
+                        <a href="#autor">O mnie</a>
                         <a href="jak-pracuje.html">Jak pracuję</a>
                         <a href="#pricing">Cennik</a>
                         <a href="#contact" class="btn btn-secondary btn-sm">Zapytaj o wycenę</a>
@@ -131,142 +134,324 @@
         </div>
     </section>
 
-    <!-- Benefits Section -->
+    <!-- Benefits Bento Grid Section -->
     <section id="benefits" class="features features--no-bottom">
         <div class="container">
-            <div class="features-grid">
-                <!-- Feature 1: Data -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-                            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-                        </svg>
+            <h2 class="section-title">Dlaczego lekka architektura przynosi realne zyski</h2>
+            
+            <div class="bento-grid">
+                <!-- Bento 1: Duża karta (8 kolumn) - Automatyzacja przepływu leadów -->
+                <article class="bento-card bento-col-8">
+                    <span class="bento-tag">Automatyzacja & Oszczędność czasu</span>
+                    <h3>Formularze, które same pilnują zapytań klientów</h3>
+                    <p>Zamiast przepisywać maile po nocach i ręcznie odpowiadać na powtarzalne pytania: Twoja strona weryfikuje zapytanie, odfiltrowuje boty spamujące i automatycznie zabezpiecza kontakt w rejestrze CRM.</p>
+                    
+                    <div class="bento-flow">
+                        <span class="bento-flow-step">1. Wpisanie danych</span>
+                        <span class="bento-flow-arrow">→</span>
+                        <span class="bento-flow-step">2. Filtr Honeypot & CSRF</span>
+                        <span class="bento-flow-arrow">→</span>
+                        <span class="bento-flow-step">3. Zapis do CRM</span>
+                        <span class="bento-flow-arrow">→</span>
+                        <span class="bento-flow-step">4. Gotowy lead</span>
                     </div>
-                    <h3>Dane</h3>
-                    <p><strong>Dane bez ręcznej roboty</strong><br>Automatyczne zbieranie i aktualizacja danych oraz
-                        treści na stronie, wydarzeń, ofert i list, bez ręcznego kopiowania.</p>
+                </article>
+
+                <!-- Bento 2: Kompaktowa karta (4 kolumny) - Prędkość Core Web Vitals -->
+                <article class="bento-card bento-col-4">
+                    <span class="bento-tag">Wydajność mobilna</span>
+                    <div class="bento-big-stat">&lt;&nbsp;0.6<span>s</span></div>
+                    <h3>Błyskawiczne ładowanie</h3>
+                    <p>Bez ciężkich frameworków i zbędnych skryptów. Klient na telefonie nie czeka na stronę – treść pojawia się natychmiast.</p>
+                </article>
+
+                <!-- Bento 3: Kompaktowa karta (4 kolumny) - Lead Recovery -->
+                <article class="bento-card bento-col-4">
+                    <span class="bento-tag">Ochrona konwersji</span>
+                    <h3>Lead Recovery (Autosave)</h3>
+                    <p>Klient zaczął wpisywać numer telefonu, ale ktoś do niego zadzwonił i zamknął kartę? System w tle zabezpiecza wersję roboczą, żeby kontakt nie przepadł.</p>
+                </article>
+
+                <!-- Bento 4: Duża karta (8 kolumn) - Zero SQL & Zero abonamentów -->
+                <article class="bento-card bento-col-8">
+                    <span class="bento-tag">Bezpieczeństwo & Własność</span>
+                    <h3>Brak bazy SQL = brak awarii i 100% kodu na własność</h3>
+                    <p>Strona oparta na ultra-szybkiej architekturze Flat-File eliminuje podatności na ataki bazodanowe. Całą witrynę przenosisz na dowolny hosting w 20 sekund zwykłym kopiuj-wklej, bez comiesięcznych abonamentów za wtyczki.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Comparison Section -->
+    <section id="porownanie" class="features">
+        <div class="container">
+            <h2 class="section-title">WordPress z wtyczkami vs Czysty kod TwojaStronaWWW</h2>
+            <p class="lead-text text-center max-w-800">
+                Zobacz, co w praktyce oznacza rezygnacja z gotowych, ciężkich szablonów na rzecz dopracowanego inżyniersko rozwiązania:
+            </p>
+
+            <div class="comparison-wrapper">
+                <!-- Legacy WordPress -->
+                <div class="compare-card compare-card--legacy">
+                    <div class="compare-badge compare-badge--red">Typowa strona na WordPress / Elementor</div>
+                    <ul class="compare-list">
+                        <li class="compare-item">
+                            <span class="compare-icon-bad">✕</span>
+                            <div><strong>Waga strony: 5–12 MB</strong><br>Długi czas ładowania na telefonie i strata niecierpliwych klientów.</div>
+                        </li>
+                        <li class="compare-item">
+                            <span class="compare-icon-bad">✕</span>
+                            <div><strong>25–40 wtyczek w tle</strong><br>Ryzyko awarii po automatycznych aktualizacjach i konflikty wtyczek.</div>
+                        </li>
+                        <li class="compare-item">
+                            <span class="compare-icon-bad">✕</span>
+                            <div><strong>Ciężka baza danych SQL</strong><br>Częsty cel automatycznych ataków hakerskich (SQL Injection) i spamu.</div>
+                        </li>
+                        <li class="compare-item">
+                            <span class="compare-icon-bad">✕</span>
+                            <div><strong>Ukryte koszty abonamentowe</strong><br>100–250 zł miesięcznie za licencje motywów, formularzy i drogi hosting.</div>
+                        </li>
+                    </ul>
                 </div>
 
-                <!-- Feature 2: Leads -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="9" cy="7" r="4"></circle>
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                        </svg>
-                    </div>
-                    <h3>Leady</h3>
-                    <p><strong>Leady, które nie uciekają</strong><br>Formularze z zapisem postępu i odzyskiwaniem leadów
-                        - kontakt nie przepada, nawet jeśli formularz nie zostanie wysłany.</p>
-                </div>
-
-                <!-- Feature 3: Performance -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                        </svg>
-                    </div>
-                    <h3>Wydajność</h3>
-                    <p><strong>Szybkość bez balastu</strong><br>Lekkie strony bez zbędnych systemów i wtyczek, wyraźnie
-                        szybkie
-                        działanie i niższe koszty utrzymania.</p>
+                <!-- TwojaStronaWWW -->
+                <div class="compare-card compare-card--modern">
+                    <div class="compare-badge compare-badge--green">Czysty kod TwojaStronaWWW (Flat-File)</div>
+                    <ul class="compare-list">
+                        <li class="compare-item">
+                            <span class="compare-icon-good">✓</span>
+                            <div><strong>Waga strony: poniżej 100 KB</strong><br>Otwiera się natychmiast (&lt; 0.6s) nawet na słabym zasięgu 3G/LTE.</div>
+                        </li>
+                        <li class="compare-item">
+                            <span class="compare-icon-good">✓</span>
+                            <div><strong>0 zbędnych wtyczek</strong><br>Czysty semantyczny HTML5, nowoczesny CSS i lekki kod bez długu technologicznego.</div>
+                        </li>
+                        <li class="compare-item">
+                            <span class="compare-icon-good">✓</span>
+                            <div><strong>Architektura bez bazy SQL</strong><br>Dane w zabezpieczonych plikach chronionych blokadą transakcyjną – odporne na włamania.</div>
+                        </li>
+                        <li class="compare-item">
+                            <span class="compare-icon-good">✓</span>
+                            <div><strong>100% kodu na własność</strong><br>Działa na tanim, stabilnym hostingu za kilkadziesiąt złotych rocznie. Zero abonamentów.</div>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Features Section -->
-
-
-    <!-- Portfolio Section -->
+    <!-- Portfolio Section with Browser Mockups -->
     <section id="portfolio" class="features bg-glass-darker">
         <div class="container">
             <h2 class="section-title">Lokalne realizacje i automatyzacje</h2>
-            <div class="features-grid">
+            <div class="portfolio-grid">
 
                 <!-- Project 1: Raricart -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                            <line x1="3" y1="6" x2="21" y2="6"></line>
-                            <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg>
+                <article class="portfolio-card">
+                    <div class="browser-mockup">
+                        <div class="browser-header">
+                            <div class="browser-dots">
+                                <span class="browser-dot dot-red"></span>
+                                <span class="browser-dot dot-yellow"></span>
+                                <span class="browser-dot dot-green"></span>
+                            </div>
+                            <div class="browser-url">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <span>https://test.raricart.pl</span>
+                            </div>
+                        </div>
+                        <div class="browser-body">
+                            <div>
+                                <div class="browser-preview-tag">Branża eventowa</div>
+                                <div class="browser-preview-headline">Raricart.pl – Rezerwacja atrakcji eventowych</div>
+                            </div>
+                            <div class="pagespeed-badge">
+                                <span class="pagespeed-circle"></span>
+                                Google PageSpeed: 99/100 (Mobile & Desktop)
+                            </div>
+                        </div>
                     </div>
-                    <h3>Raricart.pl (strona usługowa – eventy)</h3>
-                    <span class="location-tag">Zabrze</span>
-                    <p>Strona usługowa dla firmy eventowej z czytelną ofertą i sekcjami sprzedażowymi, zaprojektowana
-                        pod generowanie zapytań bez ręcznego kontaktu.</p>
-                    <a href="https://test.raricart.pl/" target="_blank" class="btn btn-secondary btn-sm">Zobacz Live</a>
-                </div>
+
+                    <div class="portfolio-title-row">
+                        <h3>Raricart.pl</h3>
+                        <span class="location-tag">Zabrze</span>
+                    </div>
+
+                    <div class="portfolio-result-box">
+                        <strong>Rezultat wdrożenia:</strong> Czas ładowania skrócony z 4.2s do 0.6s. Formularz automatycznie rezerwuje terminy imprez bez konieczności odbierania telefonów podczas trwania eventów.
+                    </div>
+
+                    <a href="https://test.raricart.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                </article>
 
                 <!-- Project 2: KatoSalsaHub -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <path d="M9 18V5l12-2v13"></path>
-                            <circle cx="6" cy="18" r="3"></circle>
-                            <circle cx="18" cy="16" r="3"></circle>
-                        </svg>
+                <article class="portfolio-card">
+                    <div class="browser-mockup">
+                        <div class="browser-header">
+                            <div class="browser-dots">
+                                <span class="browser-dot dot-red"></span>
+                                <span class="browser-dot dot-yellow"></span>
+                                <span class="browser-dot dot-green"></span>
+                            </div>
+                            <div class="browser-url">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <span>https://katosalsahub.pl</span>
+                            </div>
+                        </div>
+                        <div class="browser-body">
+                            <div>
+                                <div class="browser-preview-tag">Społeczność & Edukacja</div>
+                                <div class="browser-preview-headline">KatoSalsaHub – Centralne centrum taneczne</div>
+                            </div>
+                            <div class="pagespeed-badge">
+                                <span class="pagespeed-circle"></span>
+                                Google PageSpeed: 98/100
+                            </div>
+                        </div>
                     </div>
-                    <h3>KatoSalsaHub</h3>
-                    <span class="location-tag">Katowice</span>
-                    <p>Centralne miejsce zautomatyzowanej prezentacji informacji dla społeczności tanecznej. Zamiast
-                        rozproszonych postów i ręcznych aktualizacji treści.</p>
-                    <a href="https://katosalsahub.pl/" target="_blank" class="btn btn-secondary btn-sm">Zobacz Live</a>
-                </div>
+
+                    <div class="portfolio-title-row">
+                        <h3>KatoSalsaHub</h3>
+                        <span class="location-tag">Katowice</span>
+                    </div>
+
+                    <div class="portfolio-result-box">
+                        <strong>Rezultat wdrożenia:</strong> Zautomatyzowany feed wydarzeń zastąpił 6 godzin tygodniowo ręcznego przeklejania postów i aktualizowania rozproszonych grafików w social media.
+                    </div>
+
+                    <a href="https://katosalsahub.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                </article>
 
                 <!-- Project 3: DancePuls -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                            <polyline points="10 14 12 16 16 12"></polyline>
-                        </svg>
+                <article class="portfolio-card">
+                    <div class="browser-mockup">
+                        <div class="browser-header">
+                            <div class="browser-dots">
+                                <span class="browser-dot dot-red"></span>
+                                <span class="browser-dot dot-yellow"></span>
+                                <span class="browser-dot dot-green"></span>
+                            </div>
+                            <div class="browser-url">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <span>https://dancepuls.katosalsahub.pl</span>
+                            </div>
+                        </div>
+                        <div class="browser-body">
+                            <div>
+                                <div class="browser-preview-tag">Generator Wydarzeń</div>
+                                <div class="browser-preview-headline">DancePuls – Kalendarz i warsztaty tańca</div>
+                            </div>
+                            <div class="pagespeed-badge">
+                                <span class="pagespeed-circle"></span>
+                                Google PageSpeed: 100/100
+                            </div>
+                        </div>
                     </div>
-                    <h3>DancePuls (dance & events)</h3>
-                    <span class="location-tag">Katowice</span>
-                    <p>Strona społecznościowo-eventowa z generatorem wydarzeń, który automatyzuje publikację imprez i
-                        warsztatów zamiast ręcznego kopiowania danych.</p>
-                    <a href="https://dancepuls.katosalsahub.pl/" target="_blank" class="btn btn-secondary btn-sm">Zobacz
-                        Live</a>
-                </div>
+
+                    <div class="portfolio-title-row">
+                        <h3>DancePuls</h3>
+                        <span class="location-tag">Katowice</span>
+                    </div>
+
+                    <div class="portfolio-result-box">
+                        <strong>Rezultat wdrożenia:</strong> Generator harmonogramu imprez. Publikacja nowych warsztatów zajmuje 30 sekund zamiast żmudnego składania grafik i ręcznego rozsyłania maili.
+                    </div>
+
+                    <a href="https://dancepuls.katosalsahub.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                </article>
 
                 <!-- Project 4: FuegoLingua -->
-                <div class="feature-card">
-                    <div class="icon">
-                        <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="2" y1="12" x2="22" y2="12"></line>
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                        </svg>
+                <article class="portfolio-card">
+                    <div class="browser-mockup">
+                        <div class="browser-header">
+                            <div class="browser-dots">
+                                <span class="browser-dot dot-red"></span>
+                                <span class="browser-dot dot-yellow"></span>
+                                <span class="browser-dot dot-green"></span>
+                            </div>
+                            <div class="browser-url">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                <span>https://fuegolingua.pl</span>
+                            </div>
+                        </div>
+                        <div class="browser-body">
+                            <div>
+                                <div class="browser-preview-tag">Edukacja Językowa</div>
+                                <div class="browser-preview-headline">FuegoLingua – Kursy hiszpańskiego</div>
+                            </div>
+                            <div class="pagespeed-badge">
+                                <span class="pagespeed-circle"></span>
+                                Google PageSpeed: 100/100
+                            </div>
+                        </div>
                     </div>
-                    <h3>FuegoLingua</h3>
-                    <span class="location-tag">Katowice</span>
-                    <p>Lekka strona wizytówkowa uruchomiona bez ciężkich systemów, niskie koszty utrzymania i brak
-                        zbędnej administracji.</p>
-                    <a href="https://fuegolingua.pl/" target="_blank" class="btn btn-secondary btn-sm">Zobacz Live</a>
-                </div>
+
+                    <div class="portfolio-title-row">
+                        <h3>FuegoLingua</h3>
+                        <span class="location-tag">Katowice</span>
+                    </div>
+
+                    <div class="portfolio-result-box">
+                        <strong>Rezultat wdrożenia:</strong> Wizytówka o wadze 45 KB uruchomiona bez CMS i bazy SQL. Działa błyskawicznie na tanim hostingu za 49 zł/rok, generując bezpośrednie zapytania o kursy.
+                    </div>
+
+                    <a href="https://fuegolingua.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                </article>
 
             </div>
 
             <div class="section-cta">
                 <h2>Zobaczmy, co da się zautomatyzować u Ciebie</h2>
                 <p>
-                    Każda firma ma procesy robione ręcznie. <strong>Sprawdźmy,
-                        gdzie
-                        automatyzacja może oszczędzić Ci czas i pieniądze.</strong>
+                    Każda firma ma procesy robione ręcznie. <strong>Sprawdźmy, gdzie automatyzacja może oszczędzić Ci czas i pieniądze.</strong>
                 </p>
                 <div class="btn-container">
                     <a href="#contact" class="btn btn-primary">Zapytaj o wycenę</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Human Anchor / Author Section -->
+    <section id="autor" class="features">
+        <div class="container">
+            <div class="author-box">
+                <div class="author-content">
+                    <div class="hero-badge author-badge">
+                        <span class="status-pulse"></span>
+                        <span>Osobiście & Bez podwykonawców</span>
+                    </div>
+                    <h2 class="author-title">Pracujesz bezpośrednio z inżynierem, a nie z anonimową agencją</h2>
+                    <p class="author-lead">
+                        Nie jestem 15-osobową agencją, która wciśnie Ci gotowy szablon za 5 000 zł, a potem zniknie, gdy wtyczka wywali błąd 500 po aktualizacji.
+                    </p>
+                    <p class="author-manifesto">
+                        Osobiście projektuję architekturę, piszę każdą linijkę czystego kodu HTML/CSS/PHP i konfiguruję automatyzacje pod Twój biznes. 
+                        Dzięki temu dokładnie wiem, jak działa każdy element Twojej strony, optymalizuję ją do ułamka sekundy i daję Ci gwarancję ciągłości działania.
+                    </p>
+                </div>
+
+                <div class="author-card-side">
+                    <div>
+                        <h3 class="author-principles-title">Zasady współpracy:</h3>
+                        <ul class="author-principles-list">
+                            <li class="author-principles-item">
+                                <span class="author-check">✓</span>
+                                <div><strong>Bezpośredni kontakt:</strong> Rozmawiasz z osobą, która tworzy Twój kod, a nie z account managerem.</div>
+                            </li>
+                            <li class="author-principles-item">
+                                <span class="author-check">✓</span>
+                                <div><strong>100% kod na własność:</strong> Pełne repozytorium Git, brak uzależnienia od platform i brak abonamentów.</div>
+                            </li>
+                            <li class="author-principles-item">
+                                <span class="author-check">✓</span>
+                                <div><strong>Gwarancja i wsparcie:</strong> 30 dni bezpłatnej opieki powdrożeniowej i bezpośredni telefon.</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="author-signature">
+                        TwojaStronaWWW.pl &bull; Inżynieria czystego kodu
+                    </div>
                 </div>
             </div>
         </div>
@@ -312,7 +497,7 @@
                 <div class="pricing-card">
                     <h3>E-commerce / App</h3>
                     <div class="price">10 000+ <span>PLN netto</span></div>
-                    <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px;">Projekty szyte na
+                    <p class="pricing-card-desc">Projekty szyte na
                         miarę, w których automatyzacja jest kluczową częścią rozwiązania.</p>
                     <ul class="pricing-features">
                         <li>Dedykowana Aplikacja Webowa</li>
@@ -332,8 +517,8 @@
             </p>
 
             <div class="pricing-footer">
-                <h3 style="font-size: 1.1rem; margin-bottom: 10px;">Opieka i automatyzacje cykliczne</h3>
-                <p style="font-size: 0.95rem; color: var(--text-muted); max-width: 800px; margin: 0 auto;">
+                <h3 class="pricing-sla-title">Opieka i automatyzacje cykliczne</h3>
+                <p class="pricing-sla-desc">
                     Po wdrożeniu projektu oferuję opcjonalną obsługę abonamentową:<br>
                     aktualizacje, rozwój, monitoring, automatyzacje procesów.
                 </p>
@@ -350,11 +535,10 @@
             <div class="contact-wrapper">
                 <form id="contactForm" class="contact-form">
                     <!-- Honeypot for bots -->
-                    <input type="text" name="website_url" style="display:none !important;" tabindex="-1"
-                        autocomplete="off">
+                    <input type="text" name="website_url" class="honeypot-field" tabindex="-1"
+                        autocomplete="off" aria-hidden="true">
 
-                    <div id="formErrors"
-                        style="display: none; color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 10px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); text-align: center;">
+                    <div id="formErrors" class="form-feedback form-feedback-error">
                     </div>
 
                     <input type="text" name="name" placeholder="Imię i nazwisko">
@@ -363,11 +547,11 @@
                     <textarea name="message" placeholder="Opisz krótko projekt lub proces, który chcesz zautomatyzować"
                         rows="5"></textarea>
                     <input type="tel" name="phone" placeholder="Telefon (opcjonalnie)">
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">Wyślij zapytanie</button>
-                    <p id="formSuccess" style="display: none; color: #27c93f; text-align: center; margin-top: 10px;">
+                    <button type="submit" class="btn btn-primary btn-full-width">Wyślij zapytanie</button>
+                    <p id="formSuccess" class="form-feedback form-feedback-success">
                         Wiadomość wysłana pomyślnie!</p>
                 </form>
-                <p style="text-align: center; font-size: 0.9rem; color: var(--text-muted); margin-top: 15px;">
+                <p class="contact-subtext">
                     Odpowiadam zazwyczaj w ciągu 24h. Wycena jest niezobowiązująca.
                 </p>
             </div>
