@@ -85,7 +85,11 @@ jobs:
       - name: 3.1 Pobranie kodu repozytorium
         uses: actions/checkout@v4
 
-      - name: 3.2 Wdrożenie plików przez SFTP
+      - name: 3.2 Oczyszczenie zbędnych plików deweloperskich przed wysłaniem na serwer
+        run: |
+          rm -rf .git .github tests scripts .lighthouserc.json package*.json
+
+      - name: 3.3 Wdrożenie plików przez SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.FTP_USERNAME }}
@@ -94,12 +98,4 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           local_path: './*'
           remote_path: '/home/platne/serwer417204/public_html/twojastronawww.pl'
-          sftp_args: '-o ConnectTimeout=60'
-          exclude: |
-            **/.git*
-            **/.github/**
-            **/tests/**
-            **/scripts/**
-            **/node_modules/**
-            .lighthouserc.json
-            package*.json
+          sftpArgs: '-o ConnectTimeout=60'
