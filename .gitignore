@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Environment & local secrets
+.env
+.env.*
+!.env.example
+
+# Test coverage & builds
+coverage/
+dist/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# PHP runtime, sessions, rate limits and data
+api/sessions/*
+!api/sessions/.gitkeep
+!api/sessions/.htaccess
+api/rate_limits/*.json
+api/leads_*.csv
+!api/leads_example.csv
+*.log

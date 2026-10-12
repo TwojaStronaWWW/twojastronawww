@@ -1,6 +1,0 @@
-date,time,name,email,message,ip_hash
-2026-02-03,23:00:19,Test,test@example.com,Hello,eff8e7ca506627fe15dda5e0e512fcaad70b6d520f37cc76597fdb4f2d83a1a3
-2026-02-03,23:21:23,Test,test@example.com,Hello,eff8e7ca506627fe15dda5e0e512fcaad70b6d520f37cc76597fdb4f2d83a1a3
-2026-02-03,23:35:59,Test,test@example.com,Hello,eff8e7ca506627fe15dda5e0e512fcaad70b6d520f37cc76597fdb4f2d83a1a3
-2026-02-03,23:36:44,Test,test@example.com,Hello,eff8e7ca506627fe15dda5e0e512fcaad70b6d520f37cc76597fdb4f2d83a1a3
-2026-02-03,23:43:45,Test,test@example.com,Hello,eff8e7ca506627fe15dda5e0e512fcaad70b6d520f37cc76597fdb4f2d83a1a3
