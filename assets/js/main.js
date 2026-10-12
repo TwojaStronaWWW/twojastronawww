@@ -63,89 +63,82 @@ function initMobileNav() {
 }
 
 /**
- * Baza danych interaktywnego eksploratora technologii
+ * Baza wiedzy o stosowanych technologiach i ich korzyściach dla klienta
  */
 const TECH_DATABASE = {
     html_css: {
-        title: 'HTML5 & Nowoczesny CSS3 (Grid / Flexbox / BEM)',
-        role: 'Fundament strukturalny i wizualny',
-        command: 'cat /stack/frontend/markup-and-styling.yml',
+        title: 'HTML5 & Nowoczesny CSS3 (Grid / Flexbox)',
+        role: 'Lekka architektura wizualna i semantyka',
         highlights: [
-            'Semantyczny kod HTML5 zoptymalizowany pod roboty Google i czytniki ekranowe (a11y)',
-            'Nowoczesne tokeny CSS i brak ciężkich frameworków (np. Tailwind/Bootstrap) redukuje wagę strony o 90%',
-            'Dedykowany dark-mode, szklane efekty (glassmorphism) i płynne mikro-animacje 60 FPS'
+            'Semantyczny kod HTML5, który roboty Google i wyszukiwarki indeksują bez żadnych przeszkód',
+            'Nowoczesne arkusze stylów bez ciężkich bibliotek (jak Bootstrap czy Tailwind) – strona waży ułamek tego, co typowy szablon',
+            'Perfekcyjny dark mode, subtelny glassmorphism i płynne animacje działające z pełną prędkością na każdym telefonie'
         ],
-        benefit: 'Błyskawiczne renderowanie i doskonały wynik First Contentful Paint (<0.6s).'
-    },
-    php_flatfile: {
-        title: 'PHP 8.x & Autorski Silnik Flat-File (Baza CSV z SHA-256)',
-        role: 'Bezpieczny silnik zapisu danych i panelu CMS',
-        command: 'php --version && ls -la /api/leads-store.php',
-        highlights: [
-            'Zero podatności na SQL Injection – brak zewnętrznego serwera MySQL/PostgreSQL',
-            'Deterministyczny format CSV z unikalnymi sumami kontrolnymi SHA-256 dla każdego rekordu',
-            'Błyskawiczny backup (wystarczy skopiować folder) i brak ryzyka awarii bazy danych'
-        ],
-        benefit: 'Zerowe koszty licencji bazodanowych i maksymalna przenoszalność między serwerami.'
+        benefit: 'Strona ładuje się niemal natychmiast, a Twoi klienci nie czekają na załadowanie ciężkich bibliotek.'
     },
     vanilla_js: {
-        title: 'Vanilla JavaScript (ES Modules & Fetch API)',
-        role: 'Lekka, reaktywna warstwa interakcji',
-        command: 'node -e "console.log(process.memoryUsage())"',
+        title: 'Czysty JavaScript (Vanilla JS)',
+        role: 'Szybkie interakcje bez spowalniających wtyczek',
         highlights: [
-            'Brak ociężałych bibliotek (Zero jQuery, No bulky node_modules na produkcji)',
-            'Asynchroniczne zapytania w tle z obsługą nagłówków Content-Type: application/json',
-            'Moduł Lead Recovery – automatyczne ratowanie porzuconych leadów przez navigator.sendBeacon'
+            'Brak ociężałych frameworków i zbędnych paczek kodu – tylko czysty, przetestowany JavaScript',
+            'Płynna, asynchroniczna komunikacja w tle (szybkie formularze bez przeładowywania strony)',
+            'Mechanizm Lead Recovery – automatyczne zabezpieczenie danych kontaktowych wpisywanych przez klienta'
         ],
-        benefit: 'Natychmiastowa reakcja interfejsu i płynne działanie nawet na starszych smartfonach.'
+        benefit: 'Maksymalna responsywność interfejsu i brak zacięć nawet na starszych urządzeniach mobilnych.'
     },
-    git_cicd: {
-        title: 'Git Versioning & Automatyzacja CI/CD (Node:Test)',
-        role: 'Bezpieczeństwo kodu, powtarzalność i SLA',
-        command: 'git log -n 1 --stat && npm test',
+    php_flatfile: {
+        title: 'PHP 8+ & Autorski CMS Flat-File',
+        role: 'Bezpieczny panel zarządzania bez bazy SQL',
         highlights: [
-            'Każda zmiana w kodzie jest audytowalna i wersjonowana w repozytorium Git',
-            'Własne testy jednostkowe bez zależności (node:test) weryfikujące integralność przed wdrożeniem',
-            'Możliwość natychmiastowego rollbacku w przypadku jakichkolwiek problemów (SLA <15 min)'
+            'Brak relacyjnej bazy danych (MySQL/PostgreSQL) oznacza całkowite wyeliminowanie ryzyka ataków SQL Injection',
+            'Proste pliki danych chronione kryptograficznie sumami SHA-256 i restrykcyjnymi uprawnieniami serwera',
+            'Błyskawiczne kopie zapasowe – do pełnego backupu wystarczy skopiowanie jednego katalogu'
         ],
-        benefit: 'Pełna własność kodu źródłowego dla klienta – brak vendor lock-in.'
+        benefit: 'Zero awarii bazy danych, bezproblemowy hosting i prosty panel edycji bez zbędnych komplikacji.'
     },
-    security_csrf: {
-        title: 'Strict CSRF & Atomowy Anti-Spam (File-Locking flock)',
-        role: 'Wielowarstwowa ochrona przed atakami i botami',
-        command: 'grep -E "flock|LOCK_EX" /api/rate-limit.php',
+    automation: {
+        title: 'Automatyzacja procesów & Lead Recovery',
+        role: 'Oszczędność czasu i ochrona przed utratą klientów',
         highlights: [
-            'Jednorazowe tokeny sesyjne (One-Time Token CSRF) eliminujące ataki typu Replay',
-            'Atomowy rate-limiter oparty na blokadach plików systemowych (flock LOCK_EX) odporny na Race Conditions',
-            'Ochrona katalogów sesji i liczników regułami Apache .htaccess (Deny from all) wg norm ISO 27001'
+            'Formularze z zapisem wersji roboczych – kontakt nie przepada, nawet gdy klient zamknie kartę w trakcie pisania',
+            'Automatyczne powiadomienia i wstępna selekcja zapytań eliminująca powtarzalną, ręczną pracę',
+            'Możliwość integracji z Twoim kalendarzem, skrzynką pocztową lub systemem CRM'
         ],
-        benefit: '100% czysta skrzynka odbiorcza bez spamu i bezpieczne przetwarzanie leadów wg RODO.'
+        benefit: 'Zyskujesz więcej zapytań ofertowych i przestajesz tracić czas na powtarzalne czynności.'
     },
-    cloudflare_cdn: {
-        title: 'Cloudflare Edge SSL & Globalne Buforowanie CDN',
-        role: 'Przyspieszenie sieciowe i tarcza ochronna WAF',
-        command: 'curl -I https://twojastronawww.pl/ | grep cf-ray',
+    seo_vitals: {
+        title: 'Optymalizacja SEO & Core Web Vitals',
+        role: 'Wysoka widoczność w wyszukiwarkach od pierwszego dnia',
         highlights: [
-            'Szyfrowanie SSL Full Strict z najnowszym protokołem TLS 1.3 i HTTP/3',
-            'Serwowanie zasobów z węzłów brzegowych najbliżej Twojego klienta',
-            'Zintegrowana ochrona przed atakami wolumetrycznymi DDoS'
+            'Rygorystycznie zoptymalizowane wskaźniki LCP, FID/INP oraz CLS pod wytyczne Google',
+            'Pełne dane strukturalne Schema.org (JSON-LD), ułatwiające robotom zrozumienie Twojej oferty',
+            'Czysta struktura nagłówków, semantyczne tagi oraz zoptymalizowane metadane Open Graph'
         ],
-        benefit: 'Dostępność 99.9% oraz błyskawiczne otwieranie strony w dowolnym miejscu na świecie.'
+        benefit: 'Twoja strona ma znakomity start w wynikach wyszukiwania i jest faworyzowana przez algorytmy Google.'
+    },
+    git_security: {
+        title: 'Git Versioning & Bezpieczeństwo ISO 27001',
+        role: '100% własności kodu, wersjonowanie i spokój',
+        highlights: [
+            'Każda zmiana w kodzie jest udokumentowana i bezpiecznie wersjonowana w prywatnym repozytorium Git',
+            'Ochrona formularzy jednorazowymi tokenami CSRF oraz atomowym mechanizmem blokady plików przed botami',
+            'Brak jakiegokolwiek uzależnienia od agencji (vendor lock-in) – cały kod źródłowy należy do Ciebie'
+        ],
+        benefit: 'Pełna niezależność, bezpieczne dane Twoich klientów i brak ukrytych opłat licencyjnych.'
     }
 };
 
 /**
- * Interaktywny terminal stacku technologicznego
+ * Interaktywny panel prezentacji technologii
  */
 function initTechStackExplorer() {
     const techButtons = document.querySelectorAll('.tech-item[data-tech]');
-    const terminalTitle = document.getElementById('tech-term-title');
-    const terminalRole = document.getElementById('tech-term-role');
-    const terminalCmd = document.getElementById('tech-term-cmd');
-    const terminalList = document.getElementById('tech-term-list');
-    const terminalBenefit = document.getElementById('tech-term-benefit');
+    const cardTitle = document.getElementById('tech-card-title');
+    const cardRole = document.getElementById('tech-card-role');
+    const cardList = document.getElementById('tech-card-list');
+    const cardBenefit = document.getElementById('tech-card-benefit');
 
-    if (!techButtons.length || !terminalTitle) return;
+    if (!techButtons.length || !cardTitle) return;
 
     function renderTech(techKey) {
         const item = TECH_DATABASE[techKey];
@@ -158,22 +151,21 @@ function initTechStackExplorer() {
             btn.setAttribute('aria-pressed', String(isActive));
         });
 
-        // Wypełnij zawartość terminala
-        terminalTitle.textContent = item.title;
-        if (terminalRole) terminalRole.textContent = item.role;
-        if (terminalCmd) terminalCmd.textContent = `$ ${item.command}`;
+        // Wypełnij zawartość karty
+        cardTitle.textContent = item.title;
+        if (cardRole) cardRole.textContent = item.role;
 
-        if (terminalList) {
-            terminalList.innerHTML = '';
+        if (cardList) {
+            cardList.innerHTML = '';
             item.highlights.forEach(point => {
                 const li = document.createElement('li');
                 li.textContent = point;
-                terminalList.appendChild(li);
+                cardList.appendChild(li);
             });
         }
 
-        if (terminalBenefit) {
-            terminalBenefit.innerHTML = `<strong>Wartość biznesowa:</strong> ${item.benefit}`;
+        if (cardBenefit) {
+            cardBenefit.innerHTML = `<strong>Wartość dla Twojej firmy:</strong> ${item.benefit}`;
         }
     }
 

@@ -795,15 +795,27 @@ footer {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+}
+
+@media (max-width: 900px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .stat-item {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
-    padding: 24px 18px;
+    padding: 28px 20px;
     text-align: center;
     transition: transform var(--transition-speed), border-color var(--transition-speed), box-shadow var(--transition-speed);
     position: relative;
@@ -817,28 +829,25 @@ footer {
 }
 
 .stat-num {
-    font-family: var(--font-mono);
-    font-size: 2.3rem;
-    font-weight: 700;
-    line-height: 1.1;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, #fff 0%, var(--primary-color) 60%, var(--accent-color) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-family: var(--font-main);
+    font-size: 2.8rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 12px;
+    color: #fff;
 }
 
 .stat-title {
-    font-size: 0.95rem;
+    font-size: 1.05rem;
     font-weight: 600;
     color: var(--text-color);
-    margin-bottom: 4px;
+    margin-bottom: 6px;
 }
 
 .stat-desc {
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     color: var(--text-muted);
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 /* Workflow & Process Steps */
@@ -871,14 +880,11 @@ footer {
 }
 
 .process-num {
-    font-family: var(--font-mono);
+    font-family: var(--font-main);
     font-size: 2.4rem;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1;
-    background: linear-gradient(135deg, var(--accent-color), var(--primary-color));
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: var(--primary-color);
     text-align: center;
 }
 
@@ -912,8 +918,8 @@ footer {
 }
 
 .process-badge {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
+    font-size: 0.82rem;
+    font-weight: 600;
     padding: 6px 14px;
     border-radius: 999px;
     background: rgba(59, 130, 246, 0.12);
@@ -957,17 +963,18 @@ footer {
     position: relative;
 }
 
-.comparison-badge {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    padding: 4px 10px;
+.comparison-tag {
+    display: inline-block;
+    width: fit-content;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-color);
+    background: rgba(6, 182, 212, 0.12);
+    border: 1px solid rgba(6, 182, 212, 0.3);
     border-radius: 999px;
-    background: rgba(16, 185, 129, 0.15);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-    color: #34d399;
+    padding: 4px 14px;
+    margin-bottom: 16px;
+    letter-spacing: 0.02em;
 }
 
 .comparison-col h3 {
@@ -1010,7 +1017,7 @@ footer {
     font-size: 1.1rem;
 }
 
-/* Interactive Tech Stack & Terminal */
+/* Interactive Tech Stack Explorer */
 .tech-text {
     margin-bottom: 24px;
     color: var(--text-muted);
@@ -1055,105 +1062,77 @@ footer {
     box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
 }
 
-.tech-terminal {
-    background: #020617;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 18px;
-    overflow: hidden;
+.tech-detail-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 32px 28px;
     margin-top: 24px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    transition: border-color var(--transition-speed);
 }
 
-.tech-terminal-header {
-    background: rgba(255, 255, 255, 0.04);
-    padding: 12px 18px;
+.tech-card-header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 12px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 16px;
 }
 
-.tech-terminal-dots {
-    display: flex;
-    gap: 6px;
-}
-
-.tech-terminal-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-.tech-terminal-dot.dot-red { background: #ef4444; }
-.tech-terminal-dot.dot-yellow { background: #f59e0b; }
-.tech-terminal-dot.dot-green { background: #10b981; }
-
-.tech-terminal-path {
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.tech-terminal-body {
-    padding: 28px;
-    font-family: var(--font-main);
-}
-
-.tech-term-cmd {
-    font-family: var(--font-mono);
-    color: var(--accent-color);
-    font-size: 0.88rem;
-    margin-bottom: 16px;
-    display: block;
-}
-
-.tech-term-title {
+.tech-card-title {
     font-size: 1.35rem;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 4px;
+    margin: 0;
 }
 
-.tech-term-role {
-    font-size: 0.9rem;
-    color: var(--primary-color);
-    margin-bottom: 16px;
+.tech-card-role {
+    font-size: 0.85rem;
+    color: var(--accent-color);
+    background: rgba(6, 182, 212, 0.1);
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    padding: 3px 12px;
+    border-radius: 999px;
     font-weight: 500;
 }
 
-.tech-term-list {
-    margin-bottom: 20px;
+.tech-card-list {
+    margin-bottom: 22px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
-.tech-term-list li {
-    font-size: 0.92rem;
+.tech-card-list li {
+    font-size: 0.95rem;
     color: var(--text-muted);
     position: relative;
-    padding-left: 20px;
-    line-height: 1.5;
+    padding-left: 22px;
+    line-height: 1.6;
 }
 
-.tech-term-list li::before {
-    content: '→';
+.tech-card-list li::before {
+    content: '✓';
     position: absolute;
     left: 0;
     color: var(--primary-color);
     font-weight: bold;
 }
 
-.tech-term-benefit {
-    padding: 14px 18px;
+.tech-card-benefit {
+    padding: 16px 20px;
     border-radius: 12px;
     background: rgba(59, 130, 246, 0.08);
     border: 1px solid rgba(59, 130, 246, 0.2);
-    font-size: 0.92rem;
+    font-size: 0.95rem;
     color: #e2e8f0;
+    line-height: 1.6;
 }
 
-.tech-term-benefit strong {
-    color: var(--accent-color);
+.tech-card-benefit strong {
+    color: #fff;
 }
 
 /* Security & ISO Standards Grid */
