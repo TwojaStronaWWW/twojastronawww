@@ -10,7 +10,15 @@
     --primary-color: #3b82f6; /* Blue 500 */
     --primary-dark: #1d4ed8;
     --accent-color: #06b6d4; /* Cyan 500 */
+    --accent-cyan: #06b6d4;
     --accent-purple: #8b5cf6; /* Violet 500 */
+    
+    /* Greenish / Emerald / Mint accents for brand icons */
+    --accent-mint: #34d399; /* Emerald/Mint 400 - zielonkawy akcent */
+    --accent-emerald: #10b981; /* Emerald 500 */
+    --accent-green-glow: rgba(52, 211, 153, 0.45);
+    --accent-green-bg: rgba(16, 185, 129, 0.08);
+    --accent-green-border: rgba(52, 211, 153, 0.24);
     
     --glass-bg: rgba(30, 41, 59, 0.4);
     --glass-border: rgba(255, 255, 255, 0.08);
@@ -559,15 +567,19 @@ header {
     height: 48px;
     margin-bottom: 16px; /* Mobile: spacing below icon */
     margin-right: 0;
-    color: var(--accent-cyan);
-    transition: transform 0.3s ease, color 0.3s ease;
+    color: var(--accent-mint);
+    background: var(--accent-green-bg);
+    border: 1px solid var(--accent-green-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+    transition: transform 0.3s ease, color 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .feature-card .icon svg {
-    width: 36px;
-    height: 36px;
-    stroke-width: 2;
-    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+    width: 28px;
+    height: 28px;
+    stroke-width: 2.2;
+    filter: drop-shadow(0 0 6px var(--accent-green-glow));
     transition: filter 0.3s ease, transform 0.3s ease;
 }
 
@@ -608,12 +620,15 @@ header {
 }
 
 .feature-card:hover .icon {
-    transform: scale(1.1) translateX(3px);
+    transform: scale(1.08) translateY(-2px);
+    background: rgba(16, 185, 129, 0.16);
+    border-color: rgba(52, 211, 153, 0.45);
     color: #ffffff;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.26);
 }
 
 .feature-card:hover .icon svg {
-    filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.75));
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.8));
 }
 
 .feature-card p {
@@ -636,13 +651,13 @@ header {
     right: 24px;
     width: 52px;
     height: 52px;
-    background: linear-gradient(135deg, #00f0ff, #3b82f6);
+    background: linear-gradient(135deg, #34d399, #06b6d4);
     color: #04070d;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 8px 24px rgba(0, 240, 255, 0.4);
+    box-shadow: 0 8px 24px rgba(52, 211, 153, 0.4);
     z-index: 1000;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     text-decoration: none;
@@ -657,7 +672,7 @@ header {
 
 .sticky-call-btn:hover {
     transform: scale(1.1) translateY(-2px);
-    box-shadow: 0 12px 30px rgba(0, 240, 255, 0.65);
+    box-shadow: 0 12px 30px rgba(52, 211, 153, 0.65);
     color: #000000;
 }
 
@@ -1077,24 +1092,25 @@ footer {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
-    color: var(--accent-cyan);
+    color: var(--accent-mint);
+    filter: drop-shadow(0 0 4px rgba(52, 211, 153, 0.4));
     transition: transform 0.25s ease, color 0.25s ease, filter 0.25s ease;
 }
 
 .tech-item:hover,
 .tech-item.is-active {
-    background: rgba(0, 240, 255, 0.08);
-    border-color: var(--accent-cyan);
+    background: rgba(16, 185, 129, 0.08);
+    border-color: var(--accent-mint);
     color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 240, 255, 0.22);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.22);
 }
 
 .tech-item:hover .tech-icon,
 .tech-item.is-active .tech-icon {
     color: #ffffff;
-    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.85));
-    transform: scale(1.12);
+    filter: drop-shadow(0 0 10px rgba(52, 211, 153, 0.9));
+    transform: scale(1.15);
 }
 
 .tech-detail-card {
@@ -1152,7 +1168,7 @@ footer {
     content: '✓';
     position: absolute;
     left: 0;
-    color: var(--primary-color);
+    color: var(--accent-mint);
     font-weight: bold;
 }
 
@@ -1198,28 +1214,35 @@ footer {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    color: var(--accent-cyan);
-    margin-bottom: 6px;
-    transition: transform 0.3s ease, color 0.3s ease;
+    width: 46px;
+    height: 46px;
+    color: var(--accent-mint);
+    background: var(--accent-green-bg);
+    border: 1px solid var(--accent-green-border);
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+    margin-bottom: 12px;
+    transition: transform 0.3s ease, color 0.3s ease, background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .security-card .icon svg {
-    width: 32px;
-    height: 32px;
-    stroke-width: 2;
-    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+    width: 26px;
+    height: 26px;
+    stroke-width: 2.2;
+    filter: drop-shadow(0 0 6px var(--accent-green-glow));
     transition: filter 0.3s ease;
 }
 
 .security-card:hover .icon {
     color: #ffffff;
-    transform: scale(1.1) translateY(-2px);
+    background: rgba(16, 185, 129, 0.16);
+    border-color: rgba(52, 211, 153, 0.45);
+    transform: scale(1.08) translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.26);
 }
 
 .security-card:hover .icon svg {
-    filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.75));
+    filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.8));
 }
 
 .security-card h3 {
