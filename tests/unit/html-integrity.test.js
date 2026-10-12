@@ -45,8 +45,27 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(indexContent, /name=["']website_url["']/i, 'Brak pola honeypot website_url chroniącego przed botami');
   });
 
-  test('Skrypty JS i style CSS są poprawnie podpięte', () => {
+  test('Skrypty JS i style CSS są poprawnie podpięte w index.html i jak-pracuje.html', () => {
     assert.match(indexContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w index.html');
     assert.match(indexContent, /src=["'][^"']*contact\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia contact.js w index.html');
+    assert.match(indexContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w index.html');
+
+    assert.match(jakPracujeContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w jak-pracuje.html');
+    assert.match(jakPracujeContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w jak-pracuje.html');
+    assert.doesNotMatch(jakPracujeContent, /script\.js/i, 'Wykryto martwe odwołanie do script.js w jak-pracuje.html');
+  });
+
+  test('Pliki HTML są czyste i nie zawierają wiszących śmieciowych komentarzy testowych', () => {
+    assert.doesNotMatch(indexContent, /<!--p ltleklsuyuk/i, 'index.html zawiera śmieciowy komentarz');
+    assert.doesNotMatch(jakPracujeContent, /<!-- test,/i, 'jak-pracuje.html zawiera śmieciowy komentarz testowy');
+  });
+
+  test('jak-pracuje.html posiada kompletną strukturę etapów procesu, SLA, bezpieczeństwa i FAQ', () => {
+    assert.match(jakPracujeContent, /id=["']proces["']/i, 'Brak sekcji procesu #proces w jak-pracuje.html');
+    assert.match(jakPracujeContent, /id=["']stack["']/i, 'Brak sekcji stacku #stack w jak-pracuje.html');
+    assert.match(jakPracujeContent, /id=["']bezpieczenstwo["']/i, 'Brak sekcji bezpieczeństwa #bezpieczenstwo');
+    assert.match(jakPracujeContent, /id=["']faq["']/i, 'Brak sekcji #faq w jak-pracuje.html');
+    assert.match(jakPracujeContent, /application\/ld\+json/i, 'Brak danych strukturalnych Schema.org w jak-pracuje.html');
+    assert.match(jakPracujeContent, /rel=["']canonical["']/i, 'Brak linku canonical w jak-pracuje.html');
   });
 });

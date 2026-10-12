@@ -4,13 +4,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TwojaStronaWWW - Profesjonalne Strony z Własnym Panelem Admin</title>
+    <title>Jak pracuję – Proces tworzenia, technologie i standardy SLA | TwojaStronaWWW.pl</title>
     <meta name="description"
-        content="Tworzymy szybkie, nowoczesne strony internetowe z integracją Git, własnym panelem administracyjnym i systemem odzyskiwania leadów.">
+        content="Poznaj transparentny proces tworzenia stron WWW i automatyzacji: od analizy biznesowej, przez dedykowany UX/UI, czysty kod Vanilla JS / PHP Flat-File, po bezpieczeństwo ISO 27001 i wyniki Lighthouse 95+.">
     <meta name="robots" content="index, follow">
-    <!-- Favicon -->
+    <link rel="canonical" href="https://twojastronawww.pl/jak-pracuje.html">
+    <meta name="theme-color" content="#020617">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://twojastronawww.pl/jak-pracuje.html">
+    <meta property="og:title" content="Jak pracuję – Proces tworzenia, technologie i standardy SLA | TwojaStronaWWW.pl">
+    <meta property="og:description"
+        content="Sprawdź, jak buduję szybkie, bezpieczne strony bez ciężkich baz SQL i wtyczek. Poznaj etapy współpracy, gwarancje SLA i architekturę Zero-Bloat.">
+    <meta property="og:site_name" content="TwojaStronaWWW.pl">
+    <meta property="og:locale" content="pl_PL">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://twojastronawww.pl/jak-pracuje.html">
+    <meta name="twitter:title" content="Jak pracuję – Proces tworzenia, technologie i standardy SLA | TwojaStronaWWW.pl">
+    <meta name="twitter:description"
+        content="Inżynieria stron WWW i automatyzacja procesów. Standardy ISO 27001, architektura Flat-File i brak długu technologicznego.">
+
+    <!-- Favicon & PWA Manifest -->
     <link rel="icon"
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <link rel="manifest" href="site.webmanifest">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,27 +40,79 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=3">
+    <link rel="stylesheet" href="assets/css/style.css?v=4">
 
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": "https://twojastronawww.pl/jak-pracuje.html#webpage",
+          "url": "https://twojastronawww.pl/jak-pracuje.html",
+          "name": "Jak pracuję – Proces tworzenia, technologie i standardy SLA | TwojaStronaWWW.pl",
+          "description": "Poznaj transparentny proces tworzenia stron WWW i automatyzacji biznesowych w TwojaStronaWWW.pl.",
+          "inLanguage": "pl-PL",
+          "isPartOf": {
+            "@type": "WebSite",
+            "@id": "https://twojastronawww.pl/#website",
+            "url": "https://twojastronawww.pl/",
+            "name": "TwojaStronaWWW.pl"
+          }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://twojastronawww.pl/jak-pracuje.html#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Strona główna",
+              "item": "https://twojastronawww.pl/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Jak pracuję",
+              "item": "https://twojastronawww.pl/jak-pracuje.html"
+            }
+          ]
+        },
+        {
+          "@type": "Service",
+          "name": "Projektowanie i wdrożenia stron WWW z automatyzacją procesów",
+          "provider": {
+            "@type": "Organization",
+            "name": "TwojaStronaWWW.pl",
+            "url": "https://twojastronawww.pl/"
+          },
+          "serviceType": "Web Development & Process Automation",
+          "termsOfService": "https://twojastronawww.pl/jak-pracuje.html"
+        }
+      ]
+    }
+    </script>
 </head>
 
 <body>
 
-    <!-- Header -->
+    <!-- Header & Navigation -->
     <header>
         <nav class="nav-inner">
             <div class="nav-container">
                 <div class="nav-left">
-                    <a href="index.html" class="logo">TwojaStronaWWW</a>
+                    <a href="index.html" class="logo" title="TwojaStronaWWW – Strona Główna">TwojaStronaWWW</a>
                 </div>
 
                 <div class="nav-right">
-                    <!-- Mobile Menu Toggle -->
-                    <button class="nav-toggle" aria-label="Menu"
-                        onclick="console.log('Toggle menu placeholder')">☰</button>
+                    <!-- Mobile Menu Toggle Button -->
+                    <button class="nav-toggle" aria-label="Przełącz menu nawigacji" id="navToggleBtn">☰</button>
 
-                    <div class="nav-links">
+                    <div class="nav-links" id="navLinksList">
+                        <a href="index.html">Strona główna</a>
                         <a href="index.html#portfolio">Realizacje</a>
+                        <a href="jak-pracuje.html" class="active">Jak pracuję</a>
                         <a href="index.html#pricing">Cennik</a>
                         <a href="index.html#contact" class="btn btn-secondary btn-sm">Zapytaj o wycenę</a>
                     </div>
@@ -49,86 +121,425 @@
         </nav>
     </header>
 
-    <!-- Page Header -->
-    <section class="hero hero-mini">
-        <div class="container">
-            <h1 class="section-title">Jak pracuję</h1>
-            <p class="lead-text">
-                Technologie, narzędzia i liczby, które stoją za wydajnością moich projektów.
-            </p>
-        </div>
-    </section>
+    <main>
+        <!-- Page Header / Hero Section -->
+        <section class="hero hero-mini">
+            <div class="container">
+                <div class="hero-badge">
+                    <span>⚡</span> Architektura Zero-Bloat & Inżynieria Webowa
+                </div>
+                <h1 class="section-title">Jak pracuję: szybkość, bezpieczeństwo i automatyzacja</h1>
+                <p class="lead-text">
+                    Tworzę witryny i aplikacje firmowe w oparciu o autorski, ultralekki stack inżynieryjny.
+                    Zamiast ociężałych CMS-ów z 40 wtyczkami otrzymujesz czysty kod, zerowe ryzyko podatności SQL
+                    oraz automatyzację procesów, która oszczędza Twój czas każdego dnia.
+                </p>
+                <div class="hero-btns">
+                    <a href="index.html#contact" class="btn btn-primary">Zapytaj o wycenę</a>
+                    <a href="#proces" class="btn btn-secondary">Zobacz etapy współpracy</a>
+                </div>
+            </div>
+        </section>
 
+        <!-- Stats & SLA Metrics Section -->
+        <section class="stats-section" id="metryki" aria-label="Wskaźniki wydajności i SLA">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-num">&lt;&nbsp;0.8s</div>
+                        <div class="stat-title">Czas ładowania LCP</div>
+                        <div class="stat-desc">Błyskawiczny start na każdym łączu</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">95+</div>
+                        <div class="stat-title">Google PageSpeed</div>
+                        <div class="stat-desc">Maksymalne noty Core Web Vitals</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">0 SQL</div>
+                        <div class="stat-title">Zero podatności SQLi</div>
+                        <div class="stat-desc">Silnik Flat-File z SHA-256</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">100%</div>
+                        <div class="stat-title">Responsywności (RWD)</div>
+                        <div class="stat-desc">Projektowane Mobile-First</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">LOCK_EX</div>
+                        <div class="stat-title">Anti-Spam Rate Limit</div>
+                        <div class="stat-desc">Atomowa ochrona plików przed botami</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-num">100%</div>
+                        <div class="stat-title">Własności kodu (Git)</div>
+                        <div class="stat-desc">Brak ukrytych subskrypcji CMS</div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
+        <!-- 5-Step Process Section -->
+        <section class="features" id="proces">
+            <div class="container">
+                <h2 class="section-title">Transparentny proces wdrożenia krok po kroku</h2>
+                <p class="lead-text">
+                    Współpraca oparta jest na jasnym harmonogramie, bez nieprzewidzianych opóźnień i bez technicznego żargonu.
+                    Na każdym etapie wiesz dokładnie, co zostało zrobione i co dzieje się dalej.
+                </p>
 
-    <!-- Sticky Call Button -->
-    <a href="index.html#contact" class="sticky-call-btn" title="Szybki kontakt">
+                <div class="process-grid">
+                    <!-- Step 1 -->
+                    <article class="process-card">
+                        <div class="process-num">01</div>
+                        <div class="process-content">
+                            <h3>Analiza biznesowa & Audyt powtarzalnych procesów</h3>
+                            <p>
+                                Zaczynamy od krótkiej, celowanej rozmowy lub ankiety projektowej. Identyfikujemy to, co w Twojej
+                                firmie pochłania najwięcej czasu: ręczne odpisywanie na powtarzalne pytania, przepisywanie danych
+                                ze zgłoszeń czy brak kontroli nad uciekającymi leadami.
+                            </p>
+                            <div class="process-deliverable">
+                                <strong>Dostarczam:</strong> Spójny brief techniczny, plan automatyzacji i stałą wycenę bez gwiazdek.
+                            </div>
+                        </div>
+                        <div class="process-badge">Etap 1: Dzień 1–2</div>
+                    </article>
+
+                    <!-- Step 2 -->
+                    <article class="process-card">
+                        <div class="process-num">02</div>
+                        <div class="process-content">
+                            <h3>Projektowanie UI/UX & Ścieżka konwersji klienta</h3>
+                            <p>
+                                Projektuję indywidualną architekturę informacji oraz nowoczesny, responsywny design bez sięgania po
+                                gotowe, oklepane szablony. Każdy element nawigacji, przycisk CTA oraz formularz jest zoptymalizowany
+                                tak, aby zamieniać odwiedzających w płacących klientów.
+                            </p>
+                            <div class="process-deliverable">
+                                <strong>Dostarczam:</strong> Dedykowany projekt makiety dopasowany do tożsamości Twojej marki.
+                            </div>
+                        </div>
+                        <div class="process-badge">Etap 2: Dzień 3–5</div>
+                    </article>
+
+                    <!-- Step 3 -->
+                    <article class="process-card">
+                        <div class="process-num">03</div>
+                        <div class="process-content">
+                            <h3>Programowanie Zero-Dependency (Vanilla Stack & PHP 8+)</h3>
+                            <p>
+                                Koduję witrynę w czystym HTML5, CSS3 i Vanilla JavaScript, zasilanym ultra-lekkim backendem PHP
+                                w architekturze Flat-File. Brak ociężałych frameworków sprawia, że strona waży mniej niż 100 KB,
+                                ładuje się natychmiast i działa bezawaryjnie na dowolnym serwerze.
+                            </p>
+                            <div class="process-deliverable">
+                                <strong>Dostarczam:</strong> Czysty, w pełni responsywny kod źródłowy z wersjonowaniem w repozytorium Git.
+                            </div>
+                        </div>
+                        <div class="process-badge">Etap 3: Dzień 6–9</div>
+                    </article>
+
+                    <!-- Step 4 -->
+                    <article class="process-card">
+                        <div class="process-num">04</div>
+                        <div class="process-content">
+                            <h3>Testy bezpieczeństwa ISO 27001, CSRF & Audyt Core Web Vitals</h3>
+                            <p>
+                                Każde wdrożenie przechodzi rygorystyczne testy automatyczne (testy jednostkowe bez zewnętrznych zależności
+                                <code>node:test</code>). Wdrażam jednorazowe tokeny CSRF, atomowy rate-limiting oparty na <code>flock</code>
+                                oraz konfigurację zabezpieczeń Apache i nagłówków bezpieczeństwa zgodnych z RODO.
+                            </p>
+                            <div class="process-deliverable">
+                                <strong>Dostarczam:</strong> Raport z audytu Google Lighthouse (wyniki 95+) i testów bezpieczeństwa.
+                            </div>
+                        </div>
+                        <div class="process-badge">Etap 4: Dzień 10–11</div>
+                    </article>
+
+                    <!-- Step 5 -->
+                    <article class="process-card">
+                        <div class="process-num">05</div>
+                        <div class="process-content">
+                            <h3>Wdrożenie produkcyjne, automatyzacja leadów i opieka SLA</h3>
+                            <p>
+                                Konfiguruję domenę, certyfikaty SSL Cloudflare Full Strict, buforowanie brzegowe CDN oraz moduł
+                                <strong>Lead Recovery</strong> (zabezpieczenie przed utratą klientów, którzy nie dokończyli formularza).
+                                Po uruchomieniu otrzymujesz pełną gwarancję powdrożeniową oraz opcję stałej opieki.
+                            </p>
+                            <div class="process-deliverable">
+                                <strong>Dostarczam:</strong> Działający produkcyjnie system, instrukcję panelu oraz 30 dni asysty wdrożeniowej.
+                            </div>
+                        </div>
+                        <div class="process-badge">Etap 5: Dzień 12–14</div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Comparison: Custom vs WordPress -->
+        <section class="features bg-glass-darker" id="porownanie">
+            <div class="container">
+                <h2 class="section-title">Dlaczego autorska architektura, a nie WordPress z 40 wtyczkami?</h2>
+                <p class="lead-text">
+                    Większość agencji instaluje ciężki CMS, kupuje gotowy motyw i dodaje dziesiątki wtyczek.
+                    Oto bezpośrednie porównanie, jak to wpływa na Twój biznes:
+                </p>
+
+                <div class="comparison-grid">
+                    <!-- Standard WordPress -->
+                    <div class="comparison-col">
+                        <h3>Typowy WordPress na szablonie</h3>
+                        <div class="comparison-subtitle">Popularne, ale ociężałe i podatne na awarie</div>
+                        <ul class="comparison-list">
+                            <li>
+                                <span class="comparison-icon-bad">✕</span>
+                                <div><strong>Ciężar i prędkość:</strong> Waga strony rzędu 3–8 MB, dziesiątki skryptów JS i wolne ładowanie na smartfonach.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-bad">✕</span>
+                                <div><strong>Ryzyko włamań:</strong> Ciągłe podatności wtyczek, podatność na ataki brute-force i wstrzykiwanie SQL.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-bad">✕</span>
+                                <div><strong>Koszty utrzymania:</strong> Ciągłe aktualizacje wtyczek, ryzyko, że aktualizacja zepsuje wygląd strony.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-bad">✕</span>
+                                <div><strong>Utrata leadów:</strong> Gdy klient wyjdzie z formularza przed kliknięciem „Wyślij”, dane bezpowrotnie przepadają.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-bad">✕</span>
+                                <div><strong>Zależność (Vendor Lock-in):</strong> Uzależnienie od płatnych wtyczek rocznych i motywów zewnętrznych twórców.</div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- TwojaStronaWWW Architecture -->
+                    <div class="comparison-col featured">
+                        <div class="comparison-badge">Rekomendowane rozwiązanie</div>
+                        <h3>Architektura TwojaStronaWWW</h3>
+                        <div class="comparison-subtitle">Czysty kod Vanilla + PHP Flat-File + Automatyzacja</div>
+                        <ul class="comparison-list">
+                            <li>
+                                <span class="comparison-icon-good">✓</span>
+                                <div><strong>Natywna lekkość:</strong> Waga poniżej 100 KB, wynik Google PageSpeed 95+, start poniżej 0.8 sekundy.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-good">✓</span>
+                                <div><strong>Zero SQL Injection:</strong> Silnik Flat-File z hashowaniem SHA-256 eliminuje konieczność podatnej bazy SQL.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-good">✓</span>
+                                <div><strong>Odporność na boty:</strong> Jednorazowa rotacja CSRF, Honeypot i atomowe blokady plików systemowych (<code>flock</code>).</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-good">✓</span>
+                                <div><strong>Lead Recovery:</strong> Zapis wersji roboczej w tle – odzyskujesz kontakt nawet, gdy klient zamknie kartę.</div>
+                            </li>
+                            <li>
+                                <span class="comparison-icon-good">✓</span>
+                                <div><strong>100% Twojej własności:</strong> Czyste repozytorium Git, brak jakichkolwiek rocznych licencji na wtyczki.</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Tech Stack Explorer -->
+        <section class="features" id="stack">
+            <div class="container">
+                <h2 class="section-title">Technologie stojące za wydajnością projektów</h2>
+                <p class="tech-text">
+                    Stosuję wyłącznie sprawdzone, bezbiblioteczne fundamenty sieciowe.
+                    Wybierz technologię poniżej, aby podejrzeć szczegóły inżynieryjne w terminalu:
+                </p>
+
+                <!-- Interactive Tech Buttons -->
+                <div class="tech-grid" role="tablist" aria-label="Wybór technologii do podglądu">
+                    <button class="tech-item is-active" data-tech="html_css" role="tab" aria-selected="true">
+                        <span>🌐</span> HTML5 & CSS3
+                    </button>
+                    <button class="tech-item" data-tech="vanilla_js" role="tab" aria-selected="false">
+                        <span>⚡</span> Vanilla JS (ES6+)
+                    </button>
+                    <button class="tech-item" data-tech="php_flatfile" role="tab" aria-selected="false">
+                        <span>📁</span> PHP 8+ & Flat-File
+                    </button>
+                    <button class="tech-item" data-tech="git_cicd" role="tab" aria-selected="false">
+                        <span>🐙</span> Git & CI/CD
+                    </button>
+                    <button class="tech-item" data-tech="security_csrf" role="tab" aria-selected="false">
+                        <span>🛡️</span> Strict CSRF & Anti-Spam
+                    </button>
+                    <button class="tech-item" data-tech="cloudflare_cdn" role="tab" aria-selected="false">
+                        <span>☁️</span> Cloudflare & Edge SSL
+                    </button>
+                </div>
+
+                <!-- Interactive Terminal Screen -->
+                <div class="tech-terminal" aria-live="polite">
+                    <div class="tech-terminal-header">
+                        <div class="tech-terminal-dots">
+                            <span class="tech-terminal-dot dot-red"></span>
+                            <span class="tech-terminal-dot dot-yellow"></span>
+                            <span class="tech-terminal-dot dot-green"></span>
+                        </div>
+                        <span class="tech-terminal-path">twojastronawww@production:~/stack-inspect</span>
+                    </div>
+                    <div class="tech-terminal-body">
+                        <code class="tech-term-cmd" id="tech-term-cmd">$ cat /stack/frontend/markup-and-styling.yml</code>
+                        <h3 class="tech-term-title" id="tech-term-title">HTML5 & Nowoczesny CSS3 (Grid / Flexbox / BEM)</h3>
+                        <div class="tech-term-role" id="tech-term-role">Fundament strukturalny i wizualny</div>
+                        <ul class="tech-term-list" id="tech-term-list">
+                            <li>Semantyczny kod HTML5 zoptymalizowany pod roboty Google i czytniki ekranowe (a11y)</li>
+                            <li>Nowoczesne tokeny CSS i brak ciężkich frameworków redukuje wagę strony o 90%</li>
+                            <li>Dedykowany dark-mode, szklane efekty (glassmorphism) i płynne mikro-animacje 60 FPS</li>
+                        </ul>
+                        <div class="tech-term-benefit" id="tech-term-benefit">
+                            <strong>Wartość biznesowa:</strong> Błyskawiczne renderowanie i doskonały wynik First Contentful Paint (&lt;0.6s).
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security, ISO 27001 & Lead Protection -->
+        <section class="features bg-glass-darker" id="bezpieczenstwo">
+            <div class="container">
+                <h2 class="section-title">Standardy Bezpieczeństwa (ISO 27001 & RODO)</h2>
+                <p class="lead-text">
+                    W erze zautomatyzowanych skanerów podatności i ataków botów ochrona Twojej witryny oraz danych klientów
+                    to nie opcja, lecz standard inżynieryjny:
+                </p>
+
+                <div class="security-grid">
+                    <div class="security-card">
+                        <div class="icon">🔒</div>
+                        <h3>Izolacja danych i ochrona sesji</h3>
+                        <p>
+                            Katalogi sesji i liczników (<code>api/sessions</code>, <code>api/rate_limits</code>) są bezwzględnie
+                            chronione regułą Apache <code>Deny from all</code>. Wrażliwe pliki leadów nigdy nie trafiają do publicznego
+                            indeksu ani repozytorium kodu.
+                        </p>
+                    </div>
+
+                    <div class="security-card">
+                        <div class="icon">🛡️</div>
+                        <h3>Ochrona CSRF & Anti-Spam flock</h3>
+                        <p>
+                            Każde zapytanie POST weryfikuje nagłówki <code>Origin</code>/<code>Referer</code> oraz jednorazowy token CSRF
+                            ważny wyłącznie na jedno użycie. Blokady plików <code>LOCK_EX</code> zapobiegają wyścigom danych (Race Conditions)
+                            nawet przy uderzeniach spambotów.
+                        </p>
+                    </div>
+
+                    <div class="security-card">
+                        <div class="icon">📈</div>
+                        <h3>Lead Recovery (Ratowanie zapytań)</h3>
+                        <p>
+                            Formularz stale wersjonuje wersje robocze wpisywane przez użytkownika. Dzięki obsłudze <code>navigator.sendBeacon</code>
+                            kontakt zostaje bezpiecznie zachowany w systemie nawet w sytuacji, gdy potencjalny klient przypadkowo zamknie okno przeglądarki.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Accordion -->
+        <section class="features" id="faq">
+            <div class="container">
+                <h2 class="section-title">Często zadawane pytania (FAQ)</h2>
+                <p class="lead-text">
+                    Odpowiedzi na najważniejsze pytania dotyczące metodyki pracy, technologii i formalności:
+                </p>
+
+                <div class="faq-list">
+                    <details class="faq-item" open>
+                        <summary class="faq-summary">Ile czasu trwa stworzenie strony od zera do wdrożenia?</summary>
+                        <div class="faq-answer">
+                            Standardowa strona firmowa lub landing page z automatyzacją powstaje zazwyczaj w ciągu <strong>7 do 14 dni roboczych</strong>.
+                            Dzięki modułowej architekturze i wyeliminowaniu problematycznych motywów prace przebiegają sprawnie i bez opóźnień.
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">Czy będę mógł samodzielnie edytować treści na stronie?</summary>
+                        <div class="faq-answer">
+                            <strong>Tak.</strong> Do każdego wdrożenia dostarczam autorski, ultra-prosty panel administracyjny oparty na architekturze
+                            Flat-File. Zmiana numeru telefonu, cennika czy dodanie nowej aktualizacji zajmuje kilkadziesiąt sekund i nie wymaga
+                            żadnej znajomości programowania.
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">Czy otrzymuję pełne prawa do kodu źródłowego?</summary>
+                        <div class="faq-answer">
+                            <strong>Tak, w 100%.</strong> Po zakończeniu projektu cały kod witryny jest Twoją własnością. Otrzymujesz kompletne
+                            repozytorium Git. Nie ma tu żadnego abonamentowego uzależnienia (vendor lock-in) ani ukrytych opłat za licencje CMS.
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">Jak rozliczamy projekt i czy podpisujemy umowę?</summary>
+                        <div class="faq-answer">
+                            Każde zlecenie realizujemy na podstawie przejrzystej <strong>umowy z harmonogramem i klauzulą poufności (NDA)</strong>.
+                            Rozliczenie następuje etapowo (zaliczkowo przy rozpoczęciu oraz płatność końcowa po odbiorze i wdrożeniu na serwerze).
+                        </div>
+                    </details>
+
+                    <details class="faq-item">
+                        <summary class="faq-summary">Co dzieje się po uruchomieniu strony? Czy zapewniasz wsparcie?</summary>
+                        <div class="faq-answer">
+                            W cenie każdego projektu otrzymujesz <strong>30 dni bezpłatnej opieki powdrożeniowej</strong>.
+                            Dodatkowo oferuję opcjonalny abonament serwisowy obejmujący monitoring działania, automatyzację procesów, kopie zapasowe
+                            oraz bieżący rozwój serwisu.
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action Section -->
+        <section class="features" id="kontakt-cta">
+            <div class="container">
+                <div class="cta-box">
+                    <h2>Gotowy na stronę, która realnie automatyzuje Twój biznes?</h2>
+                    <p>
+                        Porozmawiajmy o Twoim projekcie. Przeanalizuję obecne procesy w Twojej firmie i w ciągu 24h
+                        zaproponuję optymalne, niezobowiązujące rozwiązanie techniczne.
+                    </p>
+                    <div class="cta-actions">
+                        <a href="index.html#contact" class="btn btn-primary">Zapytaj o bezpłatną wycenę</a>
+                        <a href="index.html#portfolio" class="btn btn-secondary">Zobacz zrealizowane projekty</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Sticky Call / Quick Contact Button -->
+    <a href="index.html#contact" class="sticky-call-btn" title="Szybki kontakt z wyceną" aria-label="Szybki kontakt">
         ✉️
     </a>
-
-    <!-- Stats Section -->
-    <section class="stats" id="tech">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <h3>4+</h3>
-                    <p>Unikalne Realizacje</p>
-                </div>
-                <div class="stat-item">
-                    <h3>100%</h3>
-                    <p>Responsywności</p>
-                </div>
-                <div class="stat-item">
-                    <h3>90+</h3>
-                    <p>Google PageSpeed</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Tech Stack -->
-    <section class="tech-stack">
-        <div class="container">
-            <p class="tech-text">
-                Tworzę autorskie, ultra-lekkie systemy zarządzania treścią oparte na architekturze <strong>Flat-File
-                    (CSV/PHP)</strong>.
-                Moje rozwiązania nie wymagają ciężkich baz danych SQL, co gwarantuje maksymalną mobilność strony,
-                łatwość backupu oraz błyskawiczne działanie nawet na podstawowych serwerach.
-            </p>
-            <div class="tech-grid">
-                <div class="tech-item" data-tooltip="Fundament Twojej strony. Czysty kod = szybkość i estetyka.">HTML5 &
-                    CSS3</div>
-                <div class="tech-item" data-tooltip="Szybkość, bezpieczeństwo i łatwa przenoszalność (bez bazy SQL).">
-                    PHP 8+ & Flat-File</div>
-                <div class="tech-item" data-tooltip="Interaktywne elementy i dynamika, która ożywia stronę.">JavaScript
-                </div>
-                <div class="tech-item"
-                    data-tooltip="Pełne bezpieczeństwo kodu i możliwość powrotu do poprzednich wersji.">Git</div>
-                <div class="tech-item" data-tooltip="Perfekcyjny wygląd na każdym ekranie - od smartfona po TV.">RWD
-                </div>
-                <div class="tech-item" data-tooltip="Widoczność w Google. Twoja strona przyciąga klientów sama.">SEO
-                </div>
-            </div>
-            <div id="tech-description" class="tech-description">
-                Najedź na technologię, aby zobaczyć szczegóły.
-            </div>
-        </div>
-    </section>
-
-
 
     <!-- Footer -->
     <footer>
         <div class="container">
             <p>&copy; 2026 TwojaStronaWWW. Wszelkie prawa zastrzeżone.</p>
+            <p style="margin-top: 8px;">
+                <a href="index.html" class="footer-link">Strona główna</a> &bull;
+                <a href="index.html#portfolio" class="footer-link">Realizacje</a> &bull;
+                <a href="jak-pracuje.html" class="footer-link">Jak pracuję</a> &bull;
+                <a href="index.html#pricing" class="footer-link">Cennik</a> &bull;
+                <a href="index.html#contact" class="footer-link">Kontakt</a>
+            </p>
         </div>
     </footer>
 
     <!-- Scripts -->
-    <script src="assets/js/contact.js?v=1"></script>
-    <script src="assets/js/script.js?v=4"></script>
+    <script src="assets/js/main.js?v=1"></script>
 </body>
 
 </html>
-
-<!-- test, -->
