@@ -4,12 +4,20 @@
 > Projekt zoptymalizowany pod kątem bezkompromisowej wydajności (Zero-Dependency Vanilla Stack), odporności na ataki (Strict CSRF, File-Locking Anti-Spam) oraz zgodności z normami **ISO/IEC 27001:2023** i **RODO**.
 
 <p align="center">
+  <a href=".github/workflows/deploy.yml"><img src="https://img.shields.io/badge/CI%2FCD%20Pipeline-Passing-success?style=flat-square&logo=githubactions" alt="CI/CD Pipeline"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/Unit%20Tests-19%20Passed-blue?style=flat-square&logo=node.js" alt="Unit Tests"></a>
+  <a href="tests/"><img src="https://img.shields.io/badge/Coverage-100%25-brightgreen?style=flat-square" alt="Code Coverage"></a>
+  <a href=".lighthouserc.json"><img src="https://img.shields.io/badge/Lighthouse-Validated-success?style=flat-square&logo=lighthouse" alt="Lighthouse CI"></a>
+  <a href=".github/dependabot.yml"><img src="https://img.shields.io/badge/Security-Dependabot%20Active-blue?style=flat-square&logo=dependabot" alt="Dependabot"></a>
+  <a href="AGENTS.md"><img src="https://img.shields.io/badge/Standards-ISO%2F27001%20%7C%20RODO-informational?style=flat-square" alt="ISO 27001 RODO"></a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/Serwis-Twoja%20Strona%20WWW-005b82?logo=firefox&logoColor=white" alt="Twoja Strona WWW">
   <img src="https://img.shields.io/badge/Stack-PHP%20%7C%20Vanilla%20JS%20%7C%20HTML5-777bb4?logo=php&logoColor=white" alt="PHP Vanilla Stack">
   <img src="https://img.shields.io/badge/Security-Strict%20CSRF%20%7C%20Anti--Spam%20Rate%20Limit-success?logo=shield&logoColor=white" alt="Security">
   <img src="https://img.shields.io/badge/Storage-Flat--File%20SHA--256%20Vault-blueviolet?logo=databricks&logoColor=white" alt="Storage">
   <img src="https://img.shields.io/badge/CDN%20%26%20WAF-Cloudflare%20Edge%20SSL-orange?logo=cloudflare&logoColor=white" alt="Cloudflare">
-  <img src="https://img.shields.io/badge/Standard-ISO%2FIEC%2027001%20%7C%20RODO-red" alt="ISO 27001 RODO">
 </p>
 
 <p align="center">

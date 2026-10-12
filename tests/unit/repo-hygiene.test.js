@@ -96,4 +96,18 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     assert.match(fs.readFileSync(preCommit, 'utf-8'), /npm run check/);
     assert.match(fs.readFileSync(commitMsg, 'utf-8'), /Conventional Commits/i);
   });
+
+  it('workflow CI/CD (.github/workflows/deploy.yml) realizuje pełną formatkę Quality Gate (test, audit, deploy, concurrency)', () => {
+    const workflowPath = path.join(ROOT_DIR, '.github', 'workflows', 'deploy.yml');
+    assert.ok(fs.existsSync(workflowPath), 'Brak .github/workflows/deploy.yml');
+    const content = fs.readFileSync(workflowPath, 'utf-8');
+
+    assert.match(content, /concurrency:/i, 'Brak sekcji concurrency w workflow CI/CD');
+    assert.match(content, /cancel-in-progress:/i, 'Brak cancel-in-progress w concurrency');
+    assert.match(content, /npm run check:syntax/i, 'Brak kroku npm run check:syntax');
+    assert.match(content, /npm run test:coverage/i, 'Brak kroku npm run test:coverage');
+    assert.match(content, /lighthouse-ci-action/i, 'Brak etapu audytu Lighthouse CI');
+    assert.match(content, /SFTP-Deploy-Action/i, 'Brak etapu deploy SFTP');
+    assert.match(content, /needs:\s*\[test,\s*audit\]/i, 'Etap deploy musi zależeć od [test, audit]');
+  });
 });
