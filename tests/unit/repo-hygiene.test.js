@@ -77,14 +77,20 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     assert.ok(content.includes('api/leads_*.csv'), 'Brak reguły ignorowania leadów api/leads_*.csv');
   });
 
-  it('pliki robots.txt, sitemap.xml oraz site.webmanifest istnieją i są poprawne', () => {
+  it('pliki robots.txt, sitemap.xml, site.webmanifest oraz favicon.ico istnieją i są poprawne', () => {
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'robots.txt')), 'Brak robots.txt');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'sitemap.xml')), 'Brak sitemap.xml');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'site.webmanifest')), 'Brak site.webmanifest');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'favicon.ico')), 'Brak favicon.ico');
 
     const robotsContent = fs.readFileSync(path.join(ROOT_DIR, 'robots.txt'), 'utf-8');
     assert.match(robotsContent, /User-agent:\s*\*/i);
     assert.match(robotsContent, /Disallow:\s*\/api\//i);
+  });
+
+  it('pomocnik mock-dom (.tests/helpers/mock-dom.js) oraz szablon PR istnieją', () => {
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'tests', 'helpers', 'mock-dom.js')), 'Brak tests/helpers/mock-dom.js');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, '.github', 'pull_request_template.md')), 'Brak .github/pull_request_template.md');
   });
 
   it('git hooki (.githooks/pre-commit i commit-msg) istnieją i mają poprawny shebang', () => {
@@ -97,13 +103,14 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     assert.match(fs.readFileSync(commitMsg, 'utf-8'), /Conventional Commits/i);
   });
 
-  it('workflow CI/CD (.github/workflows/deploy.yml) realizuje pełną formatkę Quality Gate (test, audit, deploy, concurrency)', () => {
+  it('workflow CI/CD (.github/workflows/deploy.yml) realizuje pełną formatkę Quality Gate (test, audit, deploy, concurrency, php-lint)', () => {
     const workflowPath = path.join(ROOT_DIR, '.github', 'workflows', 'deploy.yml');
     assert.ok(fs.existsSync(workflowPath), 'Brak .github/workflows/deploy.yml');
     const content = fs.readFileSync(workflowPath, 'utf-8');
 
     assert.match(content, /concurrency:/i, 'Brak sekcji concurrency w workflow CI/CD');
     assert.match(content, /cancel-in-progress:/i, 'Brak cancel-in-progress w concurrency');
+    assert.match(content, /Walidacja składni PHP/i, 'Brak kroku walidacji składni PHP w workflow');
     assert.match(content, /npm run check:syntax/i, 'Brak kroku npm run check:syntax');
     assert.match(content, /npm run test:coverage/i, 'Brak kroku npm run test:coverage');
     assert.match(content, /lighthouse-ci-action/i, 'Brak etapu audytu Lighthouse CI');

@@ -34,15 +34,24 @@ jobs:
             exit 1
           fi
 
-      - name: 1.4 Konfiguracja środowiska Node.js
+      - name: 1.4 Walidacja składni PHP (jeśli występują pliki PHP)
+        run: |
+          if find . -type f -name "*.php" | grep -q .; then
+            echo "Sprawdzanie składni plików PHP..."
+            find . -type f -name "*.php" -print0 | xargs -0 -n1 php -l
+          else
+            echo "Brak plików PHP, pomijanie walidacji PHP."
+          fi
+
+      - name: 1.5 Konfiguracja środowiska Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: 1.5 Sprawdzenie poprawności syntaktycznej JavaScript
+      - name: 1.6 Sprawdzenie poprawności syntaktycznej JavaScript
         run: npm run check:syntax
 
-      - name: 1.6 Uruchomienie testów jednostkowych i raportu pokrycia (Coverage)
+      - name: 1.7 Uruchomienie testów jednostkowych i raportu pokrycia (Coverage)
         run: npm run test:coverage
 
   audit:
