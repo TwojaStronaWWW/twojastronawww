@@ -552,13 +552,23 @@ header {
 
 
 .feature-card .icon {
-    font-size: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
     margin-bottom: 16px; /* Mobile: spacing below icon */
     margin-right: 0;
-    width: auto;
-    /* Neon Blue Theme */
-    filter: grayscale(100%) sepia(100%) hue-rotate(180deg) saturate(300%) drop-shadow(0 0 10px rgba(59, 130, 246, 0.6));
-    transition: transform 0.3s;
+    color: var(--accent-cyan);
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.feature-card .icon svg {
+    width: 36px;
+    height: 36px;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.35));
+    transition: filter 0.3s ease, transform 0.3s ease;
 }
 
 @media (min-width: 768px) {
@@ -598,8 +608,12 @@ header {
 }
 
 .feature-card:hover .icon {
-    transform: scale(1.1) translateX(5px);
-    filter: grayscale(100%) sepia(100%) hue-rotate(180deg) saturate(400%) drop-shadow(0 0 20px var(--accent-color));
+    transform: scale(1.1) translateX(3px);
+    color: #ffffff;
+}
+
+.feature-card:hover .icon svg {
+    filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.75));
 }
 
 .feature-card p {
@@ -618,27 +632,33 @@ header {
 
 .sticky-call-btn {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    background: var(--primary-color);
-    color: #000;
+    bottom: 24px;
+    right: 24px;
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #00f0ff, #3b82f6);
+    color: #04070d;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 20px;
-    box-shadow: 0 0 20px rgba(0,255,136, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 240, 255, 0.4);
     z-index: 1000;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
     text-decoration: none;
-    border: 2px solid #fff;
+    border: 2px solid rgba(255, 255, 255, 0.85);
+}
+
+.sticky-call-btn svg {
+    width: 22px;
+    height: 22px;
+    stroke-width: 2.2;
 }
 
 .sticky-call-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 30px rgba(0,255,136, 0.6);
+    transform: scale(1.1) translateY(-2px);
+    box-shadow: 0 12px 30px rgba(0, 240, 255, 0.65);
+    color: #000000;
 }
 
 /* Hide on Desktop */
@@ -1039,7 +1059,7 @@ footer {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 14px;
-    padding: 16px 14px;
+    padding: 14px 16px;
     text-align: center;
     font-size: 0.92rem;
     font-weight: 600;
@@ -1047,19 +1067,34 @@ footer {
     transition: all var(--transition-speed);
     user-select: none;
     color: var(--text-color);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 10px;
+}
+
+.tech-icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    color: var(--accent-cyan);
+    transition: transform 0.25s ease, color 0.25s ease, filter 0.25s ease;
 }
 
 .tech-item:hover,
 .tech-item.is-active {
-    background: rgba(59, 130, 246, 0.18);
-    border-color: var(--primary-color);
+    background: rgba(0, 240, 255, 0.08);
+    border-color: var(--accent-cyan);
     color: #fff;
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 8px 24px rgba(0, 240, 255, 0.22);
+}
+
+.tech-item:hover .tech-icon,
+.tech-item.is-active .tech-icon {
+    color: #ffffff;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.85));
+    transform: scale(1.12);
 }
 
 .tech-detail-card {
@@ -1160,8 +1195,31 @@ footer {
 }
 
 .security-card .icon {
-    font-size: 2.2rem;
-    margin-bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--accent-cyan);
+    margin-bottom: 6px;
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.security-card .icon svg {
+    width: 32px;
+    height: 32px;
+    stroke-width: 2;
+    filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+    transition: filter 0.3s ease;
+}
+
+.security-card:hover .icon {
+    color: #ffffff;
+    transform: scale(1.1) translateY(-2px);
+}
+
+.security-card:hover .icon svg {
+    filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.75));
 }
 
 .security-card h3 {

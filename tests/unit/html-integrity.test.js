@@ -68,4 +68,12 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(jakPracujeContent, /application\/ld\+json/i, 'Brak danych strukturalnych Schema.org w jak-pracuje.html');
     assert.match(jakPracujeContent, /rel=["']canonical["']/i, 'Brak linku canonical w jak-pracuje.html');
   });
+
+  test('pliki HTML używają wektorowego favicona SVG i nie zawierają surowych kolorowych emoji', () => {
+    for (const [name, content] of [['index.html', indexContent], ['jak-pracuje.html', jakPracujeContent]]) {
+      assert.match(content, /href=["'][^"']*favicon\.svg["']/i, `Brak podpięcia favicon.svg w ${name}`);
+      const rawEmojis = content.match(/[\p{Extended_Pictographic}]/ug);
+      assert.strictEqual(rawEmojis, null, `Wykryto niedozwolone surowe emoji w ${name}: ${rawEmojis?.join(' ')}`);
+    }
+  });
 });
