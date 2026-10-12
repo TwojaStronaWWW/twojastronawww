@@ -2,6 +2,10 @@
   "ci": {
     "collect": {
       "staticDistDir": "./",
+      "url": [
+        "http://localhost/index.html",
+        "http://localhost/jak-pracuje.html"
+      ],
       "numberOfRuns": 2
     },
     "assert": {
