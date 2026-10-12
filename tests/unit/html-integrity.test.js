@@ -27,12 +27,16 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     }
   });
 
-  test('Sekcja <head> zawiera kodowanie UTF-8, meta viewport oraz tagi SEO', () => {
+  test('Sekcja <head> zawiera kodowanie UTF-8, meta viewport oraz tagi SEO (robots, canonical, manifest, Schema.org)', () => {
     for (const [name, content] of [['index.html', indexContent], ['jak-pracuje.html', jakPracujeContent]]) {
       assert.match(content, /<meta\s+charset=["']?utf-8/i, `Brak deklaracji UTF-8 w ${name}`);
       assert.match(content, /<meta\s+name=["']viewport["']/i, `Brak meta viewport w ${name}`);
       assert.match(content, /<title>[^<]+<\/title>/i, `Brak tagu <title> w ${name}`);
       assert.match(content, /<meta\s+name=["']description["']/i, `Brak meta description w ${name}`);
+      assert.match(content, /<meta\s+name=["']robots["']\s+content=["']index,\s*follow["']/i, `Brak poprawnego meta robots (index, follow) w ${name}`);
+      assert.match(content, /<link\s+rel=["']canonical["']/i, `Brak linku canonical w ${name}`);
+      assert.match(content, /<link\s+rel=["']manifest["']/i, `Brak manifestu PWA w ${name}`);
+      assert.match(content, /<script\s+type=["']application\/ld\+json["']/i, `Brak danych strukturalnych Schema.org w ${name}`);
     }
   });
 

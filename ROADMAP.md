@@ -18,9 +18,9 @@ Nowoczesna, bezkompromisowo szybka strona firmowa oraz niezawodny, bezpieczny si
 
 ---
 
-## 🛡️ Sprint 2: SEO, PWA & Wydajność
-- [ ] Dodanie dedykowanych plików `robots.txt`, `sitemap.xml` oraz manifestu PWA (`site.webmanifest`).
-- [ ] Wdrożenie ustrukturyzowanych danych Schema.org (LocalBusiness / Organization) w `index.html`.
+## 🛡️ Sprint 2: SEO, PWA & Wydajność (Status: W trakcie / Etap 1 Zrealizowany)
+- [x] Dodanie dedykowanych plików `robots.txt`, `sitemap.xml` oraz manifestu PWA (`site.webmanifest`).
+- [x] Wdrożenie ustrukturyzowanych danych Schema.org (WebSite, ProfessionalService, WebPage) w `index.html` i `jak-pracuje.html`.
 - [ ] Optymalizacja Web Vitals pod kątem wyników Lighthouse > 95 we wszystkich kategoriach.
 
 ---

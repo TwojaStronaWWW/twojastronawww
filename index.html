@@ -8,9 +8,29 @@
     <meta name="description"
         content="Automatyzuję strony WWW i procesy w firmach. Tworzę szybkie, lekkie strony i rozwiązania, które zastępują ręczną pracę i obniżają koszty.">
     <meta name="robots" content="index, follow">
-    <!-- Favicon -->
+    <link rel="canonical" href="https://twojastronawww.pl/">
+    <meta name="theme-color" content="#020617">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://twojastronawww.pl/">
+    <meta property="og:title" content="TwojaStronaWWW – Automatyzacja stron i procesów w firmie">
+    <meta property="og:description"
+        content="Automatyzuję strony WWW i procesy w firmach. Tworzę szybkie, lekkie strony i rozwiązania, które zastępują ręczną pracę i obniżają koszty.">
+    <meta property="og:site_name" content="TwojaStronaWWW.pl">
+    <meta property="og:locale" content="pl_PL">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://twojastronawww.pl/">
+    <meta name="twitter:title" content="TwojaStronaWWW – Automatyzacja stron i procesów w firmie">
+    <meta name="twitter:description"
+        content="Automatyzuję strony WWW i procesy w firmach. Tworzę szybkie, lekkie strony i rozwiązania, które zastępują ręczną pracę i obniżają koszty.">
+
+    <!-- Favicon & PWA Manifest -->
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="alternate icon" href="favicon.ico">
+    <link rel="manifest" href="site.webmanifest">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,8 +40,37 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=3">
+    <link rel="stylesheet" href="assets/css/style.css?v=5">
 
+    <!-- Structured Data (Schema.org) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://twojastronawww.pl/#website",
+          "url": "https://twojastronawww.pl/",
+          "name": "TwojaStronaWWW.pl",
+          "description": "Automatyzacja stron WWW i procesów w firmach. Lekkie, ultra-szybkie strony internetowe.",
+          "inLanguage": "pl-PL"
+        },
+        {
+          "@type": "ProfessionalService",
+          "@id": "https://twojastronawww.pl/#organization",
+          "name": "TwojaStronaWWW.pl",
+          "url": "https://twojastronawww.pl/",
+          "logo": "https://twojastronawww.pl/assets/img/favicon.svg",
+          "description": "Projektowanie ultra-szybkich stron WWW, systemów CRM Flat-File i automatyzacji procesów biznesowych.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "PL"
+          },
+          "priceRange": "$$"
+        }
+      ]
+    }
+    </script>
 </head>
 
 <body>
