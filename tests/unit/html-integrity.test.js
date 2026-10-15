@@ -40,13 +40,18 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     }
   });
 
-  test('Formularz kontaktowy w index.html zawiera wymagane pola (name, email, message, honeypot)', () => {
+  test('Formularz kontaktowy w index.html zawiera wymagane pola (name, email, message, honeypot) oraz wyrównany do lewej checkbox zgody', () => {
     assert.match(indexContent, /<form[^>]*id=["']contactForm["']/i, 'Brak formularza #contactForm w index.html');
     assert.match(indexContent, /name=["']name["']/i, 'Brak pola name w formularzu');
     assert.match(indexContent, /name=["']email["']/i, 'Brak pola email w formularzu');
     assert.match(indexContent, /name=["']message["']/i, 'Brak pola message w formularzu');
     // Honeypot field
     assert.match(indexContent, /name=["']website_url["']/i, 'Brak pola honeypot website_url chroniącego przed botami');
+    // Checkbox alignment in CSS
+    const styleCssPath = path.join(ROOT_DIR, 'assets', 'css', 'style.css');
+    const styleCssContent = fs.readFileSync(styleCssPath, 'utf8');
+    assert.match(styleCssContent, /:not\(\[type=["']checkbox["']\]\)/i, 'Selektor inputów w .contact-form musi wykluczać checkboxy (:not([type="checkbox"])), aby nie nadawać im width: 100%');
+    assert.match(styleCssContent, /\.form-consent-label\s*\{[^}]*justify-content:\s*flex-start/is, 'Klasa .form-consent-label musi wyrównywać checkbox i tekst do lewej (justify-content: flex-start)');
   });
 
   test('Skrypty JS i style CSS są poprawnie podpięte w index.html i jak-pracuje.html', () => {
