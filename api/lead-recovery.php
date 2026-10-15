@@ -1,33 +1,10 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/bootstrap.php';
 header('Content-Type: application/json; charset=UTF-8');
 
-$ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-
-if (!rate_limit('lead_draft_' . md5($ip), 20, 3600)) {
-    echo json_encode(['status' => 'ok']);
-    exit;
-}
-
-$data = get_json_request();
-
-$name = trim(strip_tags($data['name'] ?? ''));
-$email = trim($data['email'] ?? '');
-$message = trim(strip_tags($data['message'] ?? ''));
-
-// zapisujemy tylko jeśli COŚ istnieje
-if (!$name && !$email && !$message) {
-    echo json_encode(['status' => 'ok']);
-    exit;
-}
-
-save_lead([
-    date('Y-m-d'),
-    date('H:i:s'),
-    $name,
-    $email,
-    $message,
-    hash('sha256', $ip)
-], true);
-
-echo json_encode(['status' => 'ok']);
+// Zgodnie z RODO (art. 5 i 6) szkice formularza przed kliknięciem "Wyślij"
+// są przechowywane wyłącznie lokalnie w przeglądarce użytkownika (localStorage).
+// Endpoint zwraca status OK dla zachowania kompatybilności wstecznej bez zapisu PII na serwerze.
+echo json_encode(['status' => 'ok', 'rodo_mode' => 'client_local_storage']);

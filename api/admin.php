@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/bootstrap.php';
 
 // Konfiguracja TTL (30 min)
@@ -15,8 +17,7 @@ if (isset($_GET['logout'])) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pin = $_POST['pin'] ?? '';
-    if ($pin === APP_PIN) {
-        // Regeneracja ID sesji dla bezpieczeństwa (session fixation)
+    if (hash_equals(APP_PIN, (string)$pin)) {
         session_regenerate_id(true);
         $_SESSION['auth'] = true;
         $_SESSION['auth_at'] = time();
@@ -24,105 +25,84 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     } else {
         $error = "Nieprawidłowy PIN.";
-        // Opóźnienie przeciw brute-force (prymitywne ale skuteczne)
         sleep(2);
     }
 }
 
 // 3. Sprawdzenie Sesji
 if (!empty($_SESSION['auth']) && $_SESSION['auth'] === true) {
-    // Sprawdź TTL
     if (time() - ($_SESSION['auth_at'] ?? 0) > $SESSION_TTL) {
         session_destroy();
         $error = "Sesja wygasła. Zaloguj się ponownie.";
-        // Fallback do formularza niżej
     } else {
-        // Odśwież czas (jeśli chcesz sliding expiration)
         $_SESSION['auth_at'] = time();
-        
-        // JESTEŚMY ZALOGOWANI - POKAŻ PANEL
-        $leads  = read_leads(false);
-        $drafts = read_leads(true);
-        $csrf = csrf_token(); // Potrzebujemy tokena do formularza usuwania
+
+        $leads = read_leads(false);
+        $newsletterCount = count(array_filter($leads, fn($l) => ($l[7] ?? 'NIE') === 'TAK'));
+        $csrf = csrf_token();
         ?>
 <!doctype html>
 <html lang="pl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panel administracyjny</title>
+<title>Panel Leadów i Zgód | TwojaStronaWWW</title>
 <style>
-body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
-h1, h2, h3 { color: #333; }
-table { border-collapse: collapse; width: 100%; max-width: 1200px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-th { background: #f4f4f4; }
-tr:hover { background: #f1f1f1; }
-.small { color: #666; font-size: 14px; margin-bottom: 20px; }
-.logout { float: right; color: red; text-decoration: none; font-weight: bold; }
-.btn-del { background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-.btn-del:hover { background: #c82333; }
-
-/* Tabela Fixed Layout */
-table {
-  table-layout: fixed;
-  width: 100%;
-  max-width: 1200px;
-}
-th:nth-child(1), td:nth-child(1) { width: 140px; } /* Data */
-th:nth-child(2), td:nth-child(2) { width: 180px; } /* Imię */
-th:nth-child(3), td:nth-child(3) { width: 220px; } /* Email */
-th:nth-child(5), td:nth-child(5) { width: 80px; text-align: center; } /* Akcja */
-
-/* Message Column (Auto + Ellipsis) */
-th:nth-child(4), td:nth-child(4) {
-  width: auto;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+body { font-family: system-ui, sans-serif; padding: 20px; background: #0f172a; color: #f8fafc; }
+h1, h2 { color: #f8fafc; }
+table { border-collapse: collapse; width: 100%; max-width: 1320px; background: #1e293b; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden; }
+th, td { border: 1px solid #334155; padding: 12px; text-align: left; font-size: 14px; }
+th { background: #0f172a; color: #94a3b8; font-weight: 600; }
+tr:hover { background: #26354d; }
+.small { color: #94a3b8; font-size: 14px; margin-bottom: 20px; }
+.logout { float: right; color: #f87171; text-decoration: none; font-weight: bold; }
+.btn-del { background: #ef4444; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+.btn-del:hover { background: #dc2626; }
+.badge-yes { background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 3px 8px; border-radius: 999px; font-weight: 600; font-size: 12px; }
+.badge-no { background: rgba(148, 163, 184, 0.15); color: #94a3b8; padding: 3px 8px; border-radius: 999px; font-size: 12px; }
 </style>
 </head>
 <body>
 
 <a href="?logout=1" class="logout">Wyloguj się</a>
-<h1>Panel administracyjny</h1>
+<h1>Panel Leadów i Zgód (RODO Ready)</h1>
 
 <p class="small">
-Status: Zalogowano | Finalne leady: <?= count($leads) ?> | Drafty: <?= count($drafts) ?>
+Status: Zalogowano | Wszystkie zapytania: <strong><?= count($leads) ?></strong> | Zgody na Newsletter (TAK): <strong><?= $newsletterCount ?></strong>
 </p>
 
-<h2>Finalne leady</h2>
+<h2>Zebrane zapytania z formularza</h2>
 <table>
-<tr><th>Data</th><th>Imię</th><th>Email</th><th>Wiadomość</th><th>Akcja</th></tr>
-<?php foreach ($leads as $l): $msg = (string)$l[4]; $id = lead_id($l); ?>
+<tr>
+    <th>Data</th>
+    <th>Imię</th>
+    <th>E-mail</th>
+    <th>Telefon</th>
+    <th>Newsletter</th>
+    <th>Wiadomość</th>
+    <th>Akcja (RODO)</th>
+</tr>
+<?php foreach ($leads as $l):
+    $msg = (string)($l[4] ?? '');
+    $phone = (string)($l[6] ?? '-');
+    $newsletter = (string)($l[7] ?? 'NIE');
+    $id = lead_id($l);
+?>
 <tr>
     <td><?= htmlspecialchars($l[0] . ' ' . $l[1]) ?></td>
-    <td><?= htmlspecialchars($l[2]) ?></td>
-    <td><?= htmlspecialchars($l[3]) ?></td>
-    <td><?= htmlspecialchars(mb_substr($msg, 0, 100)) ?></td>
+    <td><?= htmlspecialchars((string)$l[2]) ?></td>
+    <td><?= htmlspecialchars((string)$l[3]) ?></td>
+    <td><?= htmlspecialchars($phone) ?></td>
     <td>
-        <form method="post" action="delete-lead.php" onsubmit="return confirm('Czy na pewno usunąć ten wpis?');">
-            <input type="hidden" name="id" value="<?= $id ?>">
-            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-            <button type="submit" class="btn-del">Usuń</button>
-        </form>
+        <?php if ($newsletter === 'TAK'): ?>
+            <span class="badge-yes">TAK</span>
+        <?php else: ?>
+            <span class="badge-no">NIE</span>
+        <?php endif; ?>
     </td>
-</tr>
-<?php endforeach; ?>
-</table>
-
-<h2>Drafty formularzy</h2>
-<table>
-<tr><th>Data</th><th>Imię</th><th>Email</th><th>Wiadomość</th><th>Akcja</th></tr>
-<?php foreach ($drafts as $d): $msg = (string)$d[4]; $id = lead_id($d); ?>
-<tr>
-    <td><?= htmlspecialchars($d[0] . ' ' . $d[1]) ?></td>
-    <td><?= htmlspecialchars($d[2]) ?></td>
-    <td><?= htmlspecialchars($d[3]) ?></td>
-    <td><?= htmlspecialchars(mb_substr($msg, 0, 100)) ?></td>
+    <td><?= htmlspecialchars(mb_substr($msg, 0, 120)) ?></td>
     <td>
-        <form method="post" action="delete-lead.php" onsubmit="return confirm('Czy na pewno usunąć ten szkic?');">
+        <form method="post" action="delete-lead.php" onsubmit="return confirm('Czy na pewno usunąć ten wpis zgodnie z prawem do bycia zapomnianym (RODO)?');">
             <input type="hidden" name="id" value="<?= $id ?>">
             <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
             <button type="submit" class="btn-del">Usuń</button>
@@ -135,25 +115,23 @@ Status: Zalogowano | Finalne leady: <?= count($leads) ?> | Drafty: <?= count($dr
 </body>
 </html>
         <?php
-        exit; // Koniec skryptu dla zalogowanego
+        exit;
     }
 }
-
-// 4. Formularz Logowania (Domyślny widok)
 ?>
 <!doctype html>
 <html lang="pl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Logowanie</title>
+<title>Logowanie | TwojaStronaWWW</title>
 <style>
-body { display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; background: #f0f2f5; margin: 0; }
-.login-box { background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 320px; }
-input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-button { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
-button:hover { background: #0056b3; }
-.error { color: red; margin-bottom: 10px; font-size: 14px; }
+body { display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
+.login-box { background: #1e293b; padding: 40px; border-radius: 12px; border: 1px solid #334155; box-shadow: 0 10px 25px rgba(0,0,0,0.4); text-align: center; width: 100%; max-width: 320px; }
+input { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #334155; background: #0f172a; color: #fff; border-radius: 6px; box-sizing: border-box; }
+button { width: 100%; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; }
+button:hover { background: #1d4ed8; }
+.error { color: #f87171; margin-bottom: 10px; font-size: 14px; }
 </style>
 </head>
 <body>

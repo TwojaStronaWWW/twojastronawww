@@ -1,5 +1,10 @@
-// Contact Form Logic
+// Contact Form Logic (RODO Local Draft + CSRF + Anti-Bot Timing)
+// Uwaga architektoniczna: wysyłka szkiców do lead-recovery.php została zastąpiona
+// zapisem w pamięci przeglądarki (localStorage), aby klient nie tracił wpisanego tekstu
+// przy odświeżeniu karty przy 100% zgodności z RODO (brak przesyłania PII bez kliknięcia Wyślij).
+
 const API_BASE = '/api/';
+const DRAFT_STORAGE_KEY = 'tsw_contact_draft_v1';
 let CSRF_TOKEN = '';
 
 async function loadCsrfToken() {
@@ -8,42 +13,99 @@ async function loadCsrfToken() {
         const data = await response.json();
         if (data && data.token) {
             CSRF_TOKEN = data.token;
-            console.log('CSRF Token loaded.');
         }
     } catch (e) {
         console.error('Error loading CSRF token:', e);
     }
 }
 
+function saveLocalDraft(form) {
+    try {
+        if (typeof localStorage === 'undefined') return;
+        const draft = {
+            name: form.elements['name'] ? form.elements['name'].value : '',
+            email: form.elements['email'] ? form.elements['email'].value : '',
+            phone: form.elements['phone'] ? form.elements['phone'].value : '',
+            message: form.elements['message'] ? form.elements['message'].value : '',
+            newsletter_consent: form.elements['newsletter_consent'] ? Boolean(form.elements['newsletter_consent'].checked) : false,
+            updatedAt: Date.now()
+        };
+        localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+    } catch (_) {
+        // Ignoruj błędy prywatnego trybu przeglądarki (QuotaExceeded / SecurityError)
+    }
+}
+
+function restoreLocalDraft(form) {
+    try {
+        if (typeof localStorage === 'undefined') return;
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (!raw) return;
+        const draft = JSON.parse(raw);
+        if (!draft || typeof draft !== 'object') return;
+
+        // Wygaszanie szkicu po 7 dniach
+        if (draft.updatedAt && (Date.now() - draft.updatedAt) > 7 * 24 * 3600 * 1000) {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+            return;
+        }
+
+        if (draft.name && form.elements['name'] && !form.elements['name'].value) {
+            form.elements['name'].value = draft.name;
+        }
+        if (draft.email && form.elements['email'] && !form.elements['email'].value) {
+            form.elements['email'].value = draft.email;
+        }
+        if (draft.phone && form.elements['phone'] && !form.elements['phone'].value) {
+            form.elements['phone'].value = draft.phone;
+        }
+        if (draft.message && form.elements['message'] && !form.elements['message'].value) {
+            form.elements['message'].value = draft.message;
+        }
+        if (typeof draft.newsletter_consent === 'boolean' && form.elements['newsletter_consent']) {
+            form.elements['newsletter_consent'].checked = draft.newsletter_consent;
+        }
+    } catch (_) {
+        // Ignoruj uszkodzony JSON w localStorage
+    }
+}
+
+function clearLocalDraft() {
+    try {
+        if (typeof localStorage !== 'undefined') {
+            localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
+    } catch (_) {}
+}
+
 function initContactForm() {
     const form = document.getElementById('contactForm');
     if (!form) return;
 
-    // Load Token immediately
+    const formInitTime = Date.now();
+
+    // 1. Pobierz token CSRF
     loadCsrfToken();
+
+    // 2. Przywróć zapisany szkic z przeglądarki (RODO Local Draft)
+    restoreLocalDraft(form);
 
     const errorDiv = document.getElementById('formErrors');
     const successMsg = document.getElementById('formSuccess');
-    
-    // Autosave / Lead Recovery Variables
-    let autosaveTimer;
-    const AUTOSAVE_DELAY = 60 * 1000; // 60 seconds
 
     const inputs = form.querySelectorAll('input, textarea');
     const btn = form.querySelector('button[type="submit"]');
     const originalBtnText = btn ? btn.textContent : 'Wyślij';
 
-    // Helper to clear error
     function clearError() {
-        if(errorDiv) {
+        if (errorDiv) {
             errorDiv.style.display = 'none';
             errorDiv.textContent = '';
         }
     }
 
-    // Helper to show error
     function showError(msg) {
-        if(errorDiv) {
+        if (errorDiv) {
             errorDiv.style.display = 'block';
             errorDiv.textContent = msg;
         } else {
@@ -51,65 +113,19 @@ function initContactForm() {
         }
     }
 
-    // Lead Recovery: Send Draft
-    function sendDraft(isUnload = false) {
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-        // Add CSRF to draft? Not strictly enforced yet but good practice
-        if (CSRF_TOKEN) data.csrf_token = CSRF_TOKEN;
-        
-        // Only send if there's at least an email or phone/name so we know who it is
-        if (!data.email && !data.name) return;
-
-        const payload = JSON.stringify(data);
-
-        // 🔥 KLUCZOWE: przy zamknięciu karty
-        if (isUnload && navigator.sendBeacon) {
-            const params = new URLSearchParams(data);
-            navigator.sendBeacon(
-                API_BASE + 'lead-recovery.php',
-                params
-            );
-            return;
-        }
-
-        console.log('Sending draft (Lead Recovery)...');
-        fetch(API_BASE + 'lead-recovery.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'same-origin',
-            body: payload
-        }).then(res => res.json())
-          .then(res => console.log('Draft saved:', res))
-          .catch(err => console.error('Draft save failed:', err));
-    }
-
-    // Input listeners for Autosave reset
+    // 3. Zapisuj lokalny szkic przy każdej zmianie pola (żeby klient nie musiał pisać drugi raz)
     inputs.forEach(input => {
-        input.addEventListener('input', () => {
-            clearTimeout(autosaveTimer);
-            // check if form has content
-            const hasContent = Array.from(inputs).some(i => i.value.trim() !== '');
-            
-            if (hasContent) {
-                autosaveTimer = setTimeout(sendDraft, AUTOSAVE_DELAY);
-            }
-        });
+        if (input.name === 'website_url') return;
+        input.addEventListener('input', () => saveLocalDraft(form));
+        input.addEventListener('change', () => saveLocalDraft(form));
     });
 
-    // Lead Recovery on tab close / page hide
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-            sendDraft(true);
-        }
-    });
-
-    // Form Submission
+    // 4. Obsługa wysyłki formularza
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         clearError();
-        if(successMsg) successMsg.style.display = 'none';
-        
+        if (successMsg) successMsg.style.display = 'none';
+
         if (btn) {
             btn.textContent = 'Wysyłanie...';
             btn.disabled = true;
@@ -117,12 +133,17 @@ function initContactForm() {
 
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
-        
-        // Append CSRF
+
+        // Uwzględnij stan checkboxa newsletter_consent
+        const consentEl = form.elements['newsletter_consent'];
+        data.newsletter_consent = consentEl && consentEl.checked ? '1' : '0';
+
+        // Zabezpieczenia Anty-Bot (ujednolicone z _site-template)
+        data.js_check = '1';
+        data.submission_seconds = ((Date.now() - formInitTime) / 1000).toFixed(2);
+
         if (CSRF_TOKEN) {
             data.csrf_token = CSRF_TOKEN;
-        } else {
-            console.warn('Submitting without CSRF token (fetch failed?)');
         }
 
         try {
@@ -133,23 +154,20 @@ function initContactForm() {
                 body: JSON.stringify(data)
             });
 
-            // Handle non-JSON responses gracefully
             const result = await response.json().catch(() => ({ status: 'error', message: 'Błąd serwera.' }));
 
-            if (response.ok && result.status === 'success') {
-                if(successMsg) {
+            if (response.ok && (result.status === 'success' || result.success === true)) {
+                if (successMsg) {
                     successMsg.style.display = 'block';
-                    successMsg.textContent = result.message || 'Wiadomość wysłana!';
+                    successMsg.textContent = result.message || 'Wiadomość wysłana pomyślnie!';
                 } else {
-                    alert(result.message || 'Wiadomość wysłana!');
+                    alert(result.message || 'Wiadomość wysłana pomyślnie!');
                 }
                 form.reset();
-                clearTimeout(autosaveTimer); // Cancel draft if sent
-                // Refresh token for next send (if needed, though single use usually fine for contact)
-                loadCsrfToken(); 
+                clearLocalDraft();
+                loadCsrfToken();
             } else {
                 showError(result.message || 'Wystąpił błąd. Spróbuj ponownie.');
-                // Refetch token if it was invalid
                 if (response.status === 403) loadCsrfToken();
             }
         } catch (error) {

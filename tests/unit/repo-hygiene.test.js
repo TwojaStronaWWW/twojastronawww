@@ -57,12 +57,15 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'ROADMAP.md')), 'Brak ROADMAP.md');
   });
 
-  it('katalog api/sessions oraz api/rate_limits posiadają ochronę .htaccess (Deny from all)', () => {
+  it('katalog api/, api/sessions oraz api/rate_limits posiadają ochronę .htaccess (blokada CSV/JSON oraz Deny from all)', () => {
+    const apiHtaccess = path.join(ROOT_DIR, 'api', '.htaccess');
     const sessionsHtaccess = path.join(ROOT_DIR, 'api', 'sessions', '.htaccess');
     const rateLimitsHtaccess = path.join(ROOT_DIR, 'api', 'rate_limits', '.htaccess');
+    assert.ok(fs.existsSync(apiHtaccess), 'Brak .htaccess w api/ chroniącego pliki CSV');
     assert.ok(fs.existsSync(sessionsHtaccess), 'Brak .htaccess w api/sessions');
     assert.ok(fs.existsSync(rateLimitsHtaccess), 'Brak .htaccess w api/rate_limits');
 
+    assert.match(fs.readFileSync(apiHtaccess, 'utf-8'), /csv/i);
     assert.match(fs.readFileSync(sessionsHtaccess, 'utf-8'), /Deny from all/i);
     assert.match(fs.readFileSync(rateLimitsHtaccess, 'utf-8'), /Deny from all/i);
   });

@@ -25,8 +25,10 @@ describe('Weryfikacja skryptu obsługi formularza (assets/js/contact.js)', () =>
     assert.match(jsContent, /Content-Type['"]?\s*:\s*['"]application\/json['"]/i, 'Powinien deklarować Content-Type application/json');
   });
 
-  test('Obsługuje Lead Recovery i blokadę podwójnego kliknięcia (disabled button)', () => {
-    assert.match(jsContent, /lead-recovery\.php/i, 'contact.js powinien obsługiwać lead-recovery.php');
+  test('Obsługuje zgodny z RODO zapis szkicu w localStorage oraz blokadę podwójnego kliknięcia (disabled button)', () => {
+    assert.match(jsContent, /localStorage\.setItem/i, 'contact.js powinien zapisywać szkic formularza lokalnie w localStorage (zgodność z RODO)');
+    assert.match(jsContent, /localStorage\.getItem/i, 'contact.js powinien przywracać szkic formularza z localStorage');
+    assert.match(jsContent, /submission_seconds/i, 'contact.js powinien mierzyć czas interakcji submission_seconds (ochrona Anty-Bot)');
     assert.match(jsContent, /disabled\s*=\s*true/i, 'Przycisk submit powinien być blokowany podczas wysyłania zapytania');
   });
 });

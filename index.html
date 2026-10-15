@@ -541,18 +541,25 @@
                     <div id="formErrors" class="form-feedback form-feedback-error">
                     </div>
 
-                    <input type="text" name="name" placeholder="Imię i nazwisko">
-                    <input type="email" name="email" placeholder="Adres Email">
+                    <input type="text" name="name" placeholder="Imię" required>
+                    <input type="tel" name="phone" placeholder="Telefon (wystarczy sam numer, jeśli wolisz szybki telefon)">
+                    <input type="email" name="email" placeholder="Adres Email (opcjonalnie przy podaniu telefonu)">
 
-                    <textarea name="message" placeholder="Opisz krótko projekt lub proces, który chcesz zautomatyzować"
-                        rows="5"></textarea>
-                    <input type="tel" name="phone" placeholder="Telefon (opcjonalnie)">
+                    <textarea name="message" placeholder="Opisz krótko projekt (opcjonalnie — możesz zostawić puste, oddzwonię)"
+                        rows="4"></textarea>
+
+                    <label class="form-consent-label">
+                        <input type="checkbox" name="newsletter_consent" value="1">
+                        <span>Chcę otrzymywać praktyczne wskazówki o automatyzacji stron i nowościach (opcjonalny Newsletter — wypiszesz się jednym kliknięciem).</span>
+                    </label>
+
                     <button type="submit" class="btn btn-primary btn-full-width">Wyślij zapytanie</button>
                     <p id="formSuccess" class="form-feedback form-feedback-success">
                         Wiadomość wysłana pomyślnie!</p>
                 </form>
                 <p class="contact-subtext">
-                    Odpowiadam zazwyczaj w ciągu 24h. Wycena jest niezobowiązująca.
+                    Odpowiadam zazwyczaj w ciągu 24h. Wycena jest niezobowiązująca.<br>
+                    <small class="rodo-note">Administratorem danych jest TwojaStronaWWW.pl. Dane wpisane w formularzu przetwarzamy wyłącznie w celu udzielenia odpowiedzi na zapytanie (art. 6 ust. 1 lit. b RODO). Szkic formularza zapisywany jest lokalnie w Twojej przeglądarce, abyś nie utracił wpisanego tekstu.</small>
                 </p>
             </div>
         </div>

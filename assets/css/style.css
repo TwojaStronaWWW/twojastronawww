@@ -852,7 +852,7 @@ footer {
     gap: 20px;
 }
 
-.contact-form input:not([type="submit"]):not([name="website_url"]),
+.contact-form input:not([type="submit"]):not([type="checkbox"]):not([name="website_url"]),
 .contact-form textarea {
     padding: 16px;
     border-radius: 12px;
@@ -861,6 +861,35 @@ footer {
     color: #fff;
     font-family: var(--font-main);
     width: 100%;
+}
+
+.form-consent-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    cursor: pointer;
+    text-align: left;
+}
+
+.form-consent-label input[type="checkbox"] {
+    margin-top: 3px;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.rodo-note {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    opacity: 0.85;
+    line-height: 1.4;
 }
 
 .pricing-note {
