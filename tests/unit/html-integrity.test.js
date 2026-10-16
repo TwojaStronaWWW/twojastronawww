@@ -99,5 +99,16 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(styleCssContent, /\.hero::after\s*\{[^}]*hero-motion-bg\.jpg/is, 'Brak osadzenia hero-motion-bg.jpg w .hero::after w style.css');
     assert.match(styleCssContent, /\.hero::after\s*\{[^}]*mask-image:\s*radial-gradient/is, 'Brak maski radial-gradient na .hero::after w style.css');
   });
+
+  test('Pływająca ikonka wiadomości (.sticky-call-btn) nad czatem jest usunięta, a widok mobilny zabezpieczony przed poziomym przesunięciem', () => {
+    assert.doesNotMatch(indexContent, /sticky-call-btn/i, 'index.html nie powinien zawierać zduplikowanej ikonki wiadomości nad czatem (.sticky-call-btn)');
+    assert.doesNotMatch(jakPracujeContent, /sticky-call-btn/i, 'jak-pracuje.html nie powinien zawierać zduplikowanej ikonki wiadomości nad czatem (.sticky-call-btn)');
+
+    const styleCssPath = path.join(ROOT_DIR, 'assets', 'css', 'style.css');
+    const styleCssContent = fs.readFileSync(styleCssPath, 'utf8');
+    assert.doesNotMatch(styleCssContent, /\.sticky-call-btn/i, 'style.css nie powinien zawierać martwych reguł .sticky-call-btn');
+    assert.match(styleCssContent, /html\s*\{[^}]*overflow-x:\s*hidden/is, 'Tag html w style.css musi mieć overflow-x: hidden, aby zablokować poziomy scroll na telefonie');
+    assert.match(styleCssContent, /\.hero-btns\s*\{[^}]*flex-wrap:\s*wrap/is, '.hero-btns musi posiadać flex-wrap: wrap, aby przyciski nie rozpychały ekranu mobilnego w prawo');
+  });
 });
 

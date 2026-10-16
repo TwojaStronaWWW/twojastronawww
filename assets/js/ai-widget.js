@@ -212,6 +212,23 @@ export function initAiWidget(doc = document, win = globalThis.window) {
       visibility: visible;
       pointer-events: auto;
     }
+    @media (max-width: 600px) {
+      .tsw-ai-btn {
+        bottom: 16px;
+        right: 16px;
+        width: 54px;
+        height: 54px;
+      }
+      .tsw-ai-window {
+        bottom: 80px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-width: none;
+        height: min(500px, calc(100vh - 100px));
+        max-height: calc(100dvh - 100px);
+      }
+    }
     .tsw-ai-header {
       background: linear-gradient(135deg, #0f172a 0%, #132238 100%);
       padding: 14px 16px;
