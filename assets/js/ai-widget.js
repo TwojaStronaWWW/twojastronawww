@@ -94,18 +94,18 @@ export function formatMarkdown(rawText) {
  * @param {string} question
  * @returns {string}
  */
-export function getLocalFallbackAnswer(question) {
+export function getLocalFallbackAnswer(question, siteId = 'twojastronawww') {
   const q = String(question || '').toLowerCase();
 
   if (q.includes('wordpress') || q.includes('wtyczk') || q.includes('kod') || q.includes('sql') || q.includes('szybk')) {
     return 'Tworzę strony w **czystym kodzie (architektura Flat-File)** zamiast ciężkiego WordPressa z dziesiątkami wtyczek:\n- **Waga poniżej 100 KB** i ładowanie **< 0.6s** (Google PageSpeed **95–100/100**)\n- **Brak bazy SQL** = zero ryzyka ataków SQL Injection i awarii po aktualizacjach\n- **100% kodu na własność** w repozytorium Git i brak ukrytych abonamentów.';
   }
 
-  if (q.includes('ai') || q.includes('czat') || q.includes('bot') || q.includes('asystent')) {
+  if (q.includes('ai') || q.includes('czat') || q.includes('bot') || q.includes('asystent') || q.includes('rag')) {
     return 'Wdrażam dedykowanych **Asystentów AI (RAG)** trenowanych wyłącznie na bazie wiedzy Twojej firmy:\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na Twój telefon, gdy klient zostawi namiar kontaktowy.';
   }
 
-  if (q.includes('współprac') || q.includes('wspolprac') || q.includes('proces') || q.includes('etap') || q.includes('czas') || q.includes('ile trwa') || q.includes('umow')) {
+  if (q.includes('współprac') || q.includes('wspolprac') || q.includes('proces') || q.includes('etap') || q.includes('czas') || q.includes('ile trwa') || q.includes('umow') || q.includes('krok')) {
     return 'Standardowe wdrożenie trwa **7–14 dni roboczych** w 5 przejrzystych etapach:\n- **Dzień 1–2**: Analiza potrzeb, brief i stała wycena bez gwiazdek\n- **Dzień 3–5**: Indywidualny projekt graficzny UX/UI\n- **Dzień 6–9**: Programowanie w czystym kodzie (HTML5/CSS3/JS/PHP Flat-File)\n- **Dzień 10–11**: Optymalizacja PageSpeed 95+ i testy bezpieczeństwa ISO 27001\n- **Dzień 12–14**: Uruchomienie na domenie i **30 dni gwarancji**\nSzczegóły znajdziesz na podstronie https://twojastronawww.pl/jak-pracuje.html';
   }
 
@@ -117,11 +117,11 @@ export function getLocalFallbackAnswer(question) {
     return 'Przykładowe wdrożenia z wynikami **Google PageSpeed 98–100/100**:\n- **Raricart.pl** (branża eventowa) – ładowanie skrócone z 4.2s do **0.6s** i automatyzacja rezerwacji\n- **KatoSalsaHub.pl** & **DancePuls** – automatyczny agregator i generator wydarzeń oszczędzający 6h pracy tygodniowo\n- **FuegoLingua.pl** – ultra-lekka strona (45 KB) bez bazy SQL z wirtualnym doradcą AI.';
   }
 
-  if (q.includes('kontakt') || q.includes('telefon') || q.includes('mail') || q.includes('oddzwon')) {
+  if (q.includes('kontakt') || q.includes('telefon') || q.includes('mail') || q.includes('oddzwon') || q.includes('wiadomo')) {
     return 'Pracujesz bezpośrednio ze mną (inżynierem, bez pośredników). Możesz:\n- Zostawić swój **numer telefonu lub e-mail bezpośrednio tutaj na czacie** – od razu dostanę powiadomienie\n- Wypełnić szybki formularz w sekcji **#contact** na dole strony\n- Napisać na: kontakt@twojastronawww.pl\nOdpowiadam i przygotowuję niezobowiązującą wycenę w ciągu **24h**.';
   }
 
-  return 'Chętnie pomogę! Mogę opowiedzieć o **cenach pakietów (od 2 499 PLN netto)**, przewadze **czystego kodu nad WordPressem**, wdrożeniu **czatbota AI** lub **5-etapowym procesie współpracy**.\nMożesz też zostawić tutaj swój numer telefonu lub napisać na kontakt@twojastronawww.pl – przygotuję bezpłatną wycenę w **24h**.';
+  return `Jestem wirtualnym doradcą serwisu **${siteId}**. Mogę opowiedzieć o **cenach pakietów (od 2 499 PLN netto)**, przewadze **czystego kodu nad WordPressem**, wdrożeniu **czatbota AI** lub **5-etapowym procesie współpracy**.\nMożesz też zostawić tutaj swój numer telefonu lub napisać na kontakt@twojastronawww.pl – przygotuję bezpłatną wycenę w **24h**.`;
 }
 
 /**
@@ -520,17 +520,21 @@ export function initAiWidget(doc = document, win = globalThis.window) {
 
     const typingMsg = doc.createElement('div');
     typingMsg.className = 'tsw-ai-msg tsw-ai-msg-bot tsw-ai-typing';
-    typingMsg.textContent = 'Asystent analizuje...';
+    typingMsg.textContent = 'Asystent pisze...';
     messagesContainer?.appendChild(typingMsg);
     if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
     if (sendBtn) sendBtn.disabled = true;
+
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 9000) : null;
 
     try {
       const fetchFn = win?.fetch || globalThis.fetch;
       const res = await fetchFn(routerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller?.signal,
         body: JSON.stringify({
           site_id: siteId,
           question: trimmed,
@@ -546,7 +550,7 @@ export function initAiWidget(doc = document, win = globalThis.window) {
         conversationHistory.push({ role: 'user', text: trimmed });
         conversationHistory.push({ role: 'model', text: data.answer });
       } else {
-        const fallback = getLocalFallbackAnswer(trimmed);
+        const fallback = getLocalFallbackAnswer(trimmed, siteId);
         appendMessageElement('model', fallback);
         conversationHistory.push({ role: 'user', text: trimmed });
         conversationHistory.push({ role: 'model', text: fallback });
@@ -555,13 +559,14 @@ export function initAiWidget(doc = document, win = globalThis.window) {
       saveHistory();
     } catch (_) {
       typingMsg.remove?.();
-      const fallback = getLocalFallbackAnswer(trimmed);
+      const fallback = getLocalFallbackAnswer(trimmed, siteId);
       appendMessageElement('model', fallback);
       conversationHistory.push({ role: 'user', text: trimmed });
       conversationHistory.push({ role: 'model', text: fallback });
       conversationHistory = conversationHistory.slice(-8);
       saveHistory();
     } finally {
+      if (timeoutId) clearTimeout(timeoutId);
       if (sendBtn) sendBtn.disabled = false;
       if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
