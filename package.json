@@ -16,6 +16,6 @@
     "dev": "node scripts/serve.js"
   },
   "devDependencies": {
-    "@lhci/cli": "^0.14.0"
+    "@lhci/cli": "^0.15.1"
   }
 }
