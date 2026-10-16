@@ -290,6 +290,13 @@ header {
     padding-top: calc(var(--header-height) + 30px);
     padding-bottom: 70px;
     position: relative;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.hero > .container {
+    position: relative;
+    z-index: 2;
 }
 
 /* Glow behind hero */
@@ -299,8 +306,26 @@ header {
     top: 40%; left: 50%;
     transform: translate(-50%, -50%);
     width: 750px; height: 480px;
-    background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.18) 0%, rgba(6, 182, 212, 0.1) 40%, transparent 70%);
+    background: radial-gradient(ellipse at center, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.12) 40%, transparent 70%);
     filter: blur(85px);
+    z-index: -2;
+    pointer-events: none;
+}
+
+/* Studio Motion-Blur & Halftone Poster Texture behind hero */
+.hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('../img/hero-motion-bg.jpg');
+    background-size: cover;
+    background-position: center 42%;
+    background-repeat: no-repeat;
+    opacity: 0.38;
+    mix-blend-mode: screen;
+    filter: contrast(1.08);
+    -webkit-mask-image: radial-gradient(ellipse 85% 78% at 50% 46%, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0.5) 68%, transparent 100%);
+    mask-image: radial-gradient(ellipse 85% 78% at 50% 46%, rgba(0, 0, 0, 1) 30%, rgba(0, 0, 0, 0.5) 68%, transparent 100%);
     z-index: -1;
     pointer-events: none;
 }
@@ -744,8 +769,8 @@ header {
 
 .sticky-call-btn {
     position: fixed;
-    bottom: 24px;
-    right: 24px;
+    bottom: 96px;
+    right: 28px;
     width: 52px;
     height: 52px;
     background: linear-gradient(135deg, #34d399, #06b6d4);
@@ -933,6 +958,11 @@ footer {
     padding-bottom: 60px;
     text-align: center;
     position: relative;
+}
+
+.hero-mini::after {
+    opacity: 0.24;
+    background-position: center 35%;
 }
 
 .hero-badge {

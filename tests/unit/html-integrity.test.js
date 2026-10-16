@@ -54,13 +54,15 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(styleCssContent, /\.form-consent-label\s*\{[^}]*justify-content:\s*flex-start/is, 'Klasa .form-consent-label musi wyrównywać checkbox i tekst do lewej (justify-content: flex-start)');
   });
 
-  test('Skrypty JS i style CSS są poprawnie podpięte w index.html i jak-pracuje.html', () => {
+  test('Skrypty JS (w tym asystent AI) i style CSS są poprawnie podpięte w index.html i jak-pracuje.html', () => {
     assert.match(indexContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w index.html');
     assert.match(indexContent, /src=["'][^"']*contact\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia contact.js w index.html');
     assert.match(indexContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w index.html');
+    assert.match(indexContent, /src=["'][^"']*ai-widget\.js["']/i, 'Brak podpięcia ai-widget.js w index.html');
 
     assert.match(jakPracujeContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w jak-pracuje.html');
     assert.match(jakPracujeContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w jak-pracuje.html');
+    assert.match(jakPracujeContent, /src=["'][^"']*ai-widget\.js["']/i, 'Brak podpięcia ai-widget.js w jak-pracuje.html');
     assert.doesNotMatch(jakPracujeContent, /script\.js/i, 'Wykryto martwe odwołanie do script.js w jak-pracuje.html');
   });
 
@@ -85,4 +87,17 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
       assert.strictEqual(rawEmojis, null, `Wykryto niedozwolone surowe emoji w ${name}: ${rawEmojis?.join(' ')}`);
     }
   });
+
+  test('Sekcja .hero posiada wkomponowane tło studyjne z efektem Motion Blur (hero-motion-bg.jpg) z maską gradientową', () => {
+    const heroBgPath = path.join(ROOT_DIR, 'assets', 'img', 'hero-motion-bg.jpg');
+    assert.ok(fs.existsSync(heroBgPath), 'Brak pliku grafiki tła assets/img/hero-motion-bg.jpg');
+    const stats = fs.statSync(heroBgPath);
+    assert.ok(stats.size > 10000 && stats.size < 250000, 'Plik hero-motion-bg.jpg powinien być zoptymalizowany pod kątem LCP (< 250 KB)');
+
+    const styleCssPath = path.join(ROOT_DIR, 'assets', 'css', 'style.css');
+    const styleCssContent = fs.readFileSync(styleCssPath, 'utf8');
+    assert.match(styleCssContent, /\.hero::after\s*\{[^}]*hero-motion-bg\.jpg/is, 'Brak osadzenia hero-motion-bg.jpg w .hero::after w style.css');
+    assert.match(styleCssContent, /\.hero::after\s*\{[^}]*mask-image:\s*radial-gradient/is, 'Brak maski radial-gradient na .hero::after w style.css');
+  });
 });
+
