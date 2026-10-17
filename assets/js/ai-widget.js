@@ -1,8 +1,11 @@
 /**
- * TwojaStronaWWW.pl - Moduł Asystenta AI (Universal Embeddable AI Agent Widget v2.1)
+ * TwojaStronaWWW.pl - Moduł Asystenta AI (Universal Embeddable AI Agent Widget v3.0)
  *
  * Architektura Platform-First & Zero-Bloat (Vanilla ES6+):
  * - Komunikacja z centralnym routerem AI na VPS (https://ai.twojastronawww.pl/chat-router.php)
+ * - Obsługa 11-modelowej kaskady High-Availability (6 dostawców API) po stronie VPS
+ * - Priorytetowe przekazywanie leadów kontaktowych (telefon / e-mail omija cache i wyzwala Ntfy 1-Klik)
+ * - Dwupoziomowy Response Cache (pamięć podręczna zapytań < 5 ms) z inwalidacją kbVersion
  * - Pamięć rozmowy Multi-Turn (do 8 ostatnich wiadomości w sessionStorage)
  * - Bezpieczny mikro-parser Markdown (100% odporny na XSS)
  * - Szybkie podpowiedzi pytań (Quick Prompts)
@@ -27,6 +30,174 @@ export const QUICK_PROMPTS_MAP = {
     'Kursy od podstaw (P0)'
   ]
 };
+
+const CATEGORY_LABELS_PL = {
+  steps: 'Kroki (Podstawy)',
+  figures: 'Figury (Casino / Rueda)',
+  dance: 'Taniec',
+  styles: 'Style Tańca',
+  music: 'Muzyka',
+  instruments: 'Instrumenty',
+  bands: 'Zespoły i Artyści',
+  history: 'Historia',
+  gods: 'Bogowie (Orishas)',
+  instructors: 'Instruktorzy',
+  schools: 'Szkoły Tańca'
+};
+
+/**
+ * Normalizuje tekst zapytania do klucza pamięci podręcznej (Response Cache)
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeCacheQuery(text) {
+  if (!text) return '';
+  return String(text)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/ł/g, 'l')
+    .replace(/[?!.,;:()"'«»„”`~[\]{}/\\|_+-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Usuwa znaki diakrytyczne (PL / ES) i upraszcza tekst do wyszukiwania pełnotekstowego
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeSearchText(text) {
+  if (!text) return '';
+  const map = {
+    ą: 'a', ć: 'c', ę: 'e', ł: 'l', ń: 'n', ó: 'o', ś: 's', ź: 'z', ż: 'z',
+    á: 'a', é: 'e', í: 'i', ú: 'u', ü: 'u', ñ: 'n'
+  };
+  return String(text)
+    .toLowerCase()
+    .replace(/[ąćęłńóśźżáéíúüñ]/g, (ch) => map[ch] || ch)
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Szybki, deterministyczny skrót wersji bazy wiedzy (FNV-1a 32-bit + rozmiar bazy).
+ * @param {Array<Object>} entries
+ * @returns {string}
+ */
+export function computeKnowledgeVersion(entries) {
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return 'kb_v0_empty';
+  }
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < entries.length; i++) {
+    const item = entries[i] || {};
+    const cats = Array.isArray(item.category) ? item.category.join(',') : String(item.category || '');
+    const record = `${item.id || ''}|${item.term || ''}|${item.definition || ''}|${cats}|${item.status || ''}|${item.verification_count || 0}|${item.last_updated || ''}`;
+    for (let j = 0; j < record.length; j++) {
+      hash ^= record.charCodeAt(j);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+  }
+  return `kb_v${entries.length}_${hash.toString(16)}`;
+}
+
+/**
+ * Przeszukuje dynamiczną bazę wiedzy pod kątem zapytania użytkownika.
+ * @param {string} question
+ * @param {Array<Object>} entries
+ * @param {number} limit
+ * @returns {Array<Object>}
+ */
+export function searchKnowledgeEntries(question, entries, limit = 5) {
+  if (!question || !Array.isArray(entries) || entries.length === 0) return [];
+
+  const qNorm = normalizeSearchText(question);
+  if (!qNorm) return [];
+
+  const stopWords = new Set([
+    'co', 'to', 'jest', 'sa', 'jak', 'jaki', 'jaka', 'jakie', 'gdzie', 'kiedy',
+    'czy', 'na', 'w', 'we', 'z', 'ze', 'do', 'od', 'po', 'o', 'i', 'a', 'oraz',
+    'lub', 'albo', 'mi', 'sie', 'tym', 'ten', 'ta', 'te', 'oznacza', 'znaczy',
+    'opowiedz', 'wyjasnij', 'powiedz', 'czym', 'kim', 'kto', 'mozna', 'jakis'
+  ]);
+
+  const rawTokens = qNorm.split(' ').filter((t) => t.length >= 2 && !stopWords.has(t));
+  const stems = rawTokens.map((t) => {
+    if (t.length >= 6) return t.replace(/(ach|ami|owi|iem|om|ie|ow|ej|ym|im|ia|iu|ek|ka|ki|ce|ke|y|a|e|i|u|o)$/, '');
+    if (t.length >= 5) return t.replace(/(ie|ow|ej|ym|ia|ka|ki|ce|y|a|e|i|u)$/, '');
+    return t;
+  }).filter((s) => s.length >= 3);
+
+  const scored = [];
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (!entry || !entry.term) continue;
+
+    const termNorm = normalizeSearchText(entry.term);
+    const termClean = termNorm.replace(/\([^)]*\)/g, '').trim();
+    const defNorm = normalizeSearchText(entry.definition || '');
+
+    let score = 0;
+    if (termNorm && qNorm === termNorm) {
+      score += 120;
+    } else if (termClean && termClean.length >= 3 && qNorm.includes(termClean)) {
+      score += 85;
+    } else if (termNorm && termNorm.length >= 3 && qNorm.includes(termNorm)) {
+      score += 80;
+    }
+
+    for (const token of rawTokens) {
+      if (termNorm.split(' ').includes(token)) {
+        score += 45;
+      } else if (token.length >= 3 && termNorm.includes(token)) {
+        score += 30;
+      }
+      if (token.length >= 3 && defNorm.includes(token)) {
+        score += 10;
+      }
+    }
+
+    for (const stem of stems) {
+      if (stem.length >= 3 && termNorm.includes(stem)) {
+        score += 22;
+      }
+      if (stem.length >= 4 && defNorm.includes(stem)) {
+        score += 6;
+      }
+    }
+
+    if (score > 0) {
+      scored.push({ entry, score });
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score || String(a.entry.term).localeCompare(String(b.entry.term), 'pl'));
+  return scored.slice(0, limit).map((item) => item.entry);
+}
+
+/**
+ * Buduje zwięzły kontekst RAG z dynamicznej bazy wiedzy do przesłania do routera AI
+ * @param {string} question
+ * @param {Array<Object>} entries
+ * @returns {string}
+ */
+export function buildDynamicContext(question, entries) {
+  if (!Array.isArray(entries) || entries.length === 0) return '';
+  const matched = searchKnowledgeEntries(question, entries, 6);
+  let context = `[AKTUALNY STAN BAZY WIEDZY (${computeKnowledgeVersion(entries)})]: Łącznie ${entries.length} haseł.\n`;
+  if (matched.length > 0) {
+    context += 'Najbardziej pasujące hasła na stronie:\n';
+    for (const m of matched) {
+      const catsLabel = (Array.isArray(m.category) ? m.category : [m.category])
+        .map((c) => CATEGORY_LABELS_PL[c] || c)
+        .join(', ');
+      context += `- **${m.term}** [Kategoria: ${catsLabel}]: ${m.definition}\n`;
+    }
+  }
+  return context.trim();
+}
 
 /**
  * Bezpieczny mikro-parser Markdown (100% odporny na XSS)
@@ -92,6 +263,7 @@ export function formatMarkdown(rawText) {
  * Lokalna odpowiedź awaryjna oparta na oficjalnej bazie wiedzy TwojaStronaWWW.pl
  * (gwarantuje ciągłość obsługi klienta przy chwilowej niedostępności sieci/tunelu VPS)
  * @param {string} question
+ * @param {string} siteId
  * @returns {string}
  */
 export function getLocalFallbackAnswer(question, siteId = 'twojastronawww') {
@@ -102,7 +274,7 @@ export function getLocalFallbackAnswer(question, siteId = 'twojastronawww') {
   }
 
   if (q.includes('ai') || q.includes('czat') || q.includes('bot') || q.includes('asystent') || q.includes('rag')) {
-    return 'Wdrażam dedykowanych **Asystentów AI (RAG)** trenowanych wyłącznie na bazie wiedzy Twojej firmy:\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na Twój telefon, gdy klient zostawi namiar kontaktowy.';
+    return 'Wdrażam dedykowanych **Asystentów AI (RAG)** trenowanych wyłącznie na bazie wiedzy Twojej firmy (kaskada 11 modeli LLM, cache `< 5 ms`):\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na Twój telefon (z numerem telefonu i e-mailem na samej górze wiadomości), gdy klient zostawi namiar kontaktowy.';
   }
 
   if (q.includes('współprac') || q.includes('wspolprac') || q.includes('proces') || q.includes('etap') || q.includes('czas') || q.includes('ile trwa') || q.includes('umow') || q.includes('krok')) {
@@ -128,8 +300,9 @@ export function getLocalFallbackAnswer(question, siteId = 'twojastronawww') {
  * Inicjalizuje widget czatu AI w drzewie DOM
  * @param {Document} doc
  * @param {Window} win
+ * @param {Object} options
  */
-export function initAiWidget(doc = document, win = globalThis.window) {
+export function initAiWidget(doc = document, win = globalThis.window, options = {}) {
   if (!doc || !doc.body) return null;
   if (doc.getElementById('tsw-ai-widget-root')) return null;
 
@@ -139,16 +312,106 @@ export function initAiWidget(doc = document, win = globalThis.window) {
     doc.querySelector('script[src*="ai-widget.js"]') ||
     doc.querySelector('script[src*="widget.js"]');
 
-  const siteId = (scriptEl?.getAttribute('data-site-id') || 'twojastronawww').toLowerCase();
+  const siteId = (
+    options.siteId ||
+    scriptEl?.getAttribute('data-site-id') ||
+    'twojastronawww'
+  ).toLowerCase();
   const isLocalhost =
     win?.location?.hostname === 'localhost' || win?.location?.hostname === '127.0.0.1';
   const defaultRouterUrl = isLocalhost
     ? 'http://localhost:8085/chat-router.php'
     : 'https://ai.twojastronawww.pl/chat-router.php';
-  const routerUrl = scriptEl?.getAttribute('data-router-url') || defaultRouterUrl;
-  const title = scriptEl?.getAttribute('data-title') || 'Asystent TwojaStronaWWW';
+  const routerUrl =
+    options.routerUrl || scriptEl?.getAttribute('data-router-url') || defaultRouterUrl;
+  const title =
+    options.title || scriptEl?.getAttribute('data-title') || 'Asystent TwojaStronaWWW';
   const storageKey = 'tsw_ai_history_' + siteId;
+  const cacheStorageKey = 'tsw_ai_cache_' + siteId;
+  const cacheTtlMs = Number(options.cacheTtlMs) || 24 * 60 * 60 * 1000;
   const quickPrompts = QUICK_PROMPTS_MAP[siteId] || QUICK_PROMPTS_MAP.twojastronawww;
+
+  let knowledgeEntries = Array.isArray(options.initialKnowledge)
+    ? [...options.initialKnowledge]
+    : [];
+  let kbVersion = computeKnowledgeVersion(knowledgeEntries);
+  let responseCache = { kbVersion, entries: {} };
+
+  function loadResponseCache() {
+    try {
+      const storage = win?.localStorage || win?.sessionStorage;
+      const raw = storage?.getItem(cacheStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.entries) {
+          if (knowledgeEntries.length > 0 && parsed.kbVersion !== kbVersion) {
+            responseCache = { kbVersion, entries: {} };
+            saveResponseCache();
+          } else {
+            responseCache = {
+              kbVersion: parsed.kbVersion || kbVersion,
+              entries: parsed.entries || {}
+            };
+          }
+        }
+      }
+    } catch (_) {
+      responseCache = { kbVersion, entries: {} };
+    }
+  }
+
+  function saveResponseCache() {
+    try {
+      const storage = win?.localStorage || win?.sessionStorage;
+      storage?.setItem(cacheStorageKey, JSON.stringify(responseCache));
+    } catch (_) {}
+  }
+
+  function hasContactPii(text) {
+    const s = String(text || '');
+    const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
+    const phoneRegex = /(?:\+?48[\s.\-()]*)?(?:\d[\s.\-()]*){8}\d/;
+    return emailRegex.test(s) || phoneRegex.test(s);
+  }
+
+  function getCachedAnswer(question) {
+    const normQ = normalizeCacheQuery(question);
+    if (!normQ || hasContactPii(question)) return null;
+
+    if (knowledgeEntries.length > 0 && responseCache.kbVersion !== kbVersion) {
+      responseCache = { kbVersion, entries: {} };
+      saveResponseCache();
+      return null;
+    }
+
+    const item = responseCache.entries?.[normQ];
+    if (!item || !item.answer) return null;
+
+    const now = Date.now();
+    if (item.ts && now - item.ts > cacheTtlMs) {
+      delete responseCache.entries[normQ];
+      saveResponseCache();
+      return null;
+    }
+
+    return item.answer;
+  }
+
+  function setCachedAnswer(question, answer, source = 'ai') {
+    const normQ = normalizeCacheQuery(question);
+    if (!normQ || !answer || hasContactPii(question)) return;
+    if (!responseCache.entries || responseCache.kbVersion !== kbVersion) {
+      responseCache = { kbVersion, entries: {} };
+    }
+    responseCache.kbVersion = kbVersion;
+    responseCache.entries[normQ] = {
+      answer: String(answer),
+      kbVersion,
+      source,
+      ts: Date.now()
+    };
+    saveResponseCache();
+  }
 
   const style = doc.createElement('style');
   style.id = 'tsw-ai-widget-styles';
@@ -329,6 +592,9 @@ export function initAiWidget(doc = document, win = globalThis.window) {
       gap: 6px;
       padding: 0 16px 10px;
     }
+    .tsw-ai-chips.tsw-hidden {
+      display: none !important;
+    }
     .tsw-ai-chip {
       background: rgba(16, 185, 129, 0.12);
       border: 1px solid rgba(52, 211, 153, 0.35);
@@ -444,10 +710,24 @@ export function initAiWidget(doc = document, win = globalThis.window) {
     }
   } catch (_) {}
 
+  loadResponseCache();
+
   function saveHistory() {
     try {
       win?.sessionStorage?.setItem(storageKey, JSON.stringify(conversationHistory.slice(-8)));
     } catch (_) {}
+  }
+
+  function updateKnowledgeEntries(newEntries) {
+    if (!Array.isArray(newEntries)) return kbVersion;
+    const prevVersion = kbVersion;
+    knowledgeEntries = [...newEntries];
+    kbVersion = computeKnowledgeVersion(knowledgeEntries);
+    if (prevVersion !== kbVersion) {
+      responseCache = { kbVersion, entries: {} };
+      saveResponseCache();
+    }
+    return kbVersion;
   }
 
   function appendMessageElement(role, text) {
@@ -464,14 +744,20 @@ export function initAiWidget(doc = document, win = globalThis.window) {
     return msg;
   }
 
+  function setChipsVisible(visible) {
+    if (!chipsContainer) return;
+    chipsContainer.classList?.toggle('tsw-hidden', !visible);
+    chipsContainer.style.display = visible ? 'flex' : 'none';
+  }
+
   function renderChips() {
     if (!chipsContainer) return;
     chipsContainer.innerHTML = '';
     if (conversationHistory.length > 0) {
-      chipsContainer.style.display = 'none';
+      setChipsVisible(false);
       return;
     }
-    chipsContainer.style.display = 'flex';
+    setChipsVisible(true);
     quickPrompts.forEach((promptText) => {
       const chip = doc.createElement('button');
       chip.type = 'button';
@@ -531,9 +817,20 @@ export function initAiWidget(doc = document, win = globalThis.window) {
     const trimmed = String(text || '').trim();
     if (!trimmed || sendBtn?.disabled) return;
 
-    if (chipsContainer) chipsContainer.style.display = 'none';
+    setChipsVisible(false);
     appendMessageElement('user', trimmed);
     if (chatInput) chatInput.value = '';
+
+    const cachedAnswer = getCachedAnswer(trimmed);
+    if (cachedAnswer) {
+      appendMessageElement('model', cachedAnswer);
+      conversationHistory.push({ role: 'user', text: trimmed });
+      conversationHistory.push({ role: 'model', text: cachedAnswer });
+      conversationHistory = conversationHistory.slice(-8);
+      saveHistory();
+      if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return { answer: cachedAnswer, cached: true, kbVersion };
+    }
 
     const typingMsg = doc.createElement('div');
     typingMsg.className = 'tsw-ai-msg tsw-ai-msg-bot tsw-ai-typing';
@@ -545,16 +842,19 @@ export function initAiWidget(doc = document, win = globalThis.window) {
 
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
     const timeoutId = controller ? setTimeout(() => controller.abort(), 9000) : null;
+    const dynamicContext = buildDynamicContext(trimmed, knowledgeEntries);
 
     try {
       const fetchFn = win?.fetch || globalThis.fetch;
       const res = await fetchFn(routerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: controller?.signal,
+        ...(controller ? { signal: controller.signal } : {}),
         body: JSON.stringify({
           site_id: siteId,
           question: trimmed,
+          kb_version: kbVersion,
+          dynamic_context: dynamicContext,
           history: conversationHistory.slice(-8)
         })
       });
@@ -564,24 +864,32 @@ export function initAiWidget(doc = document, win = globalThis.window) {
 
       if (res.ok && data && data.success && data.answer) {
         appendMessageElement('model', data.answer);
+        setCachedAnswer(trimmed, data.answer, 'ai');
         conversationHistory.push({ role: 'user', text: trimmed });
         conversationHistory.push({ role: 'model', text: data.answer });
+        conversationHistory = conversationHistory.slice(-8);
+        saveHistory();
+        return { answer: data.answer, cached: Boolean(data.cached), kbVersion };
       } else {
         const fallback = getLocalFallbackAnswer(trimmed, siteId);
         appendMessageElement('model', fallback);
+        setCachedAnswer(trimmed, fallback, 'fallback');
         conversationHistory.push({ role: 'user', text: trimmed });
         conversationHistory.push({ role: 'model', text: fallback });
+        conversationHistory = conversationHistory.slice(-8);
+        saveHistory();
+        return { answer: fallback, cached: false, kbVersion };
       }
-      conversationHistory = conversationHistory.slice(-8);
-      saveHistory();
     } catch (_) {
       typingMsg.remove?.();
       const fallback = getLocalFallbackAnswer(trimmed, siteId);
       appendMessageElement('model', fallback);
+      setCachedAnswer(trimmed, fallback, 'fallback');
       conversationHistory.push({ role: 'user', text: trimmed });
       conversationHistory.push({ role: 'model', text: fallback });
       conversationHistory = conversationHistory.slice(-8);
       saveHistory();
+      return { answer: fallback, cached: false, kbVersion };
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
       if (sendBtn) sendBtn.disabled = false;
@@ -610,7 +918,15 @@ export function initAiWidget(doc = document, win = globalThis.window) {
     toggleChat,
     closeChat,
     sendQuestion,
-    getHistory: () => conversationHistory
+    getHistory: () => conversationHistory,
+    getKnowledgeVersion: () => kbVersion,
+    getKnowledgeEntries: () => knowledgeEntries,
+    updateKnowledgeEntries,
+    getCachedAnswer,
+    clearCache: () => {
+      responseCache = { kbVersion, entries: {} };
+      saveResponseCache();
+    }
   };
 }
 

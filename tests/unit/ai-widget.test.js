@@ -82,4 +82,38 @@ describe('Widget Asystenta AI (assets/js/ai-widget.js)', () => {
     widget.clearBtn.dispatchEvent({ type: 'click' });
     assert.equal(widget.getHistory().length, 0);
   });
+
+  test('Response Cache zwraca powtórzone pytanie bez wywołania fetch, ale omija cache dla leadów kontaktowych (telefon/e-mail)', async () => {
+    let fetchCalls = 0;
+    dom.mockWindow.fetch = async () => {
+      fetchCalls++;
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          answer: 'Dziękuję! Zapisałem kontakt i oddzwonię.'
+        })
+      };
+    };
+
+    const widget = initAiWidget(dom.mockDocument, dom.mockWindow);
+
+    // Zwykłe pytanie -> trafia do cache
+    const res1 = await widget.sendQuestion('Ile kosztuje wdrożenie sklepu?');
+    assert.equal(fetchCalls, 1);
+    assert.equal(res1.cached, false);
+
+    const res2 = await widget.sendQuestion('Ile kosztuje wdrożenie sklepu?');
+    assert.equal(fetchCalls, 1);
+    assert.equal(res2.cached, true);
+
+    // Lead z telefonem i e-mailem -> omija cache, aby wyzwolić Ntfy 1-Klik na VPS
+    await widget.sendQuestion('Proszę o telefon: +48 (600) 700 800 lub mail jan@firma.pl');
+    assert.equal(fetchCalls, 2);
+    assert.equal(widget.getCachedAnswer('Proszę o telefon: +48 (600) 700 800 lub mail jan@firma.pl'), null);
+
+    await widget.sendQuestion('Proszę o telefon: +48 (600) 700 800 lub mail jan@firma.pl');
+    assert.equal(fetchCalls, 3);
+  });
 });
+
