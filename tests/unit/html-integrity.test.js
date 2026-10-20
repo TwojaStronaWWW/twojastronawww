@@ -64,6 +64,9 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(jakPracujeContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w jak-pracuje.html');
     assert.match(jakPracujeContent, /src=["'][^"']*ai-widget\.js["']/i, 'Brak podpięcia ai-widget.js w jak-pracuje.html');
     assert.doesNotMatch(jakPracujeContent, /script\.js/i, 'Wykryto martwe odwołanie do script.js w jak-pracuje.html');
+
+    const htaccess = fs.readFileSync(path.join(ROOT_DIR, '.htaccess'), 'utf8');
+    assert.match(htaccess, /microphone=\(self\)/, 'Nagłówek Permissions-Policy w .htaccess musi zezwalać na microphone=(self) dla dyktowania głosowego w Asystencie AI');
   });
 
   test('Pliki HTML są czyste i nie zawierają wiszących śmieciowych komentarzy testowych', () => {
