@@ -58,11 +58,11 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(indexContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w index.html');
     assert.match(indexContent, /src=["'][^"']*contact\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia contact.js w index.html');
     assert.match(indexContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w index.html');
-    assert.match(indexContent, /src=["'][^"']*ai-widget\.js["']/i, 'Brak podpięcia ai-widget.js w index.html');
+    assert.match(indexContent, /src=["'][^"']*ai-widget\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia ai-widget.js w index.html');
 
     assert.match(jakPracujeContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w jak-pracuje.html');
     assert.match(jakPracujeContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w jak-pracuje.html');
-    assert.match(jakPracujeContent, /src=["'][^"']*ai-widget\.js["']/i, 'Brak podpięcia ai-widget.js w jak-pracuje.html');
+    assert.match(jakPracujeContent, /src=["'][^"']*ai-widget\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia ai-widget.js w jak-pracuje.html');
     assert.doesNotMatch(jakPracujeContent, /script\.js/i, 'Wykryto martwe odwołanie do script.js w jak-pracuje.html');
 
     const htaccess = fs.readFileSync(path.join(ROOT_DIR, '.htaccess'), 'utf8');
