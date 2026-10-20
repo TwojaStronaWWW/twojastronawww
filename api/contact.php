@@ -4,6 +4,41 @@ declare(strict_types=1);
 require_once __DIR__ . '/bootstrap.php';
 header("Content-Type: application/json; charset=UTF-8");
 
+/**
+ * Pobiera zmienną środowiskową z getenv(), $_ENV lub pliku .env poza webrootem
+ */
+function get_tsw_env(string $key, string $default = ''): string {
+    $val = getenv($key);
+    if ($val !== false && $val !== '') {
+        return (string)$val;
+    }
+    if (!empty($_ENV[$key])) {
+        return (string)$_ENV[$key];
+    }
+    $envPaths = [
+        __DIR__ . '/../.env',
+        __DIR__ . '/.env',
+    ];
+    foreach ($envPaths as $envPath) {
+        if (@is_readable($envPath)) {
+            $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+            if (is_array($lines)) {
+                foreach ($lines as $line) {
+                    $line = trim($line);
+                    if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
+                        continue;
+                    }
+                    [$k, $v] = explode('=', $line, 2);
+                    if (trim($k) === $key) {
+                        return trim($v, " \t\n\r\0\x0B\"'");
+                    }
+                }
+            }
+        }
+    }
+    return $default;
+}
+
 // Rzeczywiste IP klienta (uwzględnienie Cloudflare Proxy Anycast)
 $ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
@@ -115,25 +150,6 @@ if (preg_match('/\p{Cyrillic}/u', $message) || preg_match_all('/https?:\/\//i', 
     exit;
 }
 
-$to = "kontakt@twojastronawww.pl";
-$subject = $messageRaw === '' ? "SZYBKI TELEFON z TwojaStronaWWW: $name ($phone)" : "Nowe zapytanie z TwojaStronaWWW: $name";
-
-$body  = "Nowe zgłoszenie z formularza kontaktowego:\n";
-$body .= "=========================================\n";
-$body .= "Imię i nazwisko: $name\n";
-$body .= "Telefon:         $phone\n";
-$body .= "E-mail:          " . ($hasEmail ? $email : '-') . "\n";
-$body .= "Newsletter:      $newsletterConsent\n";
-$body .= "Data:            " . date('Y-m-d H:i:s') . "\n";
-$body .= "-----------------------------------------\n";
-$body .= "Treść wiadomości:\n$message\n";
-
-$headers  = "From: TwojaStronaWWW <$to>\r\n";
-if ($hasEmail) {
-    $headers .= "Reply-To: $email\r\n";
-}
-$headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-
 // 7. Zapis finalnego leada przed wysyłką (Zero-Data-Loss)
 save_lead([
     date('Y-m-d'),
@@ -146,18 +162,158 @@ save_lead([
     $newsletterConsent
 ], false);
 
-@mail($to, $subject, $body, $headers);
+$baseSubject = $messageRaw === ''
+    ? "[TwojaStronaWWW.pl] SZYBKI TELEFON: $name ($phone)"
+    : "[TwojaStronaWWW.pl] Nowe zapytanie: $name";
 
-// 8. Profesjonalny Autoresponder dla klienta (gdy podał e-mail)
+// 8. Rejestracja zgłoszenia w centralnym systemie ticketowym osTicket (hd.twojastronawww.pl)
+$osTicketApiKey = get_tsw_env('OSTICKET_API_KEY');
+$ticketCreated  = false;
+$ticketNum      = 'BRAK';
+
+if (!empty($osTicketApiKey) && function_exists('curl_init')) {
+    $digits = preg_replace('/\D+/', '', $phone) ?: date('YmdHis');
+    $ticketEmail = $hasEmail ? $email : "tel-{$digits}@twojastronawww.pl";
+    $ticketPayload = [
+        'name'        => html_entity_decode($name, ENT_QUOTES, 'UTF-8'),
+        'email'       => $ticketEmail,
+        'phone'       => $hasPhone ? $phone : '',
+        'subject'     => html_entity_decode($baseSubject, ENT_QUOTES, 'UTF-8'),
+        'message'     => "Imię i nazwisko: " . html_entity_decode($name, ENT_QUOTES, 'UTF-8') . "\n"
+                       . "Telefon: " . ($hasPhone ? $phone : '-') . "\n"
+                       . "E-mail: " . ($hasEmail ? $email : '-') . "\n"
+                       . "Newsletter: $newsletterConsent\n"
+                       . "-----------------------------------------\n"
+                       . html_entity_decode($message, ENT_QUOTES, 'UTF-8'),
+        'topicId'     => 10,
+        'ip'          => $ip,
+        'source'      => 'Web',
+        'autorespond' => false,
+        'send_email'  => false,
+    ];
+
+    $endpoints = [
+        ['url' => 'http://hd.twojastronawww.pl:8080/ticket_hook.php', 'resolve' => ['hd.twojastronawww.pl:8080:127.0.0.1']],
+        ['url' => 'https://hd.twojastronawww.pl/ticket_hook.php',     'resolve' => []],
+    ];
+
+    foreach ($endpoints as $ep) {
+        $ch = curl_init($ep['url']);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'X-API-Key: ' . $osTicketApiKey,
+            'Content-Type: application/json',
+            'Expect:'
+        ]);
+        if (!empty($ep['resolve'])) {
+            curl_setopt($ch, CURLOPT_RESOLVE, $ep['resolve']);
+        }
+        curl_setopt($ch, CURLOPT_USERAGENT, 'TwojaStronaWWW-HelpdeskClient/2.0');
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($ticketPayload, JSON_UNESCAPED_UNICODE));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+
+        $apiResponse = @curl_exec($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        $resArr = is_string($apiResponse) ? json_decode($apiResponse, true) : null;
+        if ($httpCode === 201 && !empty($resArr['success'])) {
+            $ticketCreated = true;
+            $ticketNum = (string)($resArr['number'] ?? 'OK');
+            break;
+        }
+    }
+}
+
+// 9. Wysyłka scentralizowanego powiadomienia e-mail na poczatek.krzysztof@gmail.com
+$centralEmail = get_tsw_env('CENTRAL_LEAD_EMAIL', 'poczatek.krzysztof@gmail.com');
+$fromSender   = "kontakt@twojastronawww.pl";
+$subject      = $baseSubject . ($ticketCreated ? " [Ticket #$ticketNum]" : "");
+
+$body  = "Nowe zgłoszenie z formularza kontaktowego (TwojaStronaWWW.pl):\n";
+$body .= "=========================================\n";
+$body .= "Imię i nazwisko: " . html_entity_decode($name, ENT_QUOTES, 'UTF-8') . "\n";
+$body .= "Telefon:         $phone\n";
+$body .= "E-mail:          " . ($hasEmail ? $email : '-') . "\n";
+$body .= "Ticket osTicket: " . ($ticketCreated ? "#$ticketNum (https://hd.twojastronawww.pl/scp/)" : "Brak") . "\n";
+$body .= "Newsletter:      $newsletterConsent\n";
+$body .= "Data:            " . date('Y-m-d H:i:s') . "\n";
+$body .= "-----------------------------------------\n";
+$body .= "Treść wiadomości:\n" . html_entity_decode($message, ENT_QUOTES, 'UTF-8') . "\n";
+
+$headers  = "From: TwojaStronaWWW <$fromSender>\r\n";
+if ($hasEmail) {
+    $headers .= "Reply-To: $email\r\n";
+}
+$headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+
+@mail($centralEmail, $subject, $body, $headers, "-f$fromSender");
+
+// 10. Powiadomienie Push na Ntfy.sh (z przyciskami akcji 1-Klik)
+$ntfyTopic = get_tsw_env('NTFY_TOPIC');
+if ($ntfyTopic !== '' && function_exists('curl_init')) {
+    $cleanName = html_entity_decode($name, ENT_QUOTES, 'UTF-8');
+    $cleanMsg  = html_entity_decode($message, ENT_QUOTES, 'UTF-8');
+    $ntfyLines = [];
+    $ntfyActions = [];
+    $titleParts = [$cleanName];
+
+    $ntfyLines[] = "👤 IMIĘ: {$cleanName}";
+    if ($hasPhone) {
+        $digits = preg_replace('/\D+/', '', $phone) ?: '';
+        $dial = (strlen($digits) === 9) ? '+48' . $digits : '+' . $digits;
+        $ntfyLines[]   = "📞 TELEFON: {$phone}";
+        $titleParts[]  = "TEL: {$phone}";
+        $ntfyActions[] = "view, Zadzwon ({$phone}), tel:{$dial}";
+    }
+    if ($hasEmail) {
+        $ntfyLines[]   = "✉️ E-MAIL: {$email}";
+        $titleParts[]  = "EMAIL: {$email}";
+        $ntfyActions[] = "view, Napisz e-mail ({$email}), mailto:{$email}";
+    }
+    $ntfyLines[] = "🎫 TICKET: " . ($ticketCreated ? "#{$ticketNum}" : "brak");
+    $ntfyLines[] = "🌐 ŹRÓDŁO: Formularz twojastronawww.pl";
+    $ntfyLines[] = "────────────────────────";
+    $ntfyLines[] = "💬 Wiadomość:";
+    $ntfyLines[] = $cleanMsg;
+
+    $ntfyActions[] = "view, Otworz Helpdesk, https://hd.twojastronawww.pl/scp/";
+
+    $ntfyHeaders = [
+        'Title: Formularz (twojastronawww) - ' . implode(' | ', $titleParts),
+        'Priority: high',
+        'Tags: incoming_envelope,telephone_receiver',
+        'Actions: ' . implode('; ', array_slice($ntfyActions, 0, 3))
+    ];
+
+    $chNtfy = curl_init("https://ntfy.sh/{$ntfyTopic}");
+    curl_setopt_array($chNtfy, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => implode("\n", $ntfyLines),
+        CURLOPT_HTTPHEADER     => $ntfyHeaders,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 3,
+        CURLOPT_CONNECTTIMEOUT => 2
+    ]);
+    @curl_exec($chNtfy);
+    curl_close($chNtfy);
+}
+
+// 11. Profesjonalny Autoresponder dla klienta (gdy podał e-mail)
 if ($hasEmail) {
     $autoSubject = "Potwierdzenie otrzymania zgłoszenia — TwojaStronaWWW.pl";
-    $autoBody  = "Cześć $name,\n\n";
+    $autoBody  = "Cześć " . html_entity_decode($name, ENT_QUOTES, 'UTF-8') . ",\n\n";
     $autoBody .= "Dziękuję za kontakt z TwojaStronaWWW.pl!\n";
     $autoBody .= "Twoje zgłoszenie dotarło do mnie bezpiecznie. Odezwę się najpóźniej w ciągu 24 godzin.\n\n";
     $autoBody .= "Podsumowanie Twojego zgłoszenia:\n";
     $autoBody .= "-----------------------------------------\n";
+    if ($ticketCreated) {
+        $autoBody .= "Numer zgłoszenia: #$ticketNum\n";
+    }
     $autoBody .= "Telefon kontaktowy: $phone\n";
-    $autoBody .= "Twoja wiadomość:\n$message\n";
+    $autoBody .= "Twoja wiadomość:\n" . html_entity_decode($message, ENT_QUOTES, 'UTF-8') . "\n";
     $autoBody .= "-----------------------------------------\n\n";
     if ($newsletterConsent === 'TAK') {
         $autoBody .= "PS. Odnotowałem również Twoją zgodę na otrzymywanie praktycznych wskazówek o automatyzacji i nowościach (możesz zrezygnować w każdej chwili, odpowiadając na tę wiadomość).\n\n";
@@ -166,16 +322,17 @@ if ($hasEmail) {
     $autoBody .= "Krzysztof | TwojaStronaWWW.pl\n";
     $autoBody .= "https://twojastronawww.pl\n";
 
-    $autoHeaders  = "From: TwojaStronaWWW <$to>\r\n";
-    $autoHeaders .= "Reply-To: $to\r\n";
+    $autoHeaders  = "From: TwojaStronaWWW <$fromSender>\r\n";
+    $autoHeaders .= "Reply-To: $fromSender\r\n";
     $autoHeaders .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
-    @mail($email, $autoSubject, $autoBody, $autoHeaders);
+    @mail($email, $autoSubject, $autoBody, $autoHeaders, "-f$fromSender");
 }
 
 echo json_encode([
     "status" => "success",
     "success" => true,
+    "ticket" => $ticketCreated ? $ticketNum : null,
     "message" => $hasEmail
         ? "Dziękujemy! Zgłoszenie wysłane. Sprawdź potwierdzenie na swojej skrzynce e-mail."
         : "Dziękujemy! Twój numer został przekazany — oddzwonię najszybciej jak to możliwe."
