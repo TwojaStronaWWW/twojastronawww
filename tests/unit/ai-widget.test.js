@@ -170,5 +170,25 @@ describe('Widget Asystenta AI (assets/js/ai-widget.js)', () => {
     assert.equal(widget.chatInput.value, 'Ile kosztuje strona firmowa');
     assert.equal(widget.getHistory().length, 0, 'Tryb bezpieczny nie może wysłać wiadomości automatycznie bez kliknięcia Wyślij');
   });
+
+  test('Cookieless Web Analytics wysyła beacon jako string JSON (Simple Request bez CORS preflight Blob) przy otwarciu czatu i interakcjach', () => {
+    const beacons = [];
+    dom.mockWindow.navigator = {
+      sendBeacon: (url, body) => {
+        beacons.push({ url, body });
+        return true;
+      }
+    };
+
+    const widget = initAiWidget(dom.mockDocument, dom.mockWindow);
+    widget.toggleChat();
+
+    assert.equal(beacons.length, 1);
+    assert.equal(typeof beacons[0].body, 'string', 'Payload sendBeacon musi być stringiem (text/plain Simple Request), aby uniknąć blokady CORS preflight');
+    const parsed = JSON.parse(beacons[0].body);
+    assert.equal(parsed.site_id, 'twojastronawww');
+    assert.equal(parsed.type, 'event');
+    assert.equal(parsed.event, 'chat_open');
+  });
 });
 

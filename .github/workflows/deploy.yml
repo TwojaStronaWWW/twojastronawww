@@ -87,7 +87,7 @@ jobs:
 
       - name: 3.2 Oczyszczenie zbędnych plików deweloperskich przed wysłaniem na serwer
         run: |
-          rm -rf .git .github tests scripts .lighthouserc.json package*.json
+          rm -rf .git .github .githooks tests scripts .lighthouserc.json .gitattributes .gitignore .editorconfig package*.json
 
       - name: 3.3 Wdrożenie plików przez SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
@@ -96,7 +96,7 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server: ${{ secrets.FTP_SERVER }}
           port: ${{ secrets.FTP_PORT }}
-          local_path: './*'
+          local_path: './* ./.htaccess'
           remote_path: '/home/platne/serwer417204/public_html/twojastronawww.pl'
           sftpArgs: '-o ConnectTimeout=60'
 

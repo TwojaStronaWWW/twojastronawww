@@ -59,14 +59,19 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(indexContent, /src=["'][^"']*contact\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia contact.js w index.html');
     assert.match(indexContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w index.html');
     assert.match(indexContent, /src=["'][^"']*ai-widget\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia ai-widget.js w index.html');
+    assert.match(indexContent, /<script[^>]*data-cfasync=["']false["'][^>]*src=["'][^"']*ai-widget\.js/i, 'Tag ai-widget.js w index.html musi posiadać data-cfasync="false" (ochrona przed Rocket Loaderem)');
 
     assert.match(jakPracujeContent, /href=["'][^"']*style\.css(?:\?[^"']*)?["']/i, 'Brak podpięcia style.css w jak-pracuje.html');
     assert.match(jakPracujeContent, /src=["'][^"']*main\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia main.js w jak-pracuje.html');
     assert.match(jakPracujeContent, /src=["'][^"']*ai-widget\.js(?:\?[^"']*)?["']/i, 'Brak podpięcia ai-widget.js w jak-pracuje.html');
+    assert.match(jakPracujeContent, /<script[^>]*data-cfasync=["']false["'][^>]*src=["'][^"']*ai-widget\.js/i, 'Tag ai-widget.js w jak-pracuje.html musi posiadać data-cfasync="false" (ochrona przed Rocket Loaderem)');
     assert.doesNotMatch(jakPracujeContent, /script\.js/i, 'Wykryto martwe odwołanie do script.js w jak-pracuje.html');
 
     const htaccess = fs.readFileSync(path.join(ROOT_DIR, '.htaccess'), 'utf8');
     assert.match(htaccess, /microphone=\(self\)/, 'Nagłówek Permissions-Policy w .htaccess musi zezwalać na microphone=(self) dla dyktowania głosowego w Asystencie AI');
+    assert.match(htaccess, /RewriteCond\s+%\{HTTP_HOST\}\s+\^www\\\./i, 'Plik .htaccess musi wymuszać kanoniczne przekierowanie 301 z www na domenę bez www (ochrona przed duplikacją w GSC)');
+    assert.match(indexContent, /"@type":\s*"FAQPage"/, 'index.html powinien zawierać dane strukturalne FAQPage Schema.org dla bogatszych wyników w Google');
+    assert.match(indexContent, /"@type":\s*"OfferCatalog"/, 'index.html powinien zawierać dane strukturalne OfferCatalog Schema.org z cennikiem usług');
   });
 
   test('Pliki HTML są czyste i nie zawierają wiszących śmieciowych komentarzy testowych', () => {
