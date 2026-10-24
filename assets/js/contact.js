@@ -7,6 +7,20 @@ const API_BASE = '/api/';
 const DRAFT_STORAGE_KEY = 'tsw_contact_draft_v1';
 let CSRF_TOKEN = '';
 
+function isStrictFiniteNumber(val) {
+    if (typeof val === 'boolean' || val === null || val === '') return false;
+    const num = Number(val);
+    return Number.isFinite(num);
+}
+
+function getMonotonicMs() {
+    if (typeof performance !== 'undefined' && typeof performance.now === 'function') {
+        const t = performance.now();
+        if (isStrictFiniteNumber(t)) return t;
+    }
+    return Date.now();
+}
+
 async function loadCsrfToken() {
     try {
         const response = await fetch(API_BASE + 'get-csrf-token.php');
@@ -82,7 +96,7 @@ function initContactForm() {
     const form = document.getElementById('contactForm');
     if (!form) return;
 
-    const formInitTime = Date.now();
+    const formInitTime = getMonotonicMs();
 
     // 1. Pobierz token CSRF
     loadCsrfToken();
@@ -138,9 +152,10 @@ function initContactForm() {
         const consentEl = form.elements['newsletter_consent'];
         data.newsletter_consent = consentEl && consentEl.checked ? '1' : '0';
 
-        // Zabezpieczenia Anty-Bot (ujednolicone z _site-template)
+        // Zabezpieczenia Anty-Bot (ujednolicone z _site-template: zegar monotoniczny)
         data.js_check = '1';
-        data.submission_seconds = ((Date.now() - formInitTime) / 1000).toFixed(2);
+        const rawElapsed = (getMonotonicMs() - formInitTime) / 1000;
+        data.submission_seconds = (isStrictFiniteNumber(rawElapsed) && rawElapsed >= 0 ? rawElapsed : 0).toFixed(2);
 
         if (CSRF_TOKEN) {
             data.csrf_token = CSRF_TOKEN;

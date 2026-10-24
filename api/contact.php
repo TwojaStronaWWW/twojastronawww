@@ -68,14 +68,18 @@ foreach ($honeypots as $hp) {
     }
 }
 
-// 2. Zabezpieczenie Anty-Bot: Pomiar czasu interakcji (minimalny czas wypełniania >= 2.0s)
-if (isset($data['submission_seconds']) && (float)$data['submission_seconds'] < 2.0) {
-    echo json_encode([
-        "status" => "success",
-        "success" => true,
-        "message" => "Dziękujemy! Twoja wiadomość została wysłana pomyślnie."
-    ]);
-    exit;
+// 2. Zabezpieczenie Anty-Bot: Pomiar czasu interakcji (minimalny czas wypełniania >= 2.0s, odrzucenie bool/NaN/Infinity)
+if (isset($data['submission_seconds'])) {
+    $rawSubSec = $data['submission_seconds'];
+    $subSecFloat = (is_numeric($rawSubSec) && !is_bool($rawSubSec)) ? (float)$rawSubSec : 0.0;
+    if (!is_finite($subSecFloat) || $subSecFloat < 2.0) {
+        echo json_encode([
+            "status" => "success",
+            "success" => true,
+            "message" => "Dziękujemy! Twoja wiadomość została wysłana pomyślnie."
+        ]);
+        exit;
+    }
 }
 
 // 3. Strict Origin / Referer check
@@ -107,10 +111,14 @@ if (!$isAllowed) {
 
 // 4. CSRF Check
 if (!csrf_check($data['csrf_token'] ?? '')) {
+    @session_write_close();
     http_response_code(403);
     echo json_encode(["status" => "error", "success" => false, "message" => "Błąd zabezpieczeń (CSRF). Odśwież stronę."]);
     exit;
 }
+
+// Wczesne zwolnienie sesji PHP przed operacjami plikowymi i cURL (osTicket / Ntfy)
+@session_write_close();
 
 // 5. Oczyszczenie i normalizacja danych wejściowych
 $name = isset($data['name']) ? htmlspecialchars(strip_tags(trim((string)$data['name'])), ENT_QUOTES, 'UTF-8') : '';
@@ -213,8 +221,16 @@ if (!empty($osTicketApiKey) && function_exists('curl_init')) {
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 8);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
+        curl_setopt($ch, CURLOPT_MAXREDIRS, 0);
+        if (defined('CURLPROTO_HTTPS') && defined('CURLPROTO_HTTP')) {
+            curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTP);
+        }
 
         $apiResponse = @curl_exec($ch);
+        if (is_string($apiResponse) && strlen($apiResponse) > 65536) {
+            $apiResponse = substr($apiResponse, 0, 65536);
+        }
         $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
@@ -295,8 +311,13 @@ if ($ntfyTopic !== '' && function_exists('curl_init')) {
         CURLOPT_HTTPHEADER     => $ntfyHeaders,
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 3,
-        CURLOPT_CONNECTTIMEOUT => 2
+        CURLOPT_CONNECTTIMEOUT => 2,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_MAXREDIRS      => 0
     ]);
+    if (defined('CURLPROTO_HTTPS')) {
+        curl_setopt($chNtfy, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+    }
     @curl_exec($chNtfy);
     curl_close($chNtfy);
 }

@@ -19,6 +19,9 @@ jobs:
     steps:
       - name: 1.1 Pobranie kodu repozytorium
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
 
       - name: 1.2 Sprawdzenie pliku wejściowego (index.html)
         run: |
@@ -27,12 +30,14 @@ jobs:
             exit 1
           fi
 
-      - name: 1.3 Ochrona przed wyciekiem danych i sekretów
+      - name: 1.3 Skaner sekretów Gitleaks i ochrona przed wyciekiem danych (ISO 27001)
         run: |
-          if git ls-files | grep -E "(\.env|config/secrets\.php|\.htpasswd|leads_.*\.csv)$"; then
+          if git ls-files | grep -E "(\.env$|config/secrets\.php|\.htpasswd|leads_.*\.csv)$"; then
             echo "❌ Wykryto plik z wrażliwymi danymi w repozytorium!"
             exit 1
           fi
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz -C /tmp gitleaks
+          /tmp/gitleaks detect --source . --config .gitleaks.toml --verbose --redact
 
       - name: 1.4 Walidacja składni PHP (jeśli występują pliki PHP)
         run: |
@@ -54,6 +59,11 @@ jobs:
       - name: 1.7 Uruchomienie testów jednostkowych i raportu pokrycia (Coverage)
         run: npm run test:coverage
 
+      - name: 1.8 Przeglądarkowy UI Smoke Test (Playwright Chromium)
+        run: |
+          npx --yes playwright@1.51.1 install --with-deps chromium
+          node tests/smoke/ui-smoke.js
+
   audit:
     name: 2. Audyt jakościowy Lighthouse CI
     needs: [test]
@@ -62,6 +72,8 @@ jobs:
     steps:
       - name: 2.1 Pobranie kodu repozytorium
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: 2.2 Konfiguracja środowiska Node.js
         uses: actions/setup-node@v4
@@ -84,12 +96,46 @@ jobs:
     steps:
       - name: 3.1 Pobranie kodu repozytorium
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
-      - name: 3.2 Oczyszczenie zbędnych plików deweloperskich przed wysłaniem na serwer
+      - name: 3.2 Pre-Deploy Snapshot (Off-Site Backup danych z serwera LH.pl)
+        continue-on-error: true
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
-          rm -rf .git .github .githooks tests scripts .lighthouserc.json .gitattributes .gitignore .editorconfig package*.json
+          sudo apt-get update -y && sudo apt-get install -y lftp
+          mkdir -p /tmp/pre-deploy-snapshot
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "${FTP_PORT:-22}" "sftp://$FTP_SERVER" << 'EOF'
+          set sftp:auto-confirm yes
+          set net:timeout 25
+          set net:max-retries 2
+          mirror --only-newer --ignore-time \
+            --exclude-glob "api/sessions/*" \
+            --exclude-glob "api/rate_limits/*" \
+            "/home/platne/serwer417204/public_html/twojastronawww.pl/api" "/tmp/pre-deploy-snapshot/api" || true
+          bye
+          EOF
+          tar -czf "/tmp/pre-deploy-snapshot-${GITHUB_SHA::7}.tar.gz" -C /tmp/pre-deploy-snapshot . || true
 
-      - name: 3.3 Wdrożenie plików przez SFTP
+      - name: 3.3 Archiwizacja migawki Pre-Deploy (7 dni retencji)
+        uses: actions/upload-artifact@v4
+        if: always()
+        continue-on-error: true
+        with:
+          name: pre-deploy-snapshot-${{ github.sha }}
+          path: /tmp/pre-deploy-snapshot-*.tar.gz
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: 3.4 Oczyszczenie zbędnych plików deweloperskich przed wysłaniem na serwer
+        run: |
+          rm -rf .git .github .gemini .githooks tests scripts docs .lighthouserc.json .gitleaks.toml .env.example eslint.config.mjs .htmlhintrc .gitattributes .gitignore .editorconfig package*.json
+
+      - name: 3.5 Wdrożenie plików przez SFTP (z ochroną sesji i leadów CSV)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
           username: ${{ secrets.FTP_USERNAME }}
@@ -99,8 +145,10 @@ jobs:
           local_path: './* ./.htaccess'
           remote_path: '/home/platne/serwer417204/public_html/twojastronawww.pl'
           sftpArgs: '-o ConnectTimeout=60'
+          args: '-o StrictHostKeyChecking=no'
+          delete: false
 
-      - name: 3.4 Czyszczenie pamięci podręcznej Cloudflare (opcjonalnie)
+      - name: 3.6 Czyszczenie pamięci podręcznej Cloudflare i ping IndexNow
         env:
           CF_ZONE: ${{ secrets.CLOUDFLARE_ZONE || secrets.CLOUDFLARE_ZONE_ID }}
           CF_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
@@ -112,3 +160,6 @@ jobs:
               -H "Content-Type: application/json" \
               --data '{"purge_everything":true}'
           fi
+          curl -s -X POST "https://api.indexnow.org/indexnow" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            --data '{"host":"twojastronawww.pl","key":"4f8b9d2e7a1c6f3b5e0d8a9c2b4f7e1a","keyLocation":"https://twojastronawww.pl/4f8b9d2e7a1c6f3b5e0d8a9c2b4f7e1a.txt","urlList":["https://twojastronawww.pl/","https://twojastronawww.pl/jak-pracuje.html"]}' || true

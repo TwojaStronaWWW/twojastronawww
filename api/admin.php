@@ -16,14 +16,23 @@ if (isset($_GET['logout'])) {
 // 2. Obsługa POST (Logowanie)
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pin = $_POST['pin'] ?? '';
-    if (hash_equals(APP_PIN, (string)$pin)) {
+    $pin = (string)($_POST['pin'] ?? '');
+    $passHash = get_env_secret('ADMIN_PASSWORD_HASH');
+    $valid = false;
+    if ($passHash !== '' && password_verify($pin, $passHash)) {
+        $valid = true;
+    } elseif (APP_PIN !== '' && $pin !== '' && hash_equals(APP_PIN, $pin)) {
+        $valid = true;
+    }
+    if ($valid) {
         session_regenerate_id(true);
         $_SESSION['auth'] = true;
         $_SESSION['auth_at'] = time();
+        @session_write_close();
         header("Location: admin.php");
         exit;
     } else {
+        @session_write_close();
         $error = "Nieprawidłowy PIN.";
         sleep(2);
     }
@@ -36,10 +45,11 @@ if (!empty($_SESSION['auth']) && $_SESSION['auth'] === true) {
         $error = "Sesja wygasła. Zaloguj się ponownie.";
     } else {
         $_SESSION['auth_at'] = time();
+        $csrf = csrf_token();
+        @session_write_close();
 
         $leads = read_leads(false);
         $newsletterCount = count(array_filter($leads, fn($l) => ($l[7] ?? 'NIE') === 'TAK'));
-        $csrf = csrf_token();
         ?>
 <!doctype html>
 <html lang="pl">

@@ -7,7 +7,20 @@ document.addEventListener('DOMContentLoaded', () => {
     initMobileNav();
     initTechStackExplorer();
     initSmoothScroll();
+    initServiceWorker();
 });
+
+function initServiceWorker() {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || !navigator.serviceWorker) return;
+    const port = typeof location !== 'undefined' ? location.port : '';
+    if (port === '5500' || port === '5501') {
+        navigator.serviceWorker.getRegistrations?.().then(regs => {
+            for (const r of regs) r.unregister();
+        }).catch(() => {});
+        return;
+    }
+    navigator.serviceWorker.register?.('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+}
 
 /**
  * Obsługa mobilnego menu nawigacji

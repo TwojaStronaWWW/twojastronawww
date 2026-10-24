@@ -50,14 +50,18 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     scanDir(ROOT_DIR);
   });
 
-  it('pliki dokumentacji i standardów AGENTS.md, GEMINI.md, README.md oraz ROADMAP.md istnieją', () => {
+  it('pliki dokumentacji i standardów AGENTS.md, GEMINI.md, README.md, ROADMAP.md, sw.js, .gitleaks.toml oraz docs/ istnieją', () => {
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'AGENTS.md')), 'Brak AGENTS.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'GEMINI.md')), 'Brak GEMINI.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'README.md')), 'Brak README.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'ROADMAP.md')), 'Brak ROADMAP.md');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'sw.js')), 'Brak sw.js');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, '.gitleaks.toml')), 'Brak .gitleaks.toml');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'docs', 'SEO_GBP_PLAYBOOK.md')), 'Brak docs/SEO_GBP_PLAYBOOK.md');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'tests', 'smoke', 'ui-smoke.js')), 'Brak tests/smoke/ui-smoke.js');
   });
 
-  it('katalog api/, api/sessions oraz api/rate_limits posiadają ochronę .htaccess (blokada CSV/JSON oraz Deny from all)', () => {
+  it('katalog api/, api/sessions oraz api/rate_limits posiadają ochronę .htaccess, bezpieczny leads-store.php, SHA-256 rate-limit oraz brak zahardkodowanego PIN-u', () => {
     const apiHtaccess = path.join(ROOT_DIR, 'api', '.htaccess');
     const sessionsHtaccess = path.join(ROOT_DIR, 'api', 'sessions', '.htaccess');
     const rateLimitsHtaccess = path.join(ROOT_DIR, 'api', 'rate_limits', '.htaccess');
@@ -68,6 +72,18 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     assert.match(fs.readFileSync(apiHtaccess, 'utf-8'), /csv/i);
     assert.match(fs.readFileSync(sessionsHtaccess, 'utf-8'), /Deny from all/i);
     assert.match(fs.readFileSync(rateLimitsHtaccess, 'utf-8'), /Deny from all/i);
+
+    const bootstrapCode = fs.readFileSync(path.join(ROOT_DIR, 'api', 'bootstrap.php'), 'utf-8');
+    assert.doesNotMatch(bootstrapCode, /9f3a7c21b8e44d0f/, 'api/bootstrap.php nie może zawierać zahardkodowanego PIN-u (ISO 27001)');
+    assert.match(bootstrapCode, /get_env_secret\(\s*'ADMIN_PIN'/i);
+
+    const leadsStoreCode = fs.readFileSync(path.join(ROOT_DIR, 'api', 'leads-store.php'), 'utf-8');
+    assert.match(leadsStoreCode, /function\s+sanitize_csv_cell/i);
+    assert.match(leadsStoreCode, /LOCK_SH/i);
+    assert.match(leadsStoreCode, /fstat\s*\(\s*\$fp\s*\)/i);
+
+    const rateLimitCode = fs.readFileSync(path.join(ROOT_DIR, 'api', 'rate-limit.php'), 'utf-8');
+    assert.match(rateLimitCode, /hash\(\s*'sha256'/i);
   });
 
   it('plik .gitignore chroni sesje PHP, logi i dane CSV przed commitem do gita', () => {
