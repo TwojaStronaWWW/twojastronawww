@@ -1,0 +1,7 @@
+# Polityka Zgłaszania Podatności (RFC 9116 / ISO/IEC 27001) — TwojaStronaWWW.pl
+# [REF-06] Standard: https://securitytxt.org/ (RFC 9116)
+
+Contact: mailto:kontakt@twojastronawww.pl
+Expires: 2027-12-31T23:59:00.000Z
+Preferred-Languages: pl, en
+Canonical: https://twojastronawww.pl/.well-known/security.txt
