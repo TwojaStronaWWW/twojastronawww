@@ -16,8 +16,12 @@ regex = '''(?i)(admin_secret|admin_pass)\s*[:=]\s*['"][^'"$]{8,}['"]'''
 tags = ["password", "admin"]
 
 [allowlist]
-description = "Allowlist for template examples and tests"
+description = "Allowlist for template examples, tests and legacy rotated commits"
 paths = [
   '''^\.env\.example$''',
   '''^tests/.*''',
+]
+commits = [
+  "67f812bfb621232c5ace84dc9e6bfb435aed8300",
+  "9c6428971646315e1d477f136bb6fa997266223f",
 ]

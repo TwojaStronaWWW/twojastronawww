@@ -2,7 +2,7 @@
  * Service Worker (PWA Offline Support — Hybrid Strategy) — TwojaStronaWWW.pl
  */
 
-const CACHE_NAME = 'tsw-pwa-v2';
+const CACHE_NAME = 'tsw-pwa-v3';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -13,7 +13,7 @@ const PRECACHE_URLS = [
   '/assets/js/ai-widget.js',
   '/site.webmanifest',
   '/favicon.ico',
-  '/favicon.svg'
+  '/assets/img/favicon.svg'
 ];
 
 self.addEventListener('install', (event) => {

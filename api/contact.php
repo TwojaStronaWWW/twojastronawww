@@ -39,11 +39,6 @@ function get_tsw_env(string $key, string $default = ''): string {
     return $default;
 }
 
-// Wczesne zwolnienie sesji PHP (jeśli aktywna), aby nie blokować równoległych żądań podczas cURL i zapisu plikowego
-if (session_status() === PHP_SESSION_ACTIVE) {
-    @session_write_close();
-}
-
 // 0a. [REF-05] Zabezpieczenie OWASP Fetch Metadata (Sec-Fetch-Site) przed żądaniami Cross-Site
 if (isset($_SERVER['HTTP_SEC_FETCH_SITE']) && strtolower(trim((string)$_SERVER['HTTP_SEC_FETCH_SITE'])) === 'cross-site') {
     http_response_code(403);
@@ -108,15 +103,13 @@ if (!$origin && !$referer) {
     exit;
 }
 
-$allowedDomains = ['twojastronawww.pl', 'localhost', '127.0.0.1'];
+$allowedDomains = ['twojastronawww.pl', 'www.twojastronawww.pl', 'localhost', '127.0.0.1'];
 $isAllowed = false;
 
 $sourceUrl = $origin ?: $referer;
-foreach ($allowedDomains as $domain) {
-    if (strpos($sourceUrl, $domain) !== false) {
-        $isAllowed = true;
-        break;
-    }
+$parsedHost = strtolower((string)parse_url($sourceUrl, PHP_URL_HOST));
+if ($parsedHost !== '' && in_array($parsedHost, $allowedDomains, true)) {
+    $isAllowed = true;
 }
 
 if (!$isAllowed) {
@@ -131,6 +124,10 @@ if (!csrf_check($data['csrf_token'] ?? '')) {
     http_response_code(403);
     echo json_encode(["status" => "error", "success" => false, "message" => "Błąd zabezpieczeń (CSRF). Odśwież stronę."]);
     exit;
+}
+
+if (session_status() === PHP_SESSION_ACTIVE) {
+    @session_write_close();
 }
 
 // Wczesne zwolnienie sesji PHP przed operacjami plikowymi i cURL (osTicket / Ntfy)

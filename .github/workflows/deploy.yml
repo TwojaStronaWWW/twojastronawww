@@ -133,7 +133,8 @@ jobs:
 
       - name: 3.4 Oczyszczenie zbędnych plików deweloperskich przed wysłaniem na serwer
         run: |
-          rm -rf .git .github .gemini .githooks tests scripts docs .lighthouserc.json .gitleaks.toml .env.example eslint.config.mjs .htmlhintrc .gitattributes .gitignore .editorconfig package*.json *.bak
+          rm -rf .git .github .gemini .githooks tests scripts docs node_modules smoke-diagnostics .lighthouserc.json .gitleaks.toml .env.example eslint.config.mjs .htmlhintrc .gitattributes .gitignore .editorconfig package*.json *.bak *.md
+          rm -f api/leads_*.csv api/rate_limits/*.json api/sessions/sess_*
 
       - name: 3.5 Wdrożenie plików przez SFTP (z ochroną sesji i leadów CSV)
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4

@@ -10,6 +10,9 @@ ini_set('session.save_path', $sessionDir);
 ini_set('session.gc_probability', '1');
 ini_set('session.gc_divisor', '100');
 ini_set('session.gc_maxlifetime', '3600');
+ini_set('session.cookie_httponly', '1');
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.use_strict_mode', '1');
 
 @session_start();
 
