@@ -61,7 +61,8 @@ jobs:
 
       - name: 1.8 Przeglądarkowy UI Smoke Test (Playwright Chromium)
         run: |
-          npx --yes playwright@1.51.1 install --with-deps chromium
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
           node tests/smoke/ui-smoke.js
 
   audit:
