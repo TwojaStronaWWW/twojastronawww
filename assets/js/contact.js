@@ -24,12 +24,13 @@ function getMonotonicMs() {
 async function loadCsrfToken() {
     try {
         const response = await fetch(API_BASE + 'get-csrf-token.php');
+        if (!response || !response.ok) return;
         const data = await response.json();
         if (data && data.token) {
             CSRF_TOKEN = data.token;
         }
-    } catch (e) {
-        console.error('Error loading CSRF token:', e);
+    } catch (_) {
+        // W statycznym serwerze deweloperskim (bez silnika PHP) endpoint CSRF jest pomijany
     }
 }
 
