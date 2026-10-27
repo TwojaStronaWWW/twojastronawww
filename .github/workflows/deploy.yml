@@ -144,11 +144,26 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           server: ${{ secrets.FTP_SERVER }}
           port: ${{ secrets.FTP_PORT }}
-          local_path: './* ./.htaccess ./.well-known'
+          local_path: './*'
           remote_path: '/home/platne/serwer417204/public_html/twojastronawww.pl'
           sftpArgs: '-o ConnectTimeout=60'
           args: '-o StrictHostKeyChecking=no'
-          delete: false
+
+      - name: 3.5b Wdrożenie plików ukrytych (.htaccess oraz .well-known/security.txt)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_PORT: ${{ secrets.FTP_PORT }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" -p "${FTP_PORT:-22}" "sftp://$FTP_SERVER" << 'EOF'
+          set sftp:auto-confirm yes
+          set net:timeout 25
+          put -O "/home/platne/serwer417204/public_html/twojastronawww.pl" .htaccess
+          mkdir -p "/home/platne/serwer417204/public_html/twojastronawww.pl/.well-known"
+          put -O "/home/platne/serwer417204/public_html/twojastronawww.pl/.well-known" .well-known/security.txt
+          bye
+          EOF
 
       - name: 3.6 Czyszczenie pamięci podręcznej Cloudflare i ping IndexNow
         env:
