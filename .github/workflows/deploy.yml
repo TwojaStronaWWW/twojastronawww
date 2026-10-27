@@ -137,7 +137,7 @@ jobs:
           rm -f api/leads_*.csv api/rate_limits/*.json api/sessions/sess_*
 
       - name: 3.5 Wdrożenie plików przez SFTP (z ochroną sesji i leadów CSV)
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
