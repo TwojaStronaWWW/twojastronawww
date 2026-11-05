@@ -1,36 +1,55 @@
+/* ==========================================================================
+   TWOJASTRONAWWW.PL — MODULAR DESIGN SYSTEM (STANDARD-TWELVE EMERALD #00E599)
+   ==========================================================================
+   Mapa architektury CSS (moduły źródłowe w assets/css/components/):
+   ├── 01-tokens-base.css              (:root, reset, typografia, kontenery, .btn)
+   ├── 02-navigation-rail.css          (header, .nav-inner, lewy panel 250px, mobile menu)
+   ├── 03-hero-xray.css                (.hero, .hero-console-deck, .keyframe-stage X-Ray, .hero-metrics)
+   ├── 04-benefits-architecture.css    (.features, .section-header-split, #benefits, .subsystem-matrix-2x2)
+   ├── 05-benchmark-race.css           (#porownanie, .timeline-stage, .split-curtain-arena, .comparison-matrix-table)
+   ├── 06-portfolio-telemetry.css      (#portfolio, .telemetry-grid-2x2, #autor, .author-open-grid)
+   ├── 07-pricing-configurator.css     (#pricing, .tactile-configurator, .config-summary-panel, #stack)
+   └── 08-contact-footer-responsive.css (#contact, .contact-form, jak-pracuje.html, footer, @media)
+   ========================================================================== */
+
+/* ==========================================================================
+   MODUŁ 01: DESIGN TOKENS (:root), RESET, TYPOGRAFIA BAZOWA, PRZYCISKI (.btn)
+   Paleta: Standard-Twelve Emerald (#00E599 / #090A0C)
+   ========================================================================== */
+
 :root {
     color-scheme: dark light;
 
-    /* ============================= */
-    /* DIETER RAMS / BRAUN & TEENAGE ENGINEERING */
-    /* "Less, but better" — Pure Industrial Design */
-    /* ============================= */
+    --bg-color: #090A0C;
+    --surface-1: #0F1115;
+    --surface-2: #14171D;
+    --surface-3: #1A1E26;
+    --surface-recessed: #060709;
 
-    --bg-color: #121316;
-    --surface-1: #181A1F;
-    --surface-2: #1E2026;
-    --surface-3: #252830;
-    --surface-recessed: #0D0E11;
+    --text-color: #F3F4F6;
+    --text-muted: #8E95A2;
+    --text-dim: #5E6673;
 
-    --text-color: #ECEEEF;
-    --text-muted: #9CA3AF;
-    --text-dim: #6B7280;
-
-    --signal-orange: #FF4F00;
-    --signal-orange-hover: #FF661A;
-    --signal-orange-dim: rgba(255, 79, 0, 0.12);
-    --signal-orange-border: rgba(255, 79, 0, 0.45);
-    --status-ok: #10B981;
+    --signal-orange: #00E599;
+    --signal-orange-hover: #00C482;
+    --signal-orange-dim: rgba(0, 229, 153, 0.12);
+    --signal-orange-border: rgba(0, 229, 153, 0.45);
+    --status-ok: #00E599;
     --status-danger: #EF4444;
 
-    --primary-color: #FF4F00;
-    --primary-dark: #E04400;
-    --accent-color: #FF4F00;
-    --accent-cyan: #ECEEEF;
-    --accent-mint: #FF4F00;
-    --accent-emerald: #10B981;
+    --primary-color: #00E599;
+    --primary-dark: #00C482;
+    --accent-color: #00E599;
+    --accent-cyan: #F3F4F6;
+    --accent-mint: #00E599;
+    --accent-emerald: #00C482;
 
-    --glass-bg: #181A1F;
+    --tsw-ai-primary: #00E599;
+    --tsw-ai-accent: #00C482;
+    --tsw-ai-bg: #0F1115;
+    --tsw-ai-text: #F3F4F6;
+
+    --glass-bg: #0F1115;
     --glass-border: rgba(255, 255, 255, 0.11);
     --border-strong: rgba(255, 255, 255, 0.18);
     --bevel-top: inset 0 1px 0 rgba(255, 255, 255, 0.14);
@@ -147,7 +166,7 @@ ul {
 }
 
 .bg-glass-darker {
-    background-color: rgba(13, 14, 17, 0.72);
+    background-color: rgba(6, 7, 9, 0.78);
     border-top: 1px solid var(--glass-border);
     border-bottom: 1px solid var(--glass-border);
 }
@@ -161,9 +180,77 @@ ul {
     font-size: 1.15rem;
 }
 
-/* ======================================================== */
-/* PERSISTENT LEFT-RAIL INSTRUMENT SIDEBAR (DESKTOP 250px)  */
-/* ======================================================== */
+/* ============================= */
+/* TACTILE HARDWARE BUTTONS      */
+/* ============================= */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 13px 24px;
+    font-family: var(--font-main);
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: transform 0.12s var(--ease-tech), background-color 0.15s var(--ease-tech), border-color 0.15s var(--ease-tech), box-shadow 0.12s var(--ease-tech);
+    text-align: center;
+    max-width: 100%;
+    position: relative;
+}
+
+.btn-sm {
+    font-size: 0.8rem;
+    padding: 8px 15px;
+    margin-top: 0;
+}
+
+.btn-primary {
+    background-color: var(--signal-orange);
+    color: #090A0C;
+    border: 1px solid #34D399;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 0 #008F5D;
+    font-weight: 700;
+}
+
+.btn-primary:hover {
+    background-color: var(--signal-orange-hover);
+    color: #060709;
+    transform: translateY(-1px);
+}
+
+.btn-primary:active {
+    transform: translateY(1px);
+}
+
+.btn-secondary {
+    background-color: var(--surface-2);
+    color: var(--text-color);
+    border: 1px solid var(--border-strong);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 0 #060709;
+}
+
+.btn-secondary:hover {
+    background-color: var(--surface-3);
+    border-color: var(--signal-orange);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+    transform: translateY(1px);
+}
+
+.btn-full-width {
+    width: 100%;
+}
+
+/* ==========================================================================
+   MODUŁ 02: NAWIGACJA, PERSISTENT LEFT-RAIL SIDEBAR (250px) I MENU MOBILNE
+   ========================================================================== */
 
 header {
     height: var(--header-height);
@@ -176,7 +263,7 @@ header {
     right: 0;
     width: 100%;
     max-width: 100%;
-    background-color: rgba(14, 15, 18, 0.96);
+    background-color: rgba(9, 10, 12, 0.96);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     z-index: 1000;
@@ -245,7 +332,7 @@ header {
     height: 9px;
     background-color: var(--signal-orange);
     border-radius: 2px;
-    box-shadow: 0 0 8px rgba(255, 79, 0, 0.55);
+    box-shadow: 0 0 8px rgba(0, 229, 153, 0.55);
 }
 
 .rail-idx {
@@ -309,7 +396,7 @@ header {
         height: 100vh;
         border-right: 1px solid rgba(255, 255, 255, 0.14);
         border-bottom: none;
-        background-color: #0E0F12;
+        background-color: #090A0C;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -445,77 +532,9 @@ header {
     flex-shrink: 0;
 }
 
-/* ============================= */
-/* TACTILE HARDWARE BUTTONS      */
-/* ============================= */
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 13px 24px;
-    font-family: var(--font-main);
-    font-size: 0.92rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: transform 0.12s var(--ease-tech), background-color 0.15s var(--ease-tech), border-color 0.15s var(--ease-tech), box-shadow 0.12s var(--ease-tech);
-    text-align: center;
-    max-width: 100%;
-    position: relative;
-}
-
-.btn-sm {
-    font-size: 0.8rem;
-    padding: 8px 15px;
-    margin-top: 0;
-}
-
-.btn-primary {
-    background-color: var(--signal-orange);
-    color: #0B0C0E;
-    border: 1px solid #FF7A3D;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 2px 0 #8F2C00;
-    font-weight: 700;
-}
-
-.btn-primary:hover {
-    background-color: var(--signal-orange-hover);
-    color: #090A0C;
-    transform: translateY(-1px);
-}
-
-.btn-primary:active {
-    transform: translateY(1px);
-}
-
-.btn-secondary {
-    background-color: var(--surface-2);
-    color: var(--text-color);
-    border: 1px solid var(--border-strong);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 0 #090A0C;
-}
-
-.btn-secondary:hover {
-    background-color: var(--surface-3);
-    border-color: var(--signal-orange);
-    color: #FFFFFF;
-    transform: translateY(-1px);
-}
-
-.btn-secondary:active {
-    transform: translateY(1px);
-}
-
-.btn-full-width {
-    width: 100%;
-}
-
-/* ======================================================== */
-/* HERO: ASYMMETRIC 2-COLUMN HARDWARE CONSOLE DECK          */
-/* ======================================================== */
+/* ==========================================================================
+   MODUŁ 03: SEKCJA HERO, INTERAKTYWNY SUWAK X-RAY (KEYFRAME STAGE) I METRYKI
+   ========================================================================== */
 
 .hero {
     min-height: auto;
@@ -583,7 +602,6 @@ header {
     margin-bottom: 0;
 }
 
-/* Clean, unboxed calm label above H1 */
 .hero-badge {
     display: block;
     font-family: var(--font-mono);
@@ -631,7 +649,6 @@ header {
     opacity: 1;
 }
 
-/* Unboxed Panoramic Hardware Visual Stage blended into #121316 */
 .hero-panorama-stage {
     width: 100%;
     background: transparent;
@@ -682,7 +699,7 @@ header {
 .hardware-view-btn.is-active {
     background-color: var(--signal-orange);
     border-color: var(--signal-orange);
-    color: #0B0C0E;
+    color: #090A0C;
 }
 
 /* Dual-Keyframe Interactive X-Ray Split Curtain Stage (Hero) */
@@ -812,7 +829,6 @@ header {
     }
 }
 
-/* Open 4-Column Readout Bar anchored only by a single top line */
 .hero-metrics {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -881,9 +897,9 @@ header {
     }
 }
 
-/* ============================= */
-/* SECTIONS & EDITORIAL HEADERS  */
-/* ============================= */
+/* ==========================================================================
+   MODUŁ 04: NAGŁÓWKI SEKCJI I ARCHITEKTURA KORZYŚCI (#benefits)
+   ========================================================================== */
 
 .features {
     padding: 44px 0;
@@ -951,10 +967,6 @@ header {
     font-size: 1rem;
     line-height: 1.6;
 }
-
-/* ======================================================== */
-/* OPEN-FRAME HARDWARE ARCHITECTURE (#benefits + Image 2)   */
-/* ======================================================== */
 
 .hardware-architecture-workbench {
     display: flex;
@@ -1060,9 +1072,9 @@ header {
     color: var(--text-muted);
 }
 
-/* ======================================================== */
-/* UNBOXED COMPARISON MATRIX & LOAD SLIDER (#porownanie)    */
-/* ======================================================== */
+/* ==========================================================================
+   MODUŁ 05: INTERAKTYWNY WYŚCIG BENCHMARKU I TABELA PORÓWNANIA (#porownanie)
+   ========================================================================== */
 
 .comparison-stage {
     background: transparent;
@@ -1127,7 +1139,7 @@ header {
 .bench-mode-btn.is-active {
     background-color: #00E599;
     border-color: #00E599;
-    color: #0B0C0E;
+    color: #090A0C;
 }
 
 /* Interactive Loading Race + Progress Bars (WS1) + Giant Growing Readout (WS3) */
@@ -1198,7 +1210,7 @@ header {
 .bench-scenario.is-active {
     background-color: #00E599;
     border-color: #00E599;
-    color: #0B0C0E;
+    color: #090A0C;
 }
 
 .timeline-slider-wrap {
@@ -1253,7 +1265,7 @@ header {
 .curtain-pane--legacy {
     border-left: 1px solid var(--glass-border);
     border-top: 2px solid var(--status-danger);
-    background: rgba(13, 14, 17, 0.35);
+    background: rgba(6, 7, 9, 0.35);
 }
 
 .lane-meta {
@@ -1320,7 +1332,7 @@ header {
 }
 
 .bench-bar-fill--wp {
-    background: linear-gradient(90deg, var(--signal-orange), var(--status-danger));
+    background: linear-gradient(90deg, #DC2626, var(--status-danger));
     width: 12%;
 }
 
@@ -1528,9 +1540,9 @@ header {
     width: 78%;
 }
 
-/* ======================================================== */
-/* 2x2 INDUSTRIAL TELEMETRY GRID (#portfolio)               */
-/* ======================================================== */
+/* ==========================================================================
+   MODUŁ 06: PORTFOLIO TELEMETRYCZNE (#portfolio) I MANIFEST AUTORA (#autor)
+   ========================================================================== */
 
 .telemetry-channel-bar {
     display: grid;
@@ -1565,7 +1577,7 @@ header {
 .channel-select-btn.is-active {
     background-color: var(--signal-orange);
     border-color: var(--signal-orange);
-    color: #0B0C0E;
+    color: #090A0C;
 }
 
 .open-portfolio-ledger.telemetry-grid-2x2 {
@@ -1718,9 +1730,9 @@ header {
     line-height: 1.5;
 }
 
-/* ======================================================== */
-/* TACTILE HORIZONTAL CONFIGURATOR (#pricing)               */
-/* ======================================================== */
+/* ==========================================================================
+   MODUŁ 07: KONFIGURATOR PAKIETÓW (#pricing) I MACIERZ TECHNOLOGII (#stack)
+   ========================================================================== */
 
 .tactile-configurator {
     display: grid;
@@ -1992,9 +2004,115 @@ header {
     text-align: center;
 }
 
-/* ======================================================== */
-/* OPEN TWO-COLUMN CONTACT SECTION (#contact)               */
-/* ======================================================== */
+/* ============================= */
+/* INTERAKTYWNA SEKCJA TECH      */
+/* ============================= */
+
+.tech-text {
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    max-width: 780px;
+    line-height: 1.6;
+}
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    gap: 10px;
+    margin: 20px 0 16px;
+}
+
+.tech-item {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tech-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--signal-orange);
+}
+
+.tech-item:hover,
+.tech-item.is-active {
+    background-color: var(--surface-2);
+    border-color: var(--signal-orange);
+    color: var(--text-color);
+}
+
+.tech-detail-card {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 24px 22px;
+    margin-top: 14px;
+}
+
+.tech-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 12px;
+}
+
+.tech-card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.tech-card-role {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--signal-orange);
+}
+
+.tech-card-list {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tech-card-list li {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    position: relative;
+    padding-left: 18px;
+}
+
+.tech-card-list li::before {
+    content: '+';
+    font-family: var(--font-mono);
+    position: absolute;
+    left: 0;
+    color: var(--signal-orange);
+}
+
+.tech-card-benefit {
+    padding: 12px 16px;
+    background-color: var(--surface-recessed);
+    border-left: 2px solid var(--signal-orange);
+    font-size: 0.88rem;
+}
+
+/* ==========================================================================
+   MODUŁ 08: FORMULARZ KONTAKTOWY (#contact), PODSTRONA JAK-PRACUJE, STOPKA
+             ORAZ REGUŁY RESPONSYWNE I PREFERS-REDUCED-MOTION
+   ========================================================================== */
 
 .contact-open-layout {
     display: grid;
@@ -2092,7 +2210,7 @@ header {
 .contact-form textarea:focus {
     outline: none;
     border-color: var(--signal-orange);
-    box-shadow: 0 0 0 2px rgba(255, 79, 0, 0.2);
+    box-shadow: 0 0 0 2px rgba(0, 229, 153, 0.2);
 }
 
 .contact-form .form-consent-label,
@@ -2150,8 +2268,8 @@ header {
 
 .form-feedback-success {
     color: var(--status-ok);
-    background-color: rgba(16, 185, 129, 0.1);
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    background-color: rgba(0, 229, 153, 0.1);
+    border: 1px solid rgba(0, 229, 153, 0.3);
 }
 
 .rodo-note {
@@ -2162,7 +2280,7 @@ header {
 }
 
 /* ================================================= */
-/* JAK PRACUJĘ – PROCESS, STATS, STACK, SECURITY     */
+/* JAK PRACUJĘ – PROCESS, STATS, SECURITY, FAQ       */
 /* ================================================= */
 
 .hero-mini {
@@ -2379,107 +2497,6 @@ header {
     font-weight: 700;
 }
 
-.tech-text {
-    margin-bottom: 20px;
-    color: var(--text-muted);
-    max-width: 780px;
-    line-height: 1.6;
-}
-
-.tech-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
-    gap: 10px;
-    margin: 20px 0 16px;
-}
-
-.tech-item {
-    background-color: var(--surface-1);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 11px 14px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--text-muted);
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.tech-icon {
-    width: 16px;
-    height: 16px;
-    flex-shrink: 0;
-    color: var(--signal-orange);
-}
-
-.tech-item:hover,
-.tech-item.is-active {
-    background-color: var(--surface-2);
-    border-color: var(--signal-orange);
-    color: var(--text-color);
-}
-
-.tech-detail-card {
-    background-color: var(--surface-1);
-    border: 1px solid var(--border-strong);
-    border-radius: var(--radius-sm);
-    padding: 24px 22px;
-    margin-top: 14px;
-}
-
-.tech-card-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 14px;
-    border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 12px;
-}
-
-.tech-card-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-}
-
-.tech-card-role {
-    font-family: var(--font-mono);
-    font-size: 0.74rem;
-    color: var(--signal-orange);
-}
-
-.tech-card-list {
-    margin-bottom: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tech-card-list li {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    position: relative;
-    padding-left: 18px;
-}
-
-.tech-card-list li::before {
-    content: '+';
-    font-family: var(--font-mono);
-    position: absolute;
-    left: 0;
-    color: var(--signal-orange);
-}
-
-.tech-card-benefit {
-    padding: 12px 16px;
-    background-color: var(--surface-recessed);
-    border-left: 2px solid var(--signal-orange);
-    font-size: 0.88rem;
-}
-
 .security-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -2613,6 +2630,10 @@ footer {
 .footer-links {
     margin: 0;
 }
+
+/* ======================================================== */
+/* MOBILE ULTRA-COMPACT OVERRIDES & PREFERS-REDUCED-MOTION  */
+/* ======================================================== */
 
 @media (max-width: 767px) {
     .hero {

@@ -1,0 +1,189 @@
+/* ==========================================================================
+   MODUŁ 06: PORTFOLIO TELEMETRYCZNE (#portfolio) I MANIFEST AUTORA (#autor)
+   ========================================================================== */
+
+.telemetry-channel-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+@media (max-width: 860px) {
+    .telemetry-channel-bar {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+}
+
+.channel-select-btn {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-align: left;
+    transition: all var(--transition-speed) var(--ease-tech);
+}
+
+.channel-select-btn:hover,
+.channel-select-btn.is-active {
+    background-color: var(--signal-orange);
+    border-color: var(--signal-orange);
+    color: #090A0C;
+}
+
+.open-portfolio-ledger.telemetry-grid-2x2 {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+@media (max-width: 860px) {
+    .open-portfolio-ledger.telemetry-grid-2x2 {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+.ledger-entry.telemetry-channel-cell {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 18px 20px;
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition-speed) var(--ease-tech), box-shadow var(--transition-speed) var(--ease-tech);
+}
+
+.ledger-entry.telemetry-channel-cell.is-active {
+    border-color: var(--signal-orange);
+    box-shadow: inset 3px 0 0 var(--signal-orange);
+}
+
+.telemetry-cell-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.channel-tag {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--signal-orange);
+}
+
+.location-tag {
+    font-family: var(--font-mono);
+    width: fit-content;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background-color: var(--surface-2);
+    border: 1px solid var(--glass-border);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.ledger-outcome {
+    border-left: 2px solid var(--signal-orange);
+    padding-left: 12px;
+}
+
+.outcome-figure {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1.1;
+}
+
+.outcome-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.ledger-body h3 {
+    font-size: 1.08rem;
+    margin-bottom: 4px;
+    color: var(--text-color);
+}
+
+.ledger-body p {
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    line-height: 1.48;
+}
+
+/* ======================================================== */
+/* OPEN AUTHOR MANIFESTO (#autor)                           */
+/* ======================================================== */
+
+.author-open-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 48px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .author-open-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+.author-title {
+    font-size: clamp(1.6rem, 3.6vw, 2.3rem);
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -0.025em;
+}
+
+.author-lead {
+    font-size: 1.05rem;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 14px;
+}
+
+.author-manifesto {
+    font-size: 0.94rem;
+    color: var(--text-muted);
+    line-height: 1.65;
+}
+
+.author-spec-col {
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--border-strong);
+}
+
+.spec-item {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.spec-item strong {
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.spec-item p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}

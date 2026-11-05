@@ -1,0 +1,378 @@
+/* ==========================================================================
+   MODUŁ 07: KONFIGURATOR PAKIETÓW (#pricing) I MACIERZ TECHNOLOGII (#stack)
+   ========================================================================== */
+
+.tactile-configurator {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 28px;
+    align-items: start;
+}
+
+@media (max-width: 980px) {
+    .tactile-configurator {
+        grid-template-columns: 1fr;
+    }
+}
+
+.config-step-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.config-tiers-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.config-tier-row {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all var(--transition-speed) var(--ease-tech);
+}
+
+.config-tier-row:hover {
+    background-color: var(--surface-2);
+}
+
+.config-tier-row.is-active {
+    background-color: var(--surface-2);
+    border-color: var(--signal-orange);
+    box-shadow: inset 3px 0 0 var(--signal-orange);
+}
+
+.tier-row-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.tier-radio-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tier-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--text-muted);
+    display: inline-block;
+}
+
+.config-tier-row.is-active .tier-indicator {
+    border-color: var(--signal-orange);
+    background-color: var(--signal-orange);
+}
+
+.tier-radio-title h3 {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.tier-recommended-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    background-color: var(--signal-orange-dim);
+    color: var(--signal-orange);
+    border: 1px solid var(--signal-orange-border);
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
+}
+
+.tier-price-tag {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.tier-price-tag span {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.tier-row-desc {
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    line-height: 1.45;
+    padding-left: 22px;
+}
+
+.module-switches {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+}
+
+.module-switch-btn {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    font-family: var(--font-main);
+    transition: all var(--transition-speed) var(--ease-tech);
+    text-align: left;
+}
+
+.module-switch-btn:hover {
+    border-color: var(--signal-orange);
+    background-color: var(--surface-2);
+}
+
+.module-switch-btn.is-selected {
+    background-color: var(--signal-orange-dim);
+    border-color: var(--signal-orange);
+}
+
+.switch-indicator {
+    width: 11px;
+    height: 11px;
+    border-radius: 2px;
+    background-color: var(--surface-recessed);
+    border: 1px solid var(--border-strong);
+    flex-shrink: 0;
+}
+
+.module-switch-btn.is-selected .switch-indicator {
+    background-color: var(--signal-orange);
+    border-color: var(--signal-orange);
+}
+
+.switch-code {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-color);
+    flex: 1;
+}
+
+.switch-price {
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.config-summary-panel {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-top: 3px solid var(--signal-orange);
+    border-radius: var(--radius-md);
+    padding: 26px 24px;
+}
+
+.summary-kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.summary-panel-top h3 {
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+    line-height: 1.25;
+}
+
+.summary-price-readout {
+    padding: 12px 0;
+    border-top: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.price {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 2.15rem;
+    font-weight: 700;
+    color: var(--text-color);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+}
+
+.price span {
+    font-size: 0.82rem;
+    font-weight: 400;
+    color: var(--text-muted);
+}
+
+.summary-time-badge {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+.summary-subhead {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 10px;
+}
+
+.pricing-features {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 14px;
+}
+
+.pricing-features li {
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    display: flex;
+    align-items: flex-start;
+    line-height: 1.45;
+}
+
+.pricing-features li::before {
+    content: '+';
+    font-family: var(--font-mono);
+    color: var(--signal-orange);
+    margin-right: 8px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.summary-addons-status {
+    padding: 8px 12px;
+    background-color: var(--surface-recessed);
+    border-left: 2px solid var(--signal-orange);
+    font-size: 0.82rem;
+    color: var(--text-color);
+    margin-bottom: 18px;
+}
+
+.summary-micro-note {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* ============================= */
+/* INTERAKTYWNA SEKCJA TECH      */
+/* ============================= */
+
+.tech-text {
+    margin-bottom: 20px;
+    color: var(--text-muted);
+    max-width: 780px;
+    line-height: 1.6;
+}
+
+.tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    gap: 10px;
+    margin: 20px 0 16px;
+}
+
+.tech-item {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.tech-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--signal-orange);
+}
+
+.tech-item:hover,
+.tech-item.is-active {
+    background-color: var(--surface-2);
+    border-color: var(--signal-orange);
+    color: var(--text-color);
+}
+
+.tech-detail-card {
+    background-color: var(--surface-1);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    padding: 24px 22px;
+    margin-top: 14px;
+}
+
+.tech-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 12px;
+}
+
+.tech-card-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.tech-card-role {
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    color: var(--signal-orange);
+}
+
+.tech-card-list {
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tech-card-list li {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    position: relative;
+    padding-left: 18px;
+}
+
+.tech-card-list li::before {
+    content: '+';
+    font-family: var(--font-mono);
+    position: absolute;
+    left: 0;
+    color: var(--signal-orange);
+}
+
+.tech-card-benefit {
+    padding: 12px 16px;
+    background-color: var(--surface-recessed);
+    border-left: 2px solid var(--signal-orange);
+    font-size: 0.88rem;
+}

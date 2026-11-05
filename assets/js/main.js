@@ -1,6 +1,39 @@
 /**
  * TwojaStronaWWW.pl – Główny skrypt interfejsu użytkownika (Vanilla JS)
  * Zero zewnętrznych bibliotek, wysoka wydajność, pełna dostępność (a11y).
+ *
+ * ============================================================================
+ * MAPA ARCHITEKTURY MODUŁÓW (assets/js/modules/*)
+ * ============================================================================
+ * Kod interfejsu jest podzielony na 5 czystych modułów tematycznych ES6:
+ *
+ * 1. assets/js/modules/navigation.js
+ *    - initMobileNav()       — obsługa mobilnego menu nawigacji i klawisza Escape
+ *    - initSmoothScroll()    — płynne przewijanie do sekcji kotwicowych
+ *    - initServiceWorker()   — rejestracja PWA Service Workera (/sw.js)
+ *
+ * 2. assets/js/modules/hero-xray.js
+ *    - initScrollScrubbedMotion() / initScrollMotion() — suwak #xraySlider i kurtyna
+ *      X-Ray przesuwająca się w lewo i w prawo podczas przewijania strony oraz przeciągania
+ *    - initHardwareViewSwitcher() — przełącznik widoku komponentów (First/Second Frame)
+ *
+ * 3. assets/js/modules/benchmark-race.js
+ *    - BENCHMARK_PROFILES    — profile obciążenia sieciowego ('4g', '3g', 'spike')
+ *    - initHardwareBenchmark() / initLiveBenchmark() — wyścig ładowania na żywo,
+ *      paski postępu oraz animacja rosnących liczb po kliknięciu w zasięgi 4g/3g/spike
+ *
+ * 4. assets/js/modules/pricing-configurator.js
+ *    - initModuleSelector()  — interaktywny konfigurator wyceny (#pricing -> #contactForm)
+ *    - initTelemetryChannelSelector() — przełącznik kanałów pomiarowych w #portfolio
+ *
+ * 5. assets/js/modules/tech-explorer.js
+ *    - TECH_DATABASE         — baza wiedzy o technologiach i korzyściach (Anti-Jargon)
+ *    - initTechStackExplorer() — interaktywny eksplorator stosu technologicznego
+ *
+ * Uwaga: Plik main.js utrzymuje zintegrowany bundle wykonawczy dla pełnej kompatybilności
+ * wstecznej z klasycznym tagiem <script data-cfasync="false" src="assets/js/main.js?v=20"></script>
+ * (bez narzutu kaskadowych żądań HTTP) oraz z testami jednostkowymi (tests/unit/main.test.js).
+ * ============================================================================
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,6 +47,10 @@ document.addEventListener('DOMContentLoaded', () => {
     initSmoothScroll();
     initServiceWorker();
 });
+
+/* ==========================================================================
+   MODUŁ 1: Nawigacja i Service Worker (assets/js/modules/navigation.js)
+   ========================================================================== */
 
 function initServiceWorker() {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator) || !navigator.serviceWorker) return;
@@ -76,6 +113,10 @@ function initMobileNav() {
         }
     });
 }
+
+/* ==========================================================================
+   MODUŁ 5: Eksplorator technologii (assets/js/modules/tech-explorer.js)
+   ========================================================================== */
 
 /**
  * Baza wiedzy o stosowanych technologiach i ich korzyściach dla klienta
@@ -192,6 +233,10 @@ function initTechStackExplorer() {
     if (firstKey) renderTech(firstKey);
 }
 
+/* ==========================================================================
+   MODUŁ 2: Kurtyna X-Ray & Scroll-Scrubbed Motion (assets/js/modules/hero-xray.js)
+   ========================================================================== */
+
 /**
  * Dual-Keyframe X-Ray Split Curtain & Scroll-Scrubbed Motion w Hero
  * Kurtyna i suwak #xraySlider reagują na ręczne przesuwanie oraz płynnie
@@ -282,10 +327,14 @@ function initScrollScrubbedMotion() {
 
 const initScrollMotion = initScrollScrubbedMotion;
 
+/* ==========================================================================
+   MODUŁ 3: Wyścig ładowania i rosnące liczby (assets/js/modules/benchmark-race.js)
+   ========================================================================== */
+
 /**
  * Zintegrowane scenariusze wyścigu ładowania, rosnących liczb i tabeli porównawczej (#porownanie)
  */
-const BENCHMARK_SCENARIOS = {
+const BENCHMARK_PROFILES = {
     '4g': {
         tswDoneMs: 380,
         wpDoneMs: 4820,
@@ -338,6 +387,8 @@ const BENCHMARK_SCENARIOS = {
         statusB: 'Przeciążenie bazy i ryzyko błędu 502/504'
     }
 };
+
+const BENCHMARK_SCENARIOS = BENCHMARK_PROFILES;
 
 /**
  * Interaktywny Symulator Wyścigu Ładowania, Rosnących Liczb i Tabeli Porównawczej w #porownanie
@@ -458,13 +509,13 @@ function initHardwareBenchmark() {
     }
 
     /**
-     * Animacja rosnących liczb po kliknięciu w zasięgi (WS3 + WS1 + WS2)
+     * Animacja rosnących liczb po kliknięciu w zasięgi ('4g', '3g', 'spike')
      */
     function animateGrowingNumbers(scenarioKey, animate = true) {
         stopAllAnimations();
         const resolvedKey = resolveScenarioKey(scenarioKey);
         currentScenarioKey = resolvedKey;
-        const scenario = BENCHMARK_SCENARIOS[resolvedKey] || BENCHMARK_SCENARIOS['4g'];
+        const scenario = BENCHMARK_PROFILES[resolvedKey] || BENCHMARK_PROFILES['4g'];
 
         highlightActiveScenarioButtons(resolvedKey);
         syncTableStaticFields(scenario);
@@ -573,7 +624,7 @@ function initHardwareBenchmark() {
      */
     function renderAtMs(rawMs) {
         const ms = Math.max(0, Math.min(5000, Number(rawMs) || 0));
-        const scenario = BENCHMARK_SCENARIOS[currentScenarioKey] || BENCHMARK_SCENARIOS['4g'];
+        const scenario = BENCHMARK_PROFILES[currentScenarioKey] || BENCHMARK_PROFILES['4g'];
         const secNum = ms / 1000;
         const secStr = `${secNum.toFixed(2)} s`;
 
@@ -710,6 +761,10 @@ function initHardwareBenchmark() {
 }
 
 const initLiveBenchmark = initHardwareBenchmark;
+
+/* ==========================================================================
+   MODUŁ 4: Konfigurator wyceny i portfolio (assets/js/modules/pricing-configurator.js)
+   ========================================================================== */
 
 /**
  * Interaktywny Konfigurator Projektu w #pricing z przekazaniem do #contactForm
