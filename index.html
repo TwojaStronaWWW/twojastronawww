@@ -41,7 +41,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=20">
+    <link rel="stylesheet" href="assets/css/style.css?v=21">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -354,13 +354,13 @@
                 </div>
 
                 <div class="timeline-slider-wrap">
-                    <label for="timelineScrubber" class="sr-only">Oś czasu ładowania od 0 do 5 sekund</label>
-                    <input type="range" id="timelineScrubber" class="timeline-scrubber tactile-range" min="0" max="5000" step="20" value="380">
+                    <label for="timelineScrubber" class="sr-only">Oś czasu ładowania witryny</label>
+                    <input type="range" id="timelineScrubber" class="timeline-scrubber tactile-range" min="0" max="4820" step="20" value="4820">
                     <div class="timeline-ticks">
-                        <span>0.0 s (Kliknięcie)</span>
-                        <span class="tick-highlight">0.38 s (Gotowy czysty kod)</span>
-                        <span>2.5 s (Próg irytacji)</span>
-                        <span>5.0 s (Utrata 38% ruchu)</span>
+                        <span id="tickStart">0.00 s (Kliknięcie)</span>
+                        <span class="tick-highlight" id="tickCleanDone">0.38 s (Gotowy czysty kod)</span>
+                        <span id="tickIrritation">2.50 s (Próg irytacji)</span>
+                        <span id="tickWpDone">4.82 s (Utrata 38% ruchu)</span>
                     </div>
                 </div>
 
@@ -849,7 +849,7 @@
 
     <!-- Scripts -->
     <script data-cfasync="false" src="assets/js/contact.js?v=3"></script>
-    <script data-cfasync="false" src="assets/js/main.js?v=20"></script>
+    <script data-cfasync="false" src="assets/js/main.js?v=21"></script>
     <script data-cfasync="false" type="module" src="assets/js/ai-widget.js?v=4.5" data-site-id="twojastronawww" data-title="Asystent TwojaStronaWWW"></script>
     <script type="speculationrules">
     {

@@ -15,17 +15,17 @@ export function initScrollScrubbedMotion() {
     if (typeof window === 'undefined') return;
 
     const stage = document.getElementById('keyframeStage');
+    const viewport = document.getElementById('keyframeViewport') || (stage && stage.querySelector ? stage.querySelector('.keyframe-viewport') : null);
     const slider = document.getElementById('xraySlider');
     const curtain = document.getElementById('xrayCurtainOverlay');
     const divider = document.getElementById('xrayDividerLine');
     const panoramaImg = document.getElementById('heroPanoramaImg');
 
-    if (!stage && !slider && !curtain && !divider && !panoramaImg) return;
-
-    const reduceMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    if (!stage && !viewport && !slider && !curtain && !divider && !panoramaImg) return;
 
     function setCurtainPercent(pct) {
-        const clamped = Math.max(4, Math.min(96, Number(pct) || 58));
+        const num = Number(pct);
+        const clamped = Math.max(2, Math.min(98, Number.isNaN(num) ? 58 : num));
         if (stage && stage.style && typeof stage.style.setProperty === 'function') {
             stage.style.setProperty('--xray-pos', `${clamped}%`);
         }
@@ -40,38 +40,110 @@ export function initScrollScrubbedMotion() {
         }
     }
 
-    function computeScrollShift(scrollY) {
-        const y = Math.max(0, Math.min(950, Number(scrollY) || 0));
-        return (y / 700) * 44;
-    }
-
     const initialSliderVal = slider ? (Number(slider.value) || 58) : 58;
-    let baseOffset = initialSliderVal;
+    let anchorPct = initialSliderVal;
+    let anchorScrollY = window.scrollY || window.pageYOffset || 0;
+
+    function setManualPosition(pct) {
+        const num = Number(pct);
+        const clamped = Math.max(2, Math.min(98, Number.isNaN(num) ? 58 : num));
+        anchorPct = clamped;
+        anchorScrollY = window.scrollY || window.pageYOffset || 0;
+        setCurtainPercent(clamped);
+    }
 
     if (slider) {
         slider.addEventListener('input', () => {
-            const val = Math.max(4, Math.min(96, Number(slider.value) || 58));
-            const currentY = window.scrollY || window.pageYOffset || 0;
-            baseOffset = val + computeScrollShift(currentY);
-            setCurtainPercent(val);
+            setManualPosition(slider.value);
         });
+    }
+
+    function updateFromClientX(clientX) {
+        if (!viewport || typeof viewport.getBoundingClientRect !== 'function') return;
+        const rect = viewport.getBoundingClientRect();
+        if (!rect || !rect.width) return;
+        const rawPct = ((clientX - rect.left) / rect.width) * 100;
+        setManualPosition(rawPct);
+    }
+
+    if (viewport && typeof viewport.addEventListener === 'function') {
+        let isDragging = false;
+
+        viewport.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            if (typeof viewport.setPointerCapture === 'function' && e && e.pointerId !== undefined) {
+                try {
+                    viewport.setPointerCapture(e.pointerId);
+                } catch (_) {
+                    // Ignorujemy brak wsparcia setPointerCapture w mock-dom
+                }
+            }
+            if (e && typeof e.clientX === 'number') {
+                updateFromClientX(e.clientX);
+            }
+        });
+
+        viewport.addEventListener('pointermove', (e) => {
+            if (!isDragging || !e || typeof e.clientX !== 'number') return;
+            updateFromClientX(e.clientX);
+        });
+
+        const endPointerDrag = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            if (typeof viewport.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
+                try {
+                    viewport.releasePointerCapture(e.pointerId);
+                } catch (_) {
+                    // Ignorujemy błędy releasePointerCapture
+                }
+            }
+        };
+
+        viewport.addEventListener('pointerup', endPointerDrag);
+        viewport.addEventListener('pointercancel', endPointerDrag);
+
+        viewport.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            if (e && typeof e.clientX === 'number') {
+                updateFromClientX(e.clientX);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || !e || typeof e.clientX !== 'number') return;
+            updateFromClientX(e.clientX);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        viewport.addEventListener('touchstart', (e) => {
+            if (e && e.touches && e.touches[0]) {
+                isDragging = true;
+                updateFromClientX(e.touches[0].clientX);
+            }
+        }, { passive: true });
+
+        viewport.addEventListener('touchmove', (e) => {
+            if (!isDragging || !e || !e.touches || !e.touches[0]) return;
+            updateFromClientX(e.touches[0].clientX);
+        }, { passive: true });
+
+        viewport.addEventListener('touchend', () => {
+            isDragging = false;
+        }, { passive: true });
     }
 
     function applyScrollState() {
         const y = window.scrollY || window.pageYOffset || 0;
 
-        if (stage || slider || curtain || divider) {
-            const shift = computeScrollShift(y);
-            const effectiveBase = Math.max(48, Math.min(92, baseOffset));
-            const scrubbedPct = effectiveBase - shift;
+        if (stage || viewport || slider || curtain || divider) {
+            const deltaY = y - anchorScrollY;
+            const shift = (deltaY / 700) * 44;
+            const scrubbedPct = Math.max(2, Math.min(98, anchorPct - shift));
             setCurtainPercent(scrubbedPct);
-        }
-
-        if (panoramaImg && !reduceMotion) {
-            const progress = Math.min(1, Math.max(0, y / 600));
-            const scale = 1 + progress * 0.045;
-            const translateY = progress * -18;
-            panoramaImg.style.transform = `scale(${scale.toFixed(4)}) translateY(${translateY.toFixed(1)}px)`;
         }
     }
 

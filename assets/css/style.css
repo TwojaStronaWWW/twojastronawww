@@ -719,6 +719,9 @@ header {
     border: 1px solid var(--border-strong);
     border-radius: var(--radius-md);
     background: var(--surface-recessed);
+    cursor: ew-resize;
+    touch-action: pan-y;
+    user-select: none;
 }
 
 .keyframe-img {
@@ -728,6 +731,8 @@ header {
     object-fit: cover;
     object-position: center;
     user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: none;
 }
 
 .keyframe-curtain {
@@ -764,6 +769,9 @@ header {
     font-weight: 600;
     white-space: nowrap;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
+    pointer-events: auto;
+    cursor: ew-resize;
+    user-select: none;
 }
 
 .keyframe-controls {

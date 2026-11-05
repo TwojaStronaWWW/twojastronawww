@@ -70,6 +70,9 @@ export function initHardwareBenchmark() {
     const clockEl = document.getElementById('timelineClock') || document.getElementById('sliderTimeValue');
     const runBtn = document.getElementById('runBenchmarkBtn');
 
+    const tickCleanDoneEl = document.getElementById('tickCleanDone');
+    const tickWpDoneEl = document.getElementById('tickWpDone');
+
     const scenarioBtns = document.querySelectorAll(
         '.bench-scenario[data-scenario], .benchmark-mode-btn[data-scenario], .bench-mode-btn[data-scenario], .bench-mode-btn[data-load-preset], [data-scenario], [data-load-preset]'
     );
@@ -149,6 +152,15 @@ export function initHardwareBenchmark() {
     }
 
     function syncTableStaticFields(scenario) {
+        if (scrubber) {
+            scrubber.max = String(scenario.wpDoneMs);
+        }
+        if (tickCleanDoneEl) {
+            tickCleanDoneEl.textContent = `${scenario.cleanTime.toFixed(2)} s (Gotowy czysty kod)`;
+        }
+        if (tickWpDoneEl) {
+            tickWpDoneEl.textContent = `${scenario.wpTime.toFixed(2)} s (Utrata ${scenario.lossPct} ruchu)`;
+        }
         if (loadValueEl) loadValueEl.textContent = scenario.loadLabel;
         if (trafficSlider) trafficSlider.value = String(scenario.visitors);
         if (benchStatusAEl) benchStatusAEl.textContent = scenario.statusA;
@@ -181,126 +193,24 @@ export function initHardwareBenchmark() {
     }
 
     /**
-     * Animacja rosnących liczb po kliknięciu w zasięgi ('4g', '3g', 'spike')
-     */
-    function animateGrowingNumbers(scenarioKey, animate = true) {
-        stopAllAnimations();
-        const resolvedKey = resolveScenarioKey(scenarioKey);
-        currentScenarioKey = resolvedKey;
-        const scenario = BENCHMARK_PROFILES[resolvedKey] || BENCHMARK_PROFILES['4g'];
-
-        highlightActiveScenarioButtons(resolvedKey);
-        syncTableStaticFields(scenario);
-
-        if (scrubber) scrubber.value = String(scenario.tswDoneMs);
-        if (clockEl) clockEl.textContent = `${(scenario.tswDoneMs / 1000).toFixed(2)} s`;
-        if (statusTextEl) statusTextEl.textContent = scenario.narrative;
-
-        if (tswTimeEl) tswTimeEl.textContent = `${(scenario.tswDoneMs / 1000).toFixed(2)} s — 100% gotowe`;
-        if (wpTimeEl) wpTimeEl.textContent = `${scenario.wpTime.toFixed(2)} s — utrata ${scenario.lossPct} odbiorców`;
-        if (tswLogEl) {
-            tswLogEl.textContent = 'Pełna treść, cennik i formularz są aktywne. Klient od razu czyta ofertę i wysyła zapytanie.';
-        }
-        if (wpLogEl) {
-            wpLogEl.textContent = `Strona ładuje się aż ${scenario.wpTime.toFixed(2)} s — skutek: ${scenario.statusB.toLowerCase()}.`;
-        }
-
-        const canAnimate = animate &&
-            typeof window !== 'undefined' &&
-            typeof window.requestAnimationFrame === 'function' &&
-            typeof performance !== 'undefined' &&
-            typeof performance.now === 'function';
-
-        if (!canAnimate) {
-            if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${scenario.cleanTime.toFixed(2)}s`;
-            if (bmWpTimeEl) bmWpTimeEl.textContent = `${scenario.wpTime.toFixed(2)}s`;
-            if (benchTimeAEl) benchTimeAEl.textContent = `${scenario.cleanTime.toFixed(2)} sekundy`;
-            if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(scenario.wpTime, resolvedKey);
-            if (tswBarEl) tswBarEl.style.width = '100%';
-            if (wpBarEl) wpBarEl.style.width = `${scenario.wpBarWidth}%`;
-            if (barA) barA.style.width = `${scenario.cleanBarWidth}%`;
-            if (barB) barB.style.width = `${scenario.wpBarWidth}%`;
-            return;
-        }
-
-        if (tswBarEl) {
-            tswBarEl.style.transition = 'none';
-            tswBarEl.style.width = '0%';
-        }
-        if (wpBarEl) {
-            wpBarEl.style.transition = 'none';
-            wpBarEl.style.width = '0%';
-        }
-        if (barA) {
-            barA.style.transition = 'none';
-            barA.style.width = '0%';
-        }
-        if (barB) {
-            barB.style.transition = 'none';
-            barB.style.width = '0%';
-        }
-
-        const startTime = performance.now();
-        const cleanDuration = 280;
-        const wpDuration = 900;
-
-        window.requestAnimationFrame(() => {
-            if (tswBarEl) {
-                tswBarEl.style.transition = 'width 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
-                tswBarEl.style.width = '100%';
-            }
-            if (wpBarEl) {
-                wpBarEl.style.transition = 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)';
-                wpBarEl.style.width = `${scenario.wpBarWidth}%`;
-            }
-            if (barA) {
-                barA.style.transition = 'width 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
-                barA.style.width = `${scenario.cleanBarWidth}%`;
-            }
-            if (barB) {
-                barB.style.transition = 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)';
-                barB.style.width = `${scenario.wpBarWidth}%`;
-            }
-        });
-
-        function tickNumbers(now) {
-            const elapsed = Math.max(0, now - startTime);
-            const cleanProgress = Math.min(1, elapsed / cleanDuration);
-            const wpProgress = Math.min(1, elapsed / wpDuration);
-
-            const currentClean = (scenario.cleanTime * cleanProgress).toFixed(2);
-            const currentWp = (scenario.wpTime * wpProgress).toFixed(2);
-
-            if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${currentClean}s`;
-            if (bmWpTimeEl) bmWpTimeEl.textContent = `${currentWp}s`;
-            if (benchTimeAEl) benchTimeAEl.textContent = `${currentClean} sekundy`;
-            if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(currentWp, resolvedKey);
-
-            if (wpProgress < 1) {
-                rafId = window.requestAnimationFrame(tickNumbers);
-            } else {
-                rafId = null;
-                if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${scenario.cleanTime.toFixed(2)}s`;
-                if (bmWpTimeEl) bmWpTimeEl.textContent = `${scenario.wpTime.toFixed(2)}s`;
-                if (benchTimeAEl) benchTimeAEl.textContent = `${scenario.cleanTime.toFixed(2)} sekundy`;
-                if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(scenario.wpTime, resolvedKey);
-                if (statusTextEl) statusTextEl.textContent = scenario.narrative;
-            }
-        }
-
-        rafId = window.requestAnimationFrame(tickNumbers);
-    }
-
-    /**
-     * Renderowanie stanu wyścigu ładowania w punkcie czasu ms (0..5000 ms)
+     * Spójne renderowanie stanu wyścigu ładowania w punkcie czasu ms (0..scenario.wpDoneMs).
+     * Wszystkie zegary (#timelineClock, #bmCleanTime, #bmWpTime, #benchTswTime, #benchWpTime)
+     * oraz paski postępu (#benchTswBar, #benchWpBar) są w 100% zsynchronizowane.
      */
     function renderAtMs(rawMs) {
-        const ms = Math.max(0, Math.min(5000, Number(rawMs) || 0));
         const scenario = BENCHMARK_PROFILES[currentScenarioKey] || BENCHMARK_PROFILES['4g'];
+        const maxMs = scenario.wpDoneMs;
+        const ms = Math.max(0, Math.min(maxMs, Number(rawMs) || 0));
         const secNum = ms / 1000;
         const secStr = `${secNum.toFixed(2)} s`;
 
         if (clockEl) clockEl.textContent = secStr;
+
+        const tswElapsedMs = Math.min(ms, scenario.tswDoneMs);
+        const wpElapsedMs = Math.min(ms, scenario.wpDoneMs);
+
+        const currentCleanSec = (tswElapsedMs / 1000).toFixed(2);
+        const currentWpSec = (wpElapsedMs / 1000).toFixed(2);
 
         const tswPct = Math.min(100, Math.round((ms / scenario.tswDoneMs) * 100));
         const wpPct = Math.min(100, Math.round((ms / scenario.wpDoneMs) * 100));
@@ -314,18 +224,13 @@ export function initHardwareBenchmark() {
             wpBarEl.style.width = `${wpPct}%`;
         }
         if (barA) {
+            barA.style.transition = 'none';
             barA.style.width = `${Math.max(4, Math.round((tswPct / 100) * scenario.cleanBarWidth))}%`;
         }
         if (barB) {
+            barB.style.transition = 'none';
             barB.style.width = `${Math.max(6, Math.round((wpPct / 100) * scenario.wpBarWidth))}%`;
         }
-
-        const currentCleanSec = ms >= scenario.tswDoneMs
-            ? scenario.cleanTime.toFixed(2)
-            : secNum.toFixed(2);
-        const currentWpSec = ms >= 5000
-            ? scenario.wpTime.toFixed(2)
-            : Math.min(scenario.wpTime, (ms / 5000) * scenario.wpTime).toFixed(2);
 
         if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${currentCleanSec}s`;
         if (bmWpTimeEl) bmWpTimeEl.textContent = `${currentWpSec}s`;
@@ -333,72 +238,127 @@ export function initHardwareBenchmark() {
         if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(currentWpSec, currentScenarioKey);
 
         if (ms >= scenario.tswDoneMs) {
-            if (tswTimeEl) tswTimeEl.textContent = `${(scenario.tswDoneMs / 1000).toFixed(2)} s — 100% gotowe`;
+            if (tswTimeEl) tswTimeEl.textContent = `${scenario.cleanTime.toFixed(2)} s — 100% gotowe`;
             if (tswLogEl) {
                 tswLogEl.textContent = 'Pełna treść, cennik i formularz są aktywne. Klient od razu czyta ofertę i wysyła zapytanie.';
             }
         } else {
-            if (tswTimeEl) tswTimeEl.textContent = `${secStr} — renderowanie (${tswPct}%)`;
+            if (tswTimeEl) tswTimeEl.textContent = `${currentCleanSec} s — renderowanie (${tswPct}%)`;
             if (tswLogEl) {
                 tswLogEl.textContent = 'Nawiązywanie połączenia TLS i odczyt statycznego pliku HTML (64 KB)...';
             }
         }
 
-        if (ms < 800) {
-            if (wpTimeEl) wpTimeEl.textContent = `${secStr} — biały ekran (${wpPct}%)`;
+        if (ms >= scenario.wpDoneMs) {
+            if (wpTimeEl) wpTimeEl.textContent = `${scenario.wpTime.toFixed(2)} s — załadowano zbyt późno (utrata ${scenario.lossPct})`;
+            if (wpLogEl) {
+                wpLogEl.textContent = `Strona wreszcie się wyświetla po ${scenario.wpTime.toFixed(2)} s, ale około ${scenario.lossPct} klientów mobilnych zdążyło już zamknąć kartę.`;
+            }
+            if (statusTextEl) {
+                statusTextEl.textContent = scenario.narrative;
+            }
+        } else if (wpPct < 25) {
+            if (wpTimeEl) wpTimeEl.textContent = `${currentWpSec} s — biały ekran (${wpPct}%)`;
             if (wpLogEl) {
                 wpLogEl.textContent = `W ${secStr} ekran telefonu jest nadal pusty — serwer wykonuje zapytania SQL i inicjuje wtyczki.`;
             }
             if (statusTextEl) {
                 statusTextEl.textContent = ms >= scenario.tswDoneMs
-                    ? `Stan w ${secStr}: TwojaStronaWWW jest już w 100% gotowa (${scenario.cleanTime.toFixed(2)} s), a na WordPressie klient widzi wciąż biały ekran.`
+                    ? `Stan w ${secStr}: TwojaStronaWWW jest już w 100% gotowa (${scenario.cleanTime.toFixed(2)} s), a na WordPressie klient widzi wciąż biały ekran (${wpPct}%).`
                     : `Stan w ${secStr}: Inicjalizacja połączenia i pobieranie pierwszych pakietów danych.`;
             }
-        } else if (ms < 2400) {
-            if (wpTimeEl) wpTimeEl.textContent = `${secStr} — blokada skryptów (${wpPct}%)`;
+        } else if (wpPct < 65) {
+            if (wpTimeEl) wpTimeEl.textContent = `${currentWpSec} s — blokada skryptów (${wpPct}%)`;
             if (wpLogEl) {
                 wpLogEl.textContent = 'Pobieranie 6,8 MB bibliotek wizualnych motywu. Klient nie może jeszcze przewijać strony.';
             }
             if (statusTextEl) {
-                statusTextEl.textContent = `Stan w ${secStr}: Witryna w czystym kodzie dawno przyjęła formularz, podczas gdy WordPress blokuje wątek główny telefonu (${wpPct}%).`;
+                statusTextEl.textContent = `Stan w ${secStr}: Witryna w czystym kodzie dawno przyjęła formularz (${scenario.cleanTime.toFixed(2)} s), podczas gdy WordPress blokuje wątek główny telefonu (${wpPct}%).`;
             }
-        } else if (ms < 5000 && ms < scenario.wpDoneMs) {
-            if (wpTimeEl) wpTimeEl.textContent = `${secStr} — opóźnienie (${wpPct}%)`;
+        } else {
+            if (wpTimeEl) wpTimeEl.textContent = `${currentWpSec} s — doczytywanie (${wpPct}%)`;
             if (wpLogEl) {
                 wpLogEl.textContent = 'Przesunięcia układu i doczytywanie czcionek. Część niecierpliwych użytkowników opuszcza stronę.';
             }
             if (statusTextEl) {
-                statusTextEl.textContent = `Stan w ${secStr}: Przesunięcia układu i doczytywanie skryptów — narasta rezygnacja użytkowników mobilnych (do ${scenario.lossPct}).`;
-            }
-        } else {
-            if (wpTimeEl) wpTimeEl.textContent = `${scenario.wpTime.toFixed(2)} s — załadowano zbyt późno`;
-            if (wpLogEl) {
-                wpLogEl.textContent = `Strona wreszcie się wyświetla, ale około ${scenario.lossPct} klientów mobilnych zdążyło już zamknąć kartę.`;
-            }
-            if (statusTextEl) {
-                statusTextEl.textContent = scenario.narrative;
+                statusTextEl.textContent = `Stan w ${secStr}: Przesunięcia układu i doczytywanie skryptów (${wpPct}%) — narasta rezygnacja użytkowników mobilnych (do ${scenario.lossPct}).`;
             }
         }
     }
 
     /**
-     * Odtworzenie żywego wyścigu ładowania (0..5000 ms) po kliknięciu #runBenchmarkBtn
+     * Animacja rosnących liczb i pasków postępu od 0 do scenario.wpDoneMs
+     * po kliknięciu w zasięgi ('4g', '3g', 'spike') lub przycisk #runBenchmarkBtn
+     */
+    function animateGrowingNumbers(scenarioKey, animate = true) {
+        stopAllAnimations();
+        const resolvedKey = resolveScenarioKey(scenarioKey);
+        currentScenarioKey = resolvedKey;
+        const scenario = BENCHMARK_PROFILES[resolvedKey] || BENCHMARK_PROFILES['4g'];
+
+        highlightActiveScenarioButtons(resolvedKey);
+        syncTableStaticFields(scenario);
+
+        const canAnimate = animate &&
+            typeof window !== 'undefined' &&
+            typeof window.requestAnimationFrame === 'function' &&
+            typeof performance !== 'undefined' &&
+            typeof performance.now === 'function';
+
+        if (!canAnimate) {
+            if (scrubber) scrubber.value = String(scenario.wpDoneMs);
+            renderAtMs(scenario.wpDoneMs);
+            return;
+        }
+
+        if (scrubber) scrubber.value = '0';
+        renderAtMs(0);
+
+        const startTime = performance.now();
+        const totalWallDurationMs = 1150;
+
+        function tickRace(now) {
+            const elapsed = Math.max(0, now - startTime);
+            const progress = Math.min(1, elapsed / totalWallDurationMs);
+            const currentMs = Math.round(progress * scenario.wpDoneMs);
+
+            if (scrubber) scrubber.value = String(currentMs);
+            renderAtMs(currentMs);
+
+            if (progress < 1) {
+                rafId = window.requestAnimationFrame(tickRace);
+            } else {
+                rafId = null;
+                if (scrubber) scrubber.value = String(scenario.wpDoneMs);
+                renderAtMs(scenario.wpDoneMs);
+            }
+        }
+
+        rafId = window.requestAnimationFrame(tickRace);
+    }
+
+    /**
+     * Odtworzenie żywego wyścigu ładowania (0..scenario.wpDoneMs) po kliknięciu #runBenchmarkBtn
      */
     function playTimelineRace() {
         stopAllAnimations();
+        const scenario = BENCHMARK_PROFILES[currentScenarioKey] || BENCHMARK_PROFILES['4g'];
+        syncTableStaticFields(scenario);
+
         let ms = 0;
+        const stepMs = Math.max(80, Math.round(scenario.wpDoneMs / 45));
         if (scrubber) scrubber.value = '0';
         renderAtMs(0);
 
         raceInterval = setInterval(() => {
-            ms += 100;
-            if (ms >= 5000) {
-                ms = 5000;
+            ms += stepMs;
+            if (ms >= scenario.wpDoneMs) {
+                ms = scenario.wpDoneMs;
                 stopAllAnimations();
             }
             if (scrubber) scrubber.value = String(ms);
             renderAtMs(ms);
-        }, 35);
+        }, 30);
     }
 
     scenarioBtns.forEach(btn => {

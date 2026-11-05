@@ -246,17 +246,17 @@ function initScrollScrubbedMotion() {
     if (typeof window === 'undefined') return;
 
     const stage = document.getElementById('keyframeStage');
+    const viewport = document.getElementById('keyframeViewport') || (stage && stage.querySelector ? stage.querySelector('.keyframe-viewport') : null);
     const slider = document.getElementById('xraySlider');
     const curtain = document.getElementById('xrayCurtainOverlay');
     const divider = document.getElementById('xrayDividerLine');
     const panoramaImg = document.getElementById('heroPanoramaImg');
 
-    if (!stage && !slider && !curtain && !divider && !panoramaImg) return;
-
-    const reduceMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+    if (!stage && !viewport && !slider && !curtain && !divider && !panoramaImg) return;
 
     function setCurtainPercent(pct) {
-        const clamped = Math.max(4, Math.min(96, Number(pct) || 58));
+        const num = Number(pct);
+        const clamped = Math.max(2, Math.min(98, Number.isNaN(num) ? 58 : num));
         if (stage && stage.style && typeof stage.style.setProperty === 'function') {
             stage.style.setProperty('--xray-pos', `${clamped}%`);
         }
@@ -271,38 +271,110 @@ function initScrollScrubbedMotion() {
         }
     }
 
-    function computeScrollShift(scrollY) {
-        const y = Math.max(0, Math.min(950, Number(scrollY) || 0));
-        return (y / 700) * 44;
-    }
-
     const initialSliderVal = slider ? (Number(slider.value) || 58) : 58;
-    let baseOffset = initialSliderVal;
+    let anchorPct = initialSliderVal;
+    let anchorScrollY = window.scrollY || window.pageYOffset || 0;
+
+    function setManualPosition(pct) {
+        const num = Number(pct);
+        const clamped = Math.max(2, Math.min(98, Number.isNaN(num) ? 58 : num));
+        anchorPct = clamped;
+        anchorScrollY = window.scrollY || window.pageYOffset || 0;
+        setCurtainPercent(clamped);
+    }
 
     if (slider) {
         slider.addEventListener('input', () => {
-            const val = Math.max(4, Math.min(96, Number(slider.value) || 58));
-            const currentY = window.scrollY || window.pageYOffset || 0;
-            baseOffset = val + computeScrollShift(currentY);
-            setCurtainPercent(val);
+            setManualPosition(slider.value);
         });
+    }
+
+    function updateFromClientX(clientX) {
+        if (!viewport || typeof viewport.getBoundingClientRect !== 'function') return;
+        const rect = viewport.getBoundingClientRect();
+        if (!rect || !rect.width) return;
+        const rawPct = ((clientX - rect.left) / rect.width) * 100;
+        setManualPosition(rawPct);
+    }
+
+    if (viewport && typeof viewport.addEventListener === 'function') {
+        let isDragging = false;
+
+        viewport.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            if (typeof viewport.setPointerCapture === 'function' && e && e.pointerId !== undefined) {
+                try {
+                    viewport.setPointerCapture(e.pointerId);
+                } catch (_) {
+                    // Ignorujemy brak wsparcia setPointerCapture w mock-dom
+                }
+            }
+            if (e && typeof e.clientX === 'number') {
+                updateFromClientX(e.clientX);
+            }
+        });
+
+        viewport.addEventListener('pointermove', (e) => {
+            if (!isDragging || !e || typeof e.clientX !== 'number') return;
+            updateFromClientX(e.clientX);
+        });
+
+        const endPointerDrag = (e) => {
+            if (!isDragging) return;
+            isDragging = false;
+            if (typeof viewport.releasePointerCapture === 'function' && e && e.pointerId !== undefined) {
+                try {
+                    viewport.releasePointerCapture(e.pointerId);
+                } catch (_) {
+                    // Ignorujemy błędy releasePointerCapture
+                }
+            }
+        };
+
+        viewport.addEventListener('pointerup', endPointerDrag);
+        viewport.addEventListener('pointercancel', endPointerDrag);
+
+        viewport.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            if (e && typeof e.clientX === 'number') {
+                updateFromClientX(e.clientX);
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging || !e || typeof e.clientX !== 'number') return;
+            updateFromClientX(e.clientX);
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        viewport.addEventListener('touchstart', (e) => {
+            if (e && e.touches && e.touches[0]) {
+                isDragging = true;
+                updateFromClientX(e.touches[0].clientX);
+            }
+        }, { passive: true });
+
+        viewport.addEventListener('touchmove', (e) => {
+            if (!isDragging || !e || !e.touches || !e.touches[0]) return;
+            updateFromClientX(e.touches[0].clientX);
+        }, { passive: true });
+
+        viewport.addEventListener('touchend', () => {
+            isDragging = false;
+        }, { passive: true });
     }
 
     function applyScrollState() {
         const y = window.scrollY || window.pageYOffset || 0;
 
-        if (stage || slider || curtain || divider) {
-            const shift = computeScrollShift(y);
-            const effectiveBase = Math.max(48, Math.min(92, baseOffset));
-            const scrubbedPct = effectiveBase - shift;
+        if (stage || viewport || slider || curtain || divider) {
+            const deltaY = y - anchorScrollY;
+            const shift = (deltaY / 700) * 44;
+            const scrubbedPct = Math.max(2, Math.min(98, anchorPct - shift));
             setCurtainPercent(scrubbedPct);
-        }
-
-        if (panoramaImg && !reduceMotion) {
-            const progress = Math.min(1, Math.max(0, y / 600));
-            const scale = 1 + progress * 0.045;
-            const translateY = progress * -18;
-            panoramaImg.style.transform = `scale(${scale.toFixed(4)}) translateY(${translateY.toFixed(1)}px)`;
         }
     }
 
@@ -398,6 +470,9 @@ function initHardwareBenchmark() {
     const clockEl = document.getElementById('timelineClock') || document.getElementById('sliderTimeValue');
     const runBtn = document.getElementById('runBenchmarkBtn');
 
+    const tickCleanDoneEl = document.getElementById('tickCleanDone');
+    const tickWpDoneEl = document.getElementById('tickWpDone');
+
     const scenarioBtns = document.querySelectorAll(
         '.bench-scenario[data-scenario], .benchmark-mode-btn[data-scenario], .bench-mode-btn[data-scenario], .bench-mode-btn[data-load-preset], [data-scenario], [data-load-preset]'
     );
@@ -477,6 +552,15 @@ function initHardwareBenchmark() {
     }
 
     function syncTableStaticFields(scenario) {
+        if (scrubber) {
+            scrubber.max = String(scenario.wpDoneMs);
+        }
+        if (tickCleanDoneEl) {
+            tickCleanDoneEl.textContent = `${scenario.cleanTime.toFixed(2)} s (Gotowy czysty kod)`;
+        }
+        if (tickWpDoneEl) {
+            tickWpDoneEl.textContent = `${scenario.wpTime.toFixed(2)} s (Utrata ${scenario.lossPct} ruchu)`;
+        }
         if (loadValueEl) loadValueEl.textContent = scenario.loadLabel;
         if (trafficSlider) trafficSlider.value = String(scenario.visitors);
         if (benchStatusAEl) benchStatusAEl.textContent = scenario.statusA;
@@ -509,126 +593,24 @@ function initHardwareBenchmark() {
     }
 
     /**
-     * Animacja rosnących liczb po kliknięciu w zasięgi ('4g', '3g', 'spike')
-     */
-    function animateGrowingNumbers(scenarioKey, animate = true) {
-        stopAllAnimations();
-        const resolvedKey = resolveScenarioKey(scenarioKey);
-        currentScenarioKey = resolvedKey;
-        const scenario = BENCHMARK_PROFILES[resolvedKey] || BENCHMARK_PROFILES['4g'];
-
-        highlightActiveScenarioButtons(resolvedKey);
-        syncTableStaticFields(scenario);
-
-        if (scrubber) scrubber.value = String(scenario.tswDoneMs);
-        if (clockEl) clockEl.textContent = `${(scenario.tswDoneMs / 1000).toFixed(2)} s`;
-        if (statusTextEl) statusTextEl.textContent = scenario.narrative;
-
-        if (tswTimeEl) tswTimeEl.textContent = `${(scenario.tswDoneMs / 1000).toFixed(2)} s — 100% gotowe`;
-        if (wpTimeEl) wpTimeEl.textContent = `${scenario.wpTime.toFixed(2)} s — utrata ${scenario.lossPct} odbiorców`;
-        if (tswLogEl) {
-            tswLogEl.textContent = 'Pełna treść, cennik i formularz są aktywne. Klient od razu czyta ofertę i wysyła zapytanie.';
-        }
-        if (wpLogEl) {
-            wpLogEl.textContent = `Strona ładuje się aż ${scenario.wpTime.toFixed(2)} s — skutek: ${scenario.statusB.toLowerCase()}.`;
-        }
-
-        const canAnimate = animate &&
-            typeof window !== 'undefined' &&
-            typeof window.requestAnimationFrame === 'function' &&
-            typeof performance !== 'undefined' &&
-            typeof performance.now === 'function';
-
-        if (!canAnimate) {
-            if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${scenario.cleanTime.toFixed(2)}s`;
-            if (bmWpTimeEl) bmWpTimeEl.textContent = `${scenario.wpTime.toFixed(2)}s`;
-            if (benchTimeAEl) benchTimeAEl.textContent = `${scenario.cleanTime.toFixed(2)} sekundy`;
-            if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(scenario.wpTime, resolvedKey);
-            if (tswBarEl) tswBarEl.style.width = '100%';
-            if (wpBarEl) wpBarEl.style.width = `${scenario.wpBarWidth}%`;
-            if (barA) barA.style.width = `${scenario.cleanBarWidth}%`;
-            if (barB) barB.style.width = `${scenario.wpBarWidth}%`;
-            return;
-        }
-
-        if (tswBarEl) {
-            tswBarEl.style.transition = 'none';
-            tswBarEl.style.width = '0%';
-        }
-        if (wpBarEl) {
-            wpBarEl.style.transition = 'none';
-            wpBarEl.style.width = '0%';
-        }
-        if (barA) {
-            barA.style.transition = 'none';
-            barA.style.width = '0%';
-        }
-        if (barB) {
-            barB.style.transition = 'none';
-            barB.style.width = '0%';
-        }
-
-        const startTime = performance.now();
-        const cleanDuration = 280;
-        const wpDuration = 900;
-
-        window.requestAnimationFrame(() => {
-            if (tswBarEl) {
-                tswBarEl.style.transition = 'width 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
-                tswBarEl.style.width = '100%';
-            }
-            if (wpBarEl) {
-                wpBarEl.style.transition = 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)';
-                wpBarEl.style.width = `${scenario.wpBarWidth}%`;
-            }
-            if (barA) {
-                barA.style.transition = 'width 0.28s cubic-bezier(0.22, 1, 0.36, 1)';
-                barA.style.width = `${scenario.cleanBarWidth}%`;
-            }
-            if (barB) {
-                barB.style.transition = 'width 0.9s cubic-bezier(0.16, 1, 0.3, 1)';
-                barB.style.width = `${scenario.wpBarWidth}%`;
-            }
-        });
-
-        function tickNumbers(now) {
-            const elapsed = Math.max(0, now - startTime);
-            const cleanProgress = Math.min(1, elapsed / cleanDuration);
-            const wpProgress = Math.min(1, elapsed / wpDuration);
-
-            const currentClean = (scenario.cleanTime * cleanProgress).toFixed(2);
-            const currentWp = (scenario.wpTime * wpProgress).toFixed(2);
-
-            if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${currentClean}s`;
-            if (bmWpTimeEl) bmWpTimeEl.textContent = `${currentWp}s`;
-            if (benchTimeAEl) benchTimeAEl.textContent = `${currentClean} sekundy`;
-            if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(currentWp, resolvedKey);
-
-            if (wpProgress < 1) {
-                rafId = window.requestAnimationFrame(tickNumbers);
-            } else {
-                rafId = null;
-                if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${scenario.cleanTime.toFixed(2)}s`;
-                if (bmWpTimeEl) bmWpTimeEl.textContent = `${scenario.wpTime.toFixed(2)}s`;
-                if (benchTimeAEl) benchTimeAEl.textContent = `${scenario.cleanTime.toFixed(2)} sekundy`;
-                if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(scenario.wpTime, resolvedKey);
-                if (statusTextEl) statusTextEl.textContent = scenario.narrative;
-            }
-        }
-
-        rafId = window.requestAnimationFrame(tickNumbers);
-    }
-
-    /**
-     * Renderowanie stanu wyścigu ładowania w punkcie czasu ms (0..5000 ms)
+     * Spójne renderowanie stanu wyścigu ładowania w punkcie czasu ms (0..scenario.wpDoneMs).
+     * Wszystkie zegary (#timelineClock, #bmCleanTime, #bmWpTime, #benchTswTime, #benchWpTime)
+     * oraz paski postępu (#benchTswBar, #benchWpBar) są w 100% zsynchronizowane.
      */
     function renderAtMs(rawMs) {
-        const ms = Math.max(0, Math.min(5000, Number(rawMs) || 0));
         const scenario = BENCHMARK_PROFILES[currentScenarioKey] || BENCHMARK_PROFILES['4g'];
+        const maxMs = scenario.wpDoneMs;
+        const ms = Math.max(0, Math.min(maxMs, Number(rawMs) || 0));
         const secNum = ms / 1000;
         const secStr = `${secNum.toFixed(2)} s`;
 
         if (clockEl) clockEl.textContent = secStr;
+
+        const tswElapsedMs = Math.min(ms, scenario.tswDoneMs);
+        const wpElapsedMs = Math.min(ms, scenario.wpDoneMs);
+
+        const currentCleanSec = (tswElapsedMs / 1000).toFixed(2);
+        const currentWpSec = (wpElapsedMs / 1000).toFixed(2);
 
         const tswPct = Math.min(100, Math.round((ms / scenario.tswDoneMs) * 100));
         const wpPct = Math.min(100, Math.round((ms / scenario.wpDoneMs) * 100));
@@ -642,18 +624,13 @@ function initHardwareBenchmark() {
             wpBarEl.style.width = `${wpPct}%`;
         }
         if (barA) {
+            barA.style.transition = 'none';
             barA.style.width = `${Math.max(4, Math.round((tswPct / 100) * scenario.cleanBarWidth))}%`;
         }
         if (barB) {
+            barB.style.transition = 'none';
             barB.style.width = `${Math.max(6, Math.round((wpPct / 100) * scenario.wpBarWidth))}%`;
         }
-
-        const currentCleanSec = ms >= scenario.tswDoneMs
-            ? scenario.cleanTime.toFixed(2)
-            : secNum.toFixed(2);
-        const currentWpSec = ms >= 5000
-            ? scenario.wpTime.toFixed(2)
-            : Math.min(scenario.wpTime, (ms / 5000) * scenario.wpTime).toFixed(2);
 
         if (bmCleanTimeEl) bmCleanTimeEl.textContent = `${currentCleanSec}s`;
         if (bmWpTimeEl) bmWpTimeEl.textContent = `${currentWpSec}s`;
@@ -661,72 +638,127 @@ function initHardwareBenchmark() {
         if (benchTimeBEl) benchTimeBEl.textContent = formatBenchTimeB(currentWpSec, currentScenarioKey);
 
         if (ms >= scenario.tswDoneMs) {
-            if (tswTimeEl) tswTimeEl.textContent = `${(scenario.tswDoneMs / 1000).toFixed(2)} s — 100% gotowe`;
+            if (tswTimeEl) tswTimeEl.textContent = `${scenario.cleanTime.toFixed(2)} s — 100% gotowe`;
             if (tswLogEl) {
                 tswLogEl.textContent = 'Pełna treść, cennik i formularz są aktywne. Klient od razu czyta ofertę i wysyła zapytanie.';
             }
         } else {
-            if (tswTimeEl) tswTimeEl.textContent = `${secStr} — renderowanie (${tswPct}%)`;
+            if (tswTimeEl) tswTimeEl.textContent = `${currentCleanSec} s — renderowanie (${tswPct}%)`;
             if (tswLogEl) {
                 tswLogEl.textContent = 'Nawiązywanie połączenia TLS i odczyt statycznego pliku HTML (64 KB)...';
             }
         }
 
-        if (ms < 800) {
-            if (wpTimeEl) wpTimeEl.textContent = `${secStr} — biały ekran (${wpPct}%)`;
+        if (ms >= scenario.wpDoneMs) {
+            if (wpTimeEl) wpTimeEl.textContent = `${scenario.wpTime.toFixed(2)} s — załadowano zbyt późno (utrata ${scenario.lossPct})`;
+            if (wpLogEl) {
+                wpLogEl.textContent = `Strona wreszcie się wyświetla po ${scenario.wpTime.toFixed(2)} s, ale około ${scenario.lossPct} klientów mobilnych zdążyło już zamknąć kartę.`;
+            }
+            if (statusTextEl) {
+                statusTextEl.textContent = scenario.narrative;
+            }
+        } else if (wpPct < 25) {
+            if (wpTimeEl) wpTimeEl.textContent = `${currentWpSec} s — biały ekran (${wpPct}%)`;
             if (wpLogEl) {
                 wpLogEl.textContent = `W ${secStr} ekran telefonu jest nadal pusty — serwer wykonuje zapytania SQL i inicjuje wtyczki.`;
             }
             if (statusTextEl) {
                 statusTextEl.textContent = ms >= scenario.tswDoneMs
-                    ? `Stan w ${secStr}: TwojaStronaWWW jest już w 100% gotowa (${scenario.cleanTime.toFixed(2)} s), a na WordPressie klient widzi wciąż biały ekran.`
+                    ? `Stan w ${secStr}: TwojaStronaWWW jest już w 100% gotowa (${scenario.cleanTime.toFixed(2)} s), a na WordPressie klient widzi wciąż biały ekran (${wpPct}%).`
                     : `Stan w ${secStr}: Inicjalizacja połączenia i pobieranie pierwszych pakietów danych.`;
             }
-        } else if (ms < 2400) {
-            if (wpTimeEl) wpTimeEl.textContent = `${secStr} — blokada skryptów (${wpPct}%)`;
+        } else if (wpPct < 65) {
+            if (wpTimeEl) wpTimeEl.textContent = `${currentWpSec} s — blokada skryptów (${wpPct}%)`;
             if (wpLogEl) {
                 wpLogEl.textContent = 'Pobieranie 6,8 MB bibliotek wizualnych motywu. Klient nie może jeszcze przewijać strony.';
             }
             if (statusTextEl) {
-                statusTextEl.textContent = `Stan w ${secStr}: Witryna w czystym kodzie dawno przyjęła formularz, podczas gdy WordPress blokuje wątek główny telefonu (${wpPct}%).`;
+                statusTextEl.textContent = `Stan w ${secStr}: Witryna w czystym kodzie dawno przyjęła formularz (${scenario.cleanTime.toFixed(2)} s), podczas gdy WordPress blokuje wątek główny telefonu (${wpPct}%).`;
             }
-        } else if (ms < 5000 && ms < scenario.wpDoneMs) {
-            if (wpTimeEl) wpTimeEl.textContent = `${secStr} — opóźnienie (${wpPct}%)`;
+        } else {
+            if (wpTimeEl) wpTimeEl.textContent = `${currentWpSec} s — doczytywanie (${wpPct}%)`;
             if (wpLogEl) {
                 wpLogEl.textContent = 'Przesunięcia układu i doczytywanie czcionek. Część niecierpliwych użytkowników opuszcza stronę.';
             }
             if (statusTextEl) {
-                statusTextEl.textContent = `Stan w ${secStr}: Przesunięcia układu i doczytywanie skryptów — narasta rezygnacja użytkowników mobilnych (do ${scenario.lossPct}).`;
-            }
-        } else {
-            if (wpTimeEl) wpTimeEl.textContent = `${scenario.wpTime.toFixed(2)} s — załadowano zbyt późno`;
-            if (wpLogEl) {
-                wpLogEl.textContent = `Strona wreszcie się wyświetla, ale około ${scenario.lossPct} klientów mobilnych zdążyło już zamknąć kartę.`;
-            }
-            if (statusTextEl) {
-                statusTextEl.textContent = scenario.narrative;
+                statusTextEl.textContent = `Stan w ${secStr}: Przesunięcia układu i doczytywanie skryptów (${wpPct}%) — narasta rezygnacja użytkowników mobilnych (do ${scenario.lossPct}).`;
             }
         }
     }
 
     /**
-     * Odtworzenie żywego wyścigu ładowania (0..5000 ms) po kliknięciu #runBenchmarkBtn
+     * Animacja rosnących liczb i pasków postępu od 0 do scenario.wpDoneMs
+     * po kliknięciu w zasięgi ('4g', '3g', 'spike') lub przycisk #runBenchmarkBtn
+     */
+    function animateGrowingNumbers(scenarioKey, animate = true) {
+        stopAllAnimations();
+        const resolvedKey = resolveScenarioKey(scenarioKey);
+        currentScenarioKey = resolvedKey;
+        const scenario = BENCHMARK_PROFILES[resolvedKey] || BENCHMARK_PROFILES['4g'];
+
+        highlightActiveScenarioButtons(resolvedKey);
+        syncTableStaticFields(scenario);
+
+        const canAnimate = animate &&
+            typeof window !== 'undefined' &&
+            typeof window.requestAnimationFrame === 'function' &&
+            typeof performance !== 'undefined' &&
+            typeof performance.now === 'function';
+
+        if (!canAnimate) {
+            if (scrubber) scrubber.value = String(scenario.wpDoneMs);
+            renderAtMs(scenario.wpDoneMs);
+            return;
+        }
+
+        if (scrubber) scrubber.value = '0';
+        renderAtMs(0);
+
+        const startTime = performance.now();
+        const totalWallDurationMs = 1150;
+
+        function tickRace(now) {
+            const elapsed = Math.max(0, now - startTime);
+            const progress = Math.min(1, elapsed / totalWallDurationMs);
+            const currentMs = Math.round(progress * scenario.wpDoneMs);
+
+            if (scrubber) scrubber.value = String(currentMs);
+            renderAtMs(currentMs);
+
+            if (progress < 1) {
+                rafId = window.requestAnimationFrame(tickRace);
+            } else {
+                rafId = null;
+                if (scrubber) scrubber.value = String(scenario.wpDoneMs);
+                renderAtMs(scenario.wpDoneMs);
+            }
+        }
+
+        rafId = window.requestAnimationFrame(tickRace);
+    }
+
+    /**
+     * Odtworzenie żywego wyścigu ładowania (0..scenario.wpDoneMs) po kliknięciu #runBenchmarkBtn
      */
     function playTimelineRace() {
         stopAllAnimations();
+        const scenario = BENCHMARK_PROFILES[currentScenarioKey] || BENCHMARK_PROFILES['4g'];
+        syncTableStaticFields(scenario);
+
         let ms = 0;
+        const stepMs = Math.max(80, Math.round(scenario.wpDoneMs / 45));
         if (scrubber) scrubber.value = '0';
         renderAtMs(0);
 
         raceInterval = setInterval(() => {
-            ms += 100;
-            if (ms >= 5000) {
-                ms = 5000;
+            ms += stepMs;
+            if (ms >= scenario.wpDoneMs) {
+                ms = scenario.wpDoneMs;
                 stopAllAnimations();
             }
             if (scrubber) scrubber.value = String(ms);
             renderAtMs(ms);
-        }, 35);
+        }, 30);
     }
 
     scenarioBtns.forEach(btn => {
