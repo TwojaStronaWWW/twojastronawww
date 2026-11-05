@@ -49,8 +49,8 @@
 
 .hero-console-deck {
     display: grid;
-    grid-template-columns: 1.05fr 0.95fr;
-    gap: 32px;
+    grid-template-columns: 0.88fr 1.12fr;
+    gap: 28px;
     align-items: center;
     margin-bottom: 24px;
 }
@@ -60,6 +60,244 @@
         grid-template-columns: 1fr;
         gap: 18px;
         margin-bottom: 18px;
+    }
+}
+
+/* ==========================================================================
+   XOR VIEWPORT STAGE (CSS Difference + Multiply Plasma + Technical HUD)
+   ========================================================================== */
+
+.xor-viewport-stage {
+    position: relative;
+    width: 100%;
+    height: 540px;
+    min-height: 500px;
+    background-color: #000000;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 6px;
+    overflow: hidden;
+    user-select: none;
+    cursor: crosshair;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85);
+}
+
+.xor-viewport-stage::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 36%;
+    background: linear-gradient(to top, rgba(45, 76, 110, 0.42) 0%, rgba(18, 36, 58, 0.16) 55%, transparent 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* 1. Kontener wycinania XOR (isolation: isolate na czarnym tle #000) */
+.xor-compositor {
+    position: absolute;
+    inset: 0;
+    isolation: isolate;
+    background-color: #000000;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.xor-mask-layer {
+    position: absolute;
+    inset: 0;
+    background-color: #000000;
+}
+
+/* 3 ruchome kwadraty (#fff + mix-blend-mode: difference => bramka logiczna XOR) */
+.xor-mask-box {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #ffffff;
+    mix-blend-mode: difference;
+    will-change: transform;
+}
+
+.xor-mask-box--1 {
+    width: 184px;
+    height: 184px;
+}
+
+.xor-mask-box--2 {
+    width: 148px;
+    height: 148px;
+}
+
+.xor-mask-box--3 {
+    width: 118px;
+    height: 118px;
+}
+
+/* 2. Wspólne tło plazmy nałożone z mix-blend-mode: multiply na warstwę maskującą */
+.xor-plasma-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+/* Subtelna poświata bazowa formy organicznej poza oknami XOR */
+.xor-ambient-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    opacity: 0.34;
+    mix-blend-mode: screen;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* 3. Warstwa UI / HUD nad maską (nie podlega wycinaniu XOR) */
+.xor-hud-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.xor-orbit-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    pointer-events: none;
+}
+
+.xor-hud-topleft {
+    position: absolute;
+    top: 16px;
+    left: 18px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1.48;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.88);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+.xor-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-sizing: border-box;
+    will-change: transform;
+}
+
+.xor-frame--1 {
+    width: 184px;
+    height: 184px;
+}
+
+.xor-frame--2 {
+    width: 148px;
+    height: 148px;
+}
+
+.xor-frame--3 {
+    width: 118px;
+    height: 118px;
+}
+
+.xor-frame-label {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    padding: 2px 5px;
+    background-color: rgba(0, 0, 0, 0.86);
+    color: rgba(255, 255, 255, 0.92);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.xor-frame-node {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.78);
+    transform: translate(-50%, -50%);
+}
+
+.xor-hud-thumbs {
+    position: absolute;
+    bottom: 16px;
+    left: 18px;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.xor-thumb-canvas {
+    display: block;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    background-color: #050a14;
+}
+
+.xor-thumb-canvas--lg {
+    width: 52px;
+    height: 52px;
+}
+
+.xor-thumb-canvas--sm {
+    width: 38px;
+    height: 38px;
+}
+
+.xor-hud-bottomright {
+    position: absolute;
+    bottom: 16px;
+    right: 18px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+@media (max-width: 767px) {
+    .xor-viewport-stage {
+        height: 400px;
+        min-height: 380px;
+    }
+
+    .xor-mask-box--1,
+    .xor-frame--1 {
+        width: 136px;
+        height: 136px;
+    }
+
+    .xor-mask-box--2,
+    .xor-frame--2 {
+        width: 110px;
+        height: 110px;
+    }
+
+    .xor-mask-box--3,
+    .xor-frame--3 {
+        width: 88px;
+        height: 88px;
     }
 }
 

@@ -41,7 +41,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=21">
+    <link rel="stylesheet" href="assets/css/style.css?v=22">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -185,7 +185,93 @@
                     </div>
                 </div>
 
-                <!-- Dual-Keyframe Interactive X-Ray Split Curtain Stage (Scroll-Scrubbed & Draggable) -->
+                <!-- Interactive XOR Viewport Stage (Canvas Plasma + Difference Masking + Technical HUD) -->
+                <div class="xor-viewport-stage" id="xorViewportStage" aria-label="Interaktywny wizualizator optyczny XOR Viewport">
+                    <!-- 1 & 2. Odizolowany kompozytor wycinania XOR (isolation: isolate; tło #000) -->
+                    <div class="xor-compositor" id="xorCompositor">
+                        <div class="xor-mask-layer" aria-hidden="true">
+                            <div class="xor-mask-box xor-mask-box--1" id="xorMask1"></div>
+                            <div class="xor-mask-box xor-mask-box--2" id="xorMask2"></div>
+                            <div class="xor-mask-box xor-mask-box--3" id="xorMask3"></div>
+                        </div>
+                        <canvas id="xorPlasmaCanvas" class="xor-plasma-canvas" width="760" height="640" aria-hidden="true"></canvas>
+                    </div>
+
+                    <!-- Subtelna poświata bazowa plazmy i horyzontu poza wycięciami -->
+                    <canvas id="xorAmbientCanvas" class="xor-ambient-canvas" width="380" height="320" aria-hidden="true"></canvas>
+
+                    <!-- 3. Warstwa UI / HUD nad maską (pointer-events: none, nie podlega wycinaniu XOR) -->
+                    <div class="xor-hud-layer" aria-hidden="true">
+                        <canvas id="xorOrbitCanvas" class="xor-orbit-canvas" width="760" height="640"></canvas>
+
+                        <div class="xor-hud-topleft">
+                            <div>TRACK 01 ALGO</div>
+                            <div>F SECTION 0.005</div>
+                            <div>TIME <span id="xorHudTimer">00:00.00</span> &nbsp;MODE XOR &nbsp;HOLD A</div>
+                        </div>
+
+                        <div class="xor-frame xor-frame--1" id="xorFrame1">
+                            <span class="xor-frame-label">SECTION 01</span>
+                            <span class="xor-frame-node"></span>
+                        </div>
+                        <div class="xor-frame xor-frame--2" id="xorFrame2">
+                            <span class="xor-frame-label">SECTION 02</span>
+                            <span class="xor-frame-node"></span>
+                        </div>
+                        <div class="xor-frame xor-frame--3" id="xorFrame3">
+                            <span class="xor-frame-label">SECTION 03</span>
+                            <span class="xor-frame-node"></span>
+                        </div>
+
+                        <div class="xor-hud-thumbs">
+                            <canvas id="xorThumb1" class="xor-thumb-canvas xor-thumb-canvas--lg" width="52" height="52"></canvas>
+                            <canvas id="xorThumb2" class="xor-thumb-canvas xor-thumb-canvas--sm" width="38" height="38"></canvas>
+                        </div>
+
+                        <div class="xor-hud-bottomright">
+                            <span id="xorHudRes">1080x1440</span> &nbsp;<span id="xorHudFps">60FPS</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4-Dial Horizontal Telemetry Strip -->
+            <div class="hero-metrics">
+                <div class="metric-pill">
+                    <span class="metric-lbl">Czas otwarcia na telefonie</span>
+                    <span class="metric-val">0.38 s</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-lbl">Całkowita waga strony</span>
+                    <span class="metric-val">64 KB</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-lbl">Bazy SQL i płatne wtyczki</span>
+                    <span class="metric-val">Zero</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-lbl">Prawa majątkowe i kod Git</span>
+                    <span class="metric-val">100%</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section: Open-Frame Hardware Architecture + Dual-Keyframe X-Ray Split Curtain + 2x2 Tactile Subsystem Matrix -->
+    <section id="benefits" class="features">
+        <div class="container">
+            <div class="section-header-split">
+                <div>
+                    <span class="section-kicker">Architektura i automatyzacja</span>
+                    <h2 class="section-title">Cztery mechanizmy inżynieryjne zamiast czterdziestu wtyczek</h2>
+                </div>
+                <p class="section-sublead">
+                    Zamiast obciążać serwer gotowym motywem, wdrażam zintegrowany tor obsługi klienta: od natychmiastowego odczytu na telefonie po automatyczny zapis każdego zapytania w rejestrze CRM.
+                </p>
+            </div>
+
+            <div class="hardware-architecture-workbench">
+                <!-- Przeniesiony sekcję niżej interaktywny suwak X-Ray ze zdjęciem -->
                 <div class="keyframe-stage" id="keyframeStage">
                     <div class="keyframe-viewport" id="keyframeViewport">
                         <!-- Keyframe 2 (Base Layer): Exploded Optical Core -->
@@ -220,44 +306,6 @@
                         <span class="keyframe-tag keyframe-tag--accent">Stan 02: Rdzeń Światłowodowy Flat-File (64 KB)</span>
                     </div>
                 </div>
-            </div>
-
-            <!-- 4-Dial Horizontal Telemetry Strip -->
-            <div class="hero-metrics">
-                <div class="metric-pill">
-                    <span class="metric-lbl">Czas otwarcia na telefonie</span>
-                    <span class="metric-val">0.38 s</span>
-                </div>
-                <div class="metric-pill">
-                    <span class="metric-lbl">Całkowita waga strony</span>
-                    <span class="metric-val">64 KB</span>
-                </div>
-                <div class="metric-pill">
-                    <span class="metric-lbl">Bazy SQL i płatne wtyczki</span>
-                    <span class="metric-val">Zero</span>
-                </div>
-                <div class="metric-pill">
-                    <span class="metric-lbl">Prawa majątkowe i kod Git</span>
-                    <span class="metric-val">100%</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Benefits Section: Open-Frame Hardware Architecture (Image 2: hardware-internals-art.jpg) + 2x2 Tactile Subsystem Matrix -->
-    <section id="benefits" class="features">
-        <div class="container">
-            <div class="section-header-split">
-                <div>
-                    <span class="section-kicker">Architektura i automatyzacja</span>
-                    <h2 class="section-title">Cztery mechanizmy inżynieryjne zamiast czterdziestu wtyczek</h2>
-                </div>
-                <p class="section-sublead">
-                    Zamiast obciążać serwer gotowym motywem, wdrażam zintegrowany tor obsługi klienta: od natychmiastowego odczytu na telefonie po automatyczny zapis każdego zapytania w rejestrze CRM.
-                </p>
-            </div>
-
-            <div class="hardware-architecture-workbench">
                 <div class="hardware-internals-stage">
                     <div class="hardware-internals-visual">
                         <img src="assets/img/case-study-grid.jpg" alt="Wewnętrzna magistrala światłowodowa i przełączniki sprzętowe architektury Flat-File" width="1408" height="768" loading="lazy" id="hardwareInternalsImg">
@@ -849,7 +897,7 @@
 
     <!-- Scripts -->
     <script data-cfasync="false" src="assets/js/contact.js?v=3"></script>
-    <script data-cfasync="false" src="assets/js/main.js?v=21"></script>
+    <script data-cfasync="false" src="assets/js/main.js?v=22"></script>
     <script data-cfasync="false" type="module" src="assets/js/ai-widget.js?v=4.5" data-site-id="twojastronawww" data-title="Asystent TwojaStronaWWW"></script>
     <script type="speculationrules">
     {
