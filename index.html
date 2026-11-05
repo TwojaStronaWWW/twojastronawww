@@ -9,7 +9,7 @@
         content="Tworzenie szybkich stron internetowych bez WordPressa, wdrożenia asystentów AI (RAG) i automatyzacja procesów w firmie. Wynik PageSpeed 95+, zero abonamentu, gwarancja SLA.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://twojastronawww.pl/">
-    <meta name="theme-color" content="#020617">
+    <meta name="theme-color" content="#121316">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
@@ -41,7 +41,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=12">
+    <link rel="stylesheet" href="assets/css/style.css?v=18">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -128,531 +128,746 @@
       ]
     }
     </script>
-  <link rel="alternate" type="text/markdown" href="llms.txt" title="Baza wiedzy dla asystentów AI (llms.txt)">
+    <link rel="alternate" type="text/markdown" href="llms.txt" title="Baza wiedzy dla asystentów AI (llms.txt)">
 </head>
 
 <body>
 
-    <!-- Header -->
+    <!-- Header: Persistent Left-Hand Vertical Instrument Sidebar on Desktop (250px Fixed Rail) -->
     <header>
-        <nav class="nav-inner">
+        <nav class="nav-inner" aria-label="Konsola nawigacji">
             <div class="nav-container">
                 <div class="nav-left">
                     <a href="#" class="logo">TwojaStronaWWW</a>
+                    <span class="rail-subtitle">KONSOLA SYSTEMOWA · FLAT-FILE</span>
                 </div>
 
                 <div class="nav-right">
-                    <!-- Mobile Menu Toggle -->
                     <button class="nav-toggle" aria-label="Przełącz menu nawigacji" id="navToggleBtn">☰</button>
 
                     <div class="nav-links">
-                        <a href="#benefits">Korzyści</a>
-                        <a href="#porownanie">WordPress vs Kod</a>
-                        <a href="#portfolio">Realizacje</a>
-                        <a href="#autor">O mnie</a>
-                        <a href="jak-pracuje.html">Jak pracuję</a>
-                        <a href="#pricing">Cennik</a>
-                        <a href="#contact" class="btn btn-secondary btn-sm">Zapytaj o wycenę</a>
+                        <a href="#benefits"><span class="rail-idx">01</span> Architektura</a>
+                        <a href="#porownanie"><span class="rail-idx">02</span> Test obciążenia</a>
+                        <a href="#portfolio"><span class="rail-idx">03</span> Wdrożenia</a>
+                        <a href="#autor"><span class="rail-idx">04</span> Odpowiedzialność</a>
+                        <a href="#pricing"><span class="rail-idx">05</span> Konfigurator</a>
+                        <a href="#contact"><span class="rail-idx">06</span> Kontakt</a>
+                        <a href="jak-pracuje.html"><span class="rail-idx">07</span> Jak pracuję</a>
+
+                        <div class="rail-telemetry-readout" aria-label="Parametry operacyjne na żywo">
+                            <div class="rail-telem-title">PARAMETRY SYSTEMU</div>
+                            <div class="rail-telem-item"><span>LCP:</span> <strong>0.38 s</strong></div>
+                            <div class="rail-telem-item"><span>WAGA:</span> <strong>64 KB</strong></div>
+                            <div class="rail-telem-item"><span>SQL:</span> <strong>ZERO</strong></div>
+                        </div>
+
+                        <a href="#contact" class="btn btn-primary btn-sm rail-cta-btn">Wyceń projekt →</a>
                     </div>
                 </div>
             </div>
         </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Hero Section: Asymmetric 2-Column Hardware Console Deck with Image 1 (hero-console-art.jpg) -->
     <section class="hero">
         <div class="container">
-            <div class="hero-badge">
-                <span class="status-pulse"></span>
-                <span>Czysty kod & Automatyzacja procesów bez WordPressa</span>
+            <div class="hero-console-deck">
+                <div class="hero-stage-header">
+                    <div class="hero-badge">Inżynieria czystego kodu i automatyzacja procesów — wdrożenie w 14 dni</div>
+
+                    <h1>Mniej wtyczek. Szybsza strona. Automatyzacja pracy w Twojej firmie.</h1>
+
+                    <p>Projektuję strony internetowe o wadze poniżej 65 KB, które otwierają się w 0.38 sekundy, zabezpieczają niedokończone formularze i eliminują ręczne przepisywanie zapytań. Bez bazy SQL, bez WordPressa i bez abonamentów.</p>
+
+                    <div class="hero-btns">
+                        <a href="#pricing" class="btn btn-primary">Skonfiguruj projekt</a>
+                        <a href="#porownanie" class="btn btn-secondary">Sprawdź test obciążenia</a>
+                    </div>
+                </div>
+
+                <!-- Dual-Keyframe Interactive X-Ray Split Curtain Stage (Scroll-Scrubbed & Draggable) -->
+                <div class="keyframe-stage" id="keyframeStage">
+                    <div class="keyframe-viewport" id="keyframeViewport">
+                        <!-- Keyframe 2 (Base Layer): Exploded Optical Core -->
+                        <img src="assets/img/monolith-exploded-art.jpg"
+                            alt="Przekrój światłowodowy architektury Flat-File bez bazy SQL"
+                            width="1440" height="810"
+                            id="keyframeBaseImg"
+                            class="keyframe-img keyframe-img--exploded">
+
+                        <!-- Keyframe 1 (Clipped X-Ray Curtain Layer): Closed Obsidian Monolith -->
+                        <div class="keyframe-curtain" id="xrayCurtainOverlay">
+                            <img src="assets/img/hero-architecture-art.jpg"
+                                alt="Monolit zewnętrzny architektury czystego kodu TwojaStronaWWW"
+                                width="1440" height="810"
+                                fetchpriority="high"
+                                id="heroPanoramaImg"
+                                class="keyframe-img keyframe-img--monolith">
+                        </div>
+
+                        <!-- Laser Divider Line -->
+                        <div class="keyframe-divider" id="xrayDividerLine" aria-hidden="true">
+                            <span class="keyframe-handle">‹ ›</span>
+                        </div>
+                    </div>
+
+                    <div class="keyframe-controls">
+                        <span class="keyframe-tag">Stan 01: Monolit Zewnętrzny (0.38 s)</span>
+                        <div class="keyframe-slider-box">
+                            <label for="xraySlider" class="sr-only">Przesuń kurtynę rentgenowską między monolitem a przekrojem rdzenia</label>
+                            <input type="range" id="xraySlider" class="keyframe-slider" min="0" max="100" value="58">
+                        </div>
+                        <span class="keyframe-tag keyframe-tag--accent">Stan 02: Rdzeń Światłowodowy Flat-File (64 KB)</span>
+                    </div>
+                </div>
             </div>
 
-            <h1>Automatyzuję strony WWW i procesy, które dziś robisz ręcznie w firmie</h1>
-            <p>Tworzę szybkie, lekkie strony i dedykowane automatyzacje, które zastępują powtarzalną pracę – bez ciężkich baz danych, wtyczek i abonamentów.</p>
-
-            <div class="hero-btns">
-                <a href="#contact" class="btn btn-primary">Zapytaj o wycenę</a>
-                <a href="#portfolio" class="btn btn-secondary">Zobacz realizacje</a>
-            </div>
-
+            <!-- 4-Dial Horizontal Telemetry Strip -->
             <div class="hero-metrics">
                 <div class="metric-pill">
-                    <span class="metric-val">&lt;&nbsp;1s</span>
-                    <span class="metric-lbl">czas ładowania</span>
+                    <span class="metric-lbl">Czas otwarcia na telefonie</span>
+                    <span class="metric-val">0.38 s</span>
                 </div>
                 <div class="metric-pill">
-                    <span class="metric-val">100%</span>
-                    <span class="metric-lbl">kod na własność</span>
+                    <span class="metric-lbl">Całkowita waga strony</span>
+                    <span class="metric-val">64 KB</span>
                 </div>
                 <div class="metric-pill">
+                    <span class="metric-lbl">Bazy SQL i płatne wtyczki</span>
                     <span class="metric-val">Zero</span>
-                    <span class="metric-lbl">baz SQL i wtyczek</span>
+                </div>
+                <div class="metric-pill">
+                    <span class="metric-lbl">Prawa majątkowe i kod Git</span>
+                    <span class="metric-val">100%</span>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Benefits Bento Grid Section -->
-    <section id="benefits" class="features features--no-bottom">
+    <!-- Benefits Section: Open-Frame Hardware Architecture (Image 2: hardware-internals-art.jpg) + 2x2 Tactile Subsystem Matrix -->
+    <section id="benefits" class="features">
         <div class="container">
-            <h2 class="section-title">Dlaczego lekka architektura przynosi realne zyski</h2>
-            
-            <div class="bento-grid">
-                <!-- Bento 1: Duża karta (8 kolumn) - Automatyzacja przepływu leadów -->
-                <article class="bento-card bento-col-8">
-                    <span class="bento-tag">Automatyzacja & Oszczędność czasu</span>
-                    <h3>Formularze, które same pilnują zapytań klientów</h3>
-                    <p>Zamiast przepisywać maile po nocach i ręcznie odpowiadać na powtarzalne pytania: Twoja strona weryfikuje zapytanie, odfiltrowuje boty spamujące i automatycznie zabezpiecza kontakt w rejestrze CRM.</p>
-                    
-                    <div class="bento-flow">
-                        <span class="bento-flow-step">1. Wpisanie danych</span>
-                        <span class="bento-flow-arrow">→</span>
-                        <span class="bento-flow-step">2. Filtr Honeypot & CSRF</span>
-                        <span class="bento-flow-arrow">→</span>
-                        <span class="bento-flow-step">3. Zapis do CRM</span>
-                        <span class="bento-flow-arrow">→</span>
-                        <span class="bento-flow-step">4. Gotowy lead</span>
+            <div class="section-header-split">
+                <div>
+                    <span class="section-kicker">Architektura i automatyzacja</span>
+                    <h2 class="section-title">Cztery mechanizmy inżynieryjne zamiast czterdziestu wtyczek</h2>
+                </div>
+                <p class="section-sublead">
+                    Zamiast obciążać serwer gotowym motywem, wdrażam zintegrowany tor obsługi klienta: od natychmiastowego odczytu na telefonie po automatyczny zapis każdego zapytania w rejestrze CRM.
+                </p>
+            </div>
+
+            <div class="hardware-architecture-workbench">
+                <div class="hardware-internals-stage">
+                    <div class="hardware-internals-visual">
+                        <img src="assets/img/hardware-internals-art.jpg" alt="Wewnętrzna magistrala światłowodowa i przełączniki sprzętowe architektury Flat-File" width="1408" height="768" loading="lazy" id="hardwareInternalsImg">
                     </div>
-                </article>
+                    <div class="internals-control-strip">
+                        <div class="internals-caption">
+                            <span class="status-pulse"></span>
+                            <span>Zintegrowana magistrala Flat-File I/O — bezpośredni zapis zapytań i natychmiastowy odczyt bez narzutu bazy SQL</span>
+                        </div>
+                        <div class="hardware-view-switcher" role="group" aria-label="Inspekcja stanu architektury">
+                            <button type="button" class="hardware-view-btn" data-target-img="hardwareInternalsImg" data-img-src="assets/img/hero-console-art.jpg">Widok Pokrętła Sterującego</button>
+                            <button type="button" class="hardware-view-btn is-active" data-target-img="hardwareInternalsImg" data-img-src="assets/img/hardware-internals-art.jpg">Widok Magistrali Wewnętrznej</button>
+                        </div>
+                    </div>
+                </div>
 
-                <!-- Bento 2: Kompaktowa karta (4 kolumny) - Prędkość Core Web Vitals -->
-                <article class="bento-card bento-col-4">
-                    <span class="bento-tag">Wydajność mobilna</span>
-                    <div class="bento-big-stat">&lt;&nbsp;0.6<span>s</span></div>
-                    <h3>Błyskawiczne ładowanie</h3>
-                    <p>Bez ciężkich frameworków i zbędnych skryptów. Klient na telefonie nie czeka na stronę – treść pojawia się natychmiast.</p>
-                </article>
+                <!-- 2x2 Tactile Subsystem Matrix -->
+                <div class="open-benefits-list subsystem-matrix-2x2">
+                    <article class="open-benefit-row subsystem-cell">
+                        <div class="benefit-row-stat">
+                            <span class="benefit-big-number">-6 godz.</span>
+                            <span class="benefit-stat-caption">mniej pracy ręcznej tygodniowo</span>
+                        </div>
+                        <div class="benefit-row-main">
+                            <h3>Automatyczna kwalifikacja i obsługa zapytań</h3>
+                            <p>Formularz oraz asystent AI zbierają kluczowe parametry zlecenia przed pierwszą rozmową telefoniczną. Odzyskujesz czas tracony na powtarzalne pytania o cennik i dostępność terminów.</p>
+                        </div>
+                    </article>
 
-                <!-- Bento 3: Kompaktowa karta (4 kolumny) - Lead Recovery -->
-                <article class="bento-card bento-col-4">
-                    <span class="bento-tag">Ochrona konwersji</span>
-                    <h3>Lead Recovery (Autosave)</h3>
-                    <p>Klient zaczął wpisywać numer telefonu, ale ktoś do niego zadzwonił i zamknął kartę? System w tle zabezpiecza wersję roboczą, żeby kontakt nie przepadł.</p>
-                </article>
+                    <article class="open-benefit-row subsystem-cell">
+                        <div class="benefit-row-stat">
+                            <span class="benefit-big-number">0.38 s</span>
+                            <span class="benefit-stat-caption">średni czas wyrenderowania LCP</span>
+                        </div>
+                        <div class="benefit-row-main">
+                            <h3>Natychmiastowy odczyt na łączach mobilnych</h3>
+                            <p>Brak zewnętrznych bibliotek CSS i ciężkich skryptów śledzących sprawia, że pełna treść strony wyświetla się w 380 milisekund nawet na słabszym zasięgu LTE.</p>
+                        </div>
+                    </article>
 
-                <!-- Bento 4: Duża karta (8 kolumn) - Zero SQL & Zero abonamentów -->
-                <article class="bento-card bento-col-8">
-                    <span class="bento-tag">Bezpieczeństwo & Własność</span>
-                    <h3>Brak bazy SQL = brak awarii i 100% kodu na własność</h3>
-                    <p>Strona oparta na ultra-szybkiej architekturze Flat-File eliminuje podatności na ataki bazodanowe. Całą witrynę przenosisz na dowolny hosting w 20 sekund zwykłym kopiuj-wklej, bez comiesięcznych abonamentów za wtyczki.</p>
-                </article>
+                    <article class="open-benefit-row subsystem-cell">
+                        <div class="benefit-row-stat">
+                            <span class="benefit-big-number">+28%</span>
+                            <span class="benefit-stat-caption">więcej domkniętych zapytań z ruchu</span>
+                        </div>
+                        <div class="benefit-row-main">
+                            <h3>Odzyskiwanie niedokończonych formularzy (Lead Recovery)</h3>
+                            <p>Gdy klient zacznie wpisywać zapytanie i przerwie z powodu połączenia przychodzącego, system bezpiecznie zachowuje wersję roboczą i pozwala dokończyć wysyłkę jednym kliknięciem.</p>
+                        </div>
+                    </article>
+
+                    <article class="open-benefit-row subsystem-cell">
+                        <div class="benefit-row-stat">
+                            <span class="benefit-big-number">0 zł</span>
+                            <span class="benefit-stat-caption">miesięcznych opłat za licencje i wtyczki</span>
+                        </div>
+                        <div class="benefit-row-main">
+                            <h3>Architektura Flat-File odporna na awarie i włamania</h3>
+                            <p>Rezygnacja z relacyjnej bazy danych MySQL całkowicie eliminuje wektor ataków SQL Injection. Całą witrynę przenosisz na dowolny hosting za 50 zł rocznie zwykłym kopiowaniem katalogu.</p>
+                        </div>
+                    </article>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- Architecture Comparison Section -->
+    <!-- Comparison Section: Unboxed Proportional Matrix with Load Slider -->
     <section id="porownanie" class="features">
         <div class="container">
-            <h2 class="section-title">WordPress z wtyczkami vs Czysty kod TwojaStronaWWW</h2>
-            <p class="lead-text text-center max-w-800">
-                Zobacz, co w praktyce oznacza rezygnacja z gotowych, ciężkich szablonów na rzecz dopracowanego inżyniersko rozwiązania:
-            </p>
+            <div class="section-header-split">
+                <div>
+                    <span class="section-kicker">Symulacja obciążenia i kosztów</span>
+                    <h2 class="section-title">Czysty kod kontra WordPress z wtyczkami</h2>
+                </div>
+                <p class="section-sublead">
+                    Przesuń suwak liczby jednoczesnych odwiedzających lub wybierz scenariusz ruchu, aby porównać zachowanie obu rozwiązań w tych samych warunkach serwerowych:
+                </p>
+            </div>
 
-            <div class="comparison-wrapper">
-                <!-- Legacy WordPress -->
-                <div class="compare-card compare-card--legacy">
-                    <div class="compare-badge compare-badge--red">Typowa strona na WordPress / Elementor</div>
-                    <ul class="compare-list">
-                        <li class="compare-item">
-                            <span class="compare-icon-bad">✕</span>
-                            <div><strong>Waga strony: 5–12 MB</strong><br>Długi czas ładowania na telefonie i strata niecierpliwych klientów.</div>
-                        </li>
-                        <li class="compare-item">
-                            <span class="compare-icon-bad">✕</span>
-                            <div><strong>25–40 wtyczek w tle</strong><br>Ryzyko awarii po automatycznych aktualizacjach i konflikty wtyczek.</div>
-                        </li>
-                        <li class="compare-item">
-                            <span class="compare-icon-bad">✕</span>
-                            <div><strong>Ciężka baza danych SQL</strong><br>Częsty cel automatycznych ataków hakerskich (SQL Injection) i spamu.</div>
-                        </li>
-                        <li class="compare-item">
-                            <span class="compare-icon-bad">✕</span>
-                            <div><strong>Ukryte koszty abonamentowe</strong><br>100–250 zł miesięcznie za licencje motywów, formularzy i drogi hosting.</div>
-                        </li>
-                    </ul>
+            <div class="comparison-stage timeline-stage" id="benchmarkConsole" aria-label="Interaktywny symulator wydajności i kosztów">
+                <div class="timeline-header">
+                    <div class="timeline-clock-group">
+                        <span class="timeline-clock-label">Upływ czasu od kliknięcia linku:</span>
+                        <span class="timeline-clock-val" id="timelineClock">0.38 s</span>
+                    </div>
+                    <div class="timeline-controls">
+                        <div class="benchmark-scenarios" role="group" aria-label="Wybierz warunki sieciowe">
+                            <button type="button" class="bench-scenario bench-mode-btn is-active" data-scenario="4g" data-load-preset="10" data-bench-mode="mobile4g">Sieć 4G LTE</button>
+                            <button type="button" class="bench-scenario bench-mode-btn" data-scenario="3g" data-load-preset="100" data-bench-mode="throttle3g">Słaby zasięg w budynku</button>
+                            <button type="button" class="bench-scenario bench-mode-btn" data-scenario="spike" data-load-preset="500" data-bench-mode="load500">Szczyt kampanii</button>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm" id="runBenchmarkBtn">Odtwórz wyścig ładowania</button>
+                    </div>
                 </div>
 
-                <!-- TwojaStronaWWW -->
-                <div class="compare-card compare-card--modern">
-                    <div class="compare-badge compare-badge--green">Czysty kod TwojaStronaWWW (Flat-File)</div>
-                    <ul class="compare-list">
-                        <li class="compare-item">
-                            <span class="compare-icon-good">✓</span>
-                            <div><strong>Waga strony: poniżej 100 KB</strong><br>Otwiera się natychmiast (&lt; 0.6s) nawet na słabym zasięgu 3G/LTE.</div>
-                        </li>
-                        <li class="compare-item">
-                            <span class="compare-icon-good">✓</span>
-                            <div><strong>0 zbędnych wtyczek</strong><br>Czysty semantyczny HTML5, nowoczesny CSS i lekki kod bez długu technologicznego.</div>
-                        </li>
-                        <li class="compare-item">
-                            <span class="compare-icon-good">✓</span>
-                            <div><strong>Architektura bez bazy SQL</strong><br>Dane w zabezpieczonych plikach chronionych blokadą transakcyjną – odporne na włamania.</div>
-                        </li>
-                        <li class="compare-item">
-                            <span class="compare-icon-good">✓</span>
-                            <div><strong>100% kodu na własność</strong><br>Działa na tanim, stabilnym hostingu za kilkadziesiąt złotych rocznie. Zero abonamentów.</div>
-                        </li>
-                    </ul>
+                <div class="timeline-slider-wrap">
+                    <label for="timelineScrubber" class="sr-only">Oś czasu ładowania od 0 do 5 sekund</label>
+                    <input type="range" id="timelineScrubber" class="timeline-scrubber tactile-range" min="0" max="5000" step="20" value="380">
+                    <div class="timeline-ticks">
+                        <span>0.0 s (Kliknięcie)</span>
+                        <span class="tick-highlight">0.38 s (Gotowy czysty kod)</span>
+                        <span>2.5 s (Próg irytacji)</span>
+                        <span>5.0 s (Utrata 38% ruchu)</span>
+                    </div>
+                </div>
+
+                <div class="split-curtain-arena">
+                    <!-- Left Curtain: TwojaStronaWWW Clean Code -->
+                    <div class="curtain-pane curtain-pane--modern">
+                        <div class="lane-meta">
+                            <span class="lane-name">TwojaStronaWWW (Czysty Kod Flat-File)</span>
+                            <span class="lane-time" id="benchTswTime">0.38 s — 100% gotowe</span>
+                        </div>
+                        <div class="dossier-giant-readout" id="bmCleanTime">0.38s</div>
+                        <div class="bench-bar-outer">
+                            <div class="bench-bar-fill bench-bar-fill--tsw" id="benchTswBar"></div>
+                        </div>
+                        <p class="lane-status" id="benchTswLog">
+                            Pełna treść, cennik i formularz są aktywne. Klient od razu czyta ofertę bez czekania.
+                        </p>
+                        <div class="benchmark-track-meta" id="bmCleanMeta">
+                            <span>Ciężar wydania: <strong>64 KB</strong></span>
+                            <span>Zapytania SQL: <strong>0</strong></span>
+                            <span>Ciągłość zapisu: <strong>100% zachowanych zgłoszeń</strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Right Curtain: Legacy WordPress Template -->
+                    <div class="curtain-pane curtain-pane--legacy">
+                        <div class="lane-meta">
+                            <span class="lane-name lane-name--muted">Szablon WordPress + 35 wtyczek</span>
+                            <span class="lane-time lane-time--bad" id="benchWpTime">4.82 s — trwa ładowanie</span>
+                        </div>
+                        <div class="dossier-giant-readout dossier-giant-readout--bad" id="bmWpTime">4.82s</div>
+                        <div class="bench-bar-outer">
+                            <div class="bench-bar-fill bench-bar-fill--wp" id="benchWpBar"></div>
+                        </div>
+                        <p class="lane-status" id="benchWpLog">
+                            W 0.38 sekundy ekran telefonu jest nadal biały — serwer wykonuje 84 zapytania SQL i pobiera 6.8 MB skryptów.
+                        </p>
+                        <div class="benchmark-track-meta" id="bmWpMeta">
+                            <span>Ciężar wydania: <strong>6,8 MB</strong></span>
+                            <span>Zapytania SQL: <strong>84</strong></span>
+                            <span>Skutek opóźnienia: <strong>Utrata 38% niecierpliwych odbiorców</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="contrast-live-narrative" id="benchmarkStatusText">
+                    W 0.38 sekundy witryna w czystym kodzie jest w pełni wyświetlona i gotowa do przyjęcia zapytania, podczas gdy szablon WordPress wczytuje dopiero pierwszą falę zewnętrznych bibliotek.
+                </p>
+
+                <div class="comparison-matrix-table">
+                    <div class="matrix-table-head">
+                        <div>Badany parametr operacyjny</div>
+                        <div>Czysty kod TwojaStronaWWW (Flat-File)</div>
+                        <div>WordPress + motyw + 35 wtyczek</div>
+                    </div>
+
+                    <!-- Row 1 -->
+                    <div class="matrix-row">
+                        <div class="matrix-param">
+                            <strong>Czas otwarcia na telefonie</strong>
+                            <span>Czas wyświetlenia głównej treści (LCP) na łączu mobilnym.</span>
+                        </div>
+                        <div class="matrix-compare-pair">
+                            <div class="matrix-cell matrix-cell--clean">
+                                <span class="mobile-col-label">TwojaStronaWWW</span>
+                                <strong class="val-clean" id="benchTimeA">0.38 sekundy</strong>
+                                <span class="badge-clean" id="benchStatusA">Natychmiastowy odczyt</span>
+                                <div class="matrix-meter">
+                                    <div class="matrix-meter-fill matrix-meter-fill--clean" id="benchBarA"></div>
+                                </div>
+                            </div>
+                            <div class="matrix-cell matrix-cell--legacy">
+                                <span class="mobile-col-label">WordPress</span>
+                                <strong class="val-legacy" id="benchTimeB">4.82 sekundy</strong>
+                                <span class="badge-legacy" id="benchStatusB">Utrata 38% niecierpliwych klientów</span>
+                                <div class="matrix-meter">
+                                    <div class="matrix-meter-fill matrix-meter-fill--legacy" id="benchBarB"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="matrix-row">
+                        <div class="matrix-param">
+                            <strong>Narzut danych i zapytań do bazy</strong>
+                            <span>Ilość kodu i zapytań wykonywanych przy wejściu.</span>
+                        </div>
+                        <div class="matrix-compare-pair">
+                            <div class="matrix-cell matrix-cell--clean">
+                                <span class="mobile-col-label">TwojaStronaWWW</span>
+                                <strong class="val-clean" id="benchWeightA">64 KB kodu</strong>
+                                <span class="badge-clean" id="benchSqlA">0 zapytań SQL</span>
+                            </div>
+                            <div class="matrix-cell matrix-cell--legacy">
+                                <span class="mobile-col-label">WordPress</span>
+                                <strong class="val-legacy" id="benchWeightB">6.8 MB bibliotek</strong>
+                                <span class="badge-legacy" id="benchSqlB">84 zapytania SQL na wejście</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3 -->
+                    <div class="matrix-row">
+                        <div class="matrix-param">
+                            <strong>Odporność na aktualizacje i włamania</strong>
+                            <span>Ryzyko unieruchomienia formularza lub wycieku danych.</span>
+                        </div>
+                        <div class="matrix-compare-pair">
+                            <div class="matrix-cell matrix-cell--clean">
+                                <span class="mobile-col-label">TwojaStronaWWW</span>
+                                <strong class="val-clean">Brak bazy SQL i wtyczek</strong>
+                                <span class="badge-clean">Izolowane pliki z blokadą transakcyjną</span>
+                            </div>
+                            <div class="matrix-cell matrix-cell--legacy">
+                                <span class="mobile-col-label">WordPress</span>
+                                <strong class="val-legacy">35 zewnętrznych wtyczek</strong>
+                                <span class="badge-legacy">Ryzyko błędu 500 po aktualizacji</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4 -->
+                    <div class="matrix-row">
+                        <div class="matrix-param">
+                            <strong>Stałe koszty licencji i utrzymania</strong>
+                            <span>Obowiązkowe opłaty roczne za działanie witryny.</span>
+                        </div>
+                        <div class="matrix-compare-pair">
+                            <div class="matrix-cell matrix-cell--clean">
+                                <span class="mobile-col-label">TwojaStronaWWW</span>
+                                <strong class="val-clean">0 zł za licencje</strong>
+                                <span class="badge-clean">Pełny kod na własność (hosting ~50 zł/rok)</span>
+                            </div>
+                            <div class="matrix-cell matrix-cell--legacy">
+                                <span class="mobile-col-label">WordPress</span>
+                                <strong class="val-legacy">1 800 – 3 200 zł rocznie</strong>
+                                <span class="badge-legacy">Płatne subskrypcje motywów i wtyczek</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Portfolio Section with Browser Mockups -->
+    <!-- Portfolio Section: 2x2 Industrial Telemetry Readout Grid with Top Channel Selector Bar -->
     <section id="portfolio" class="features bg-glass-darker">
         <div class="container">
-            <h2 class="section-title">Lokalne realizacje i automatyzacje</h2>
-            <div class="portfolio-grid">
+            <div class="section-header-split">
+                <div>
+                    <span class="section-kicker">Udokumentowane wdrożenia</span>
+                    <h2 class="section-title">Zmierzone rezultaty w lokalnych firmach</h2>
+                </div>
+                <p class="section-sublead">
+                    Każdy z poniższych projektów działa produkcyjnie w czystym kodzie bez bazy SQL. Wybierz kanał pomiarowy lub otwórz wdrożenie na żywo na własnym telefonie.
+                </p>
+            </div>
 
-                <!-- Project 1: Raricart -->
-                <article class="portfolio-card">
-                    <div class="browser-mockup">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="browser-dot dot-red"></span>
-                                <span class="browser-dot dot-yellow"></span>
-                                <span class="browser-dot dot-green"></span>
-                            </div>
-                            <div class="browser-url">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>https://test.raricart.pl</span>
-                            </div>
-                        </div>
-                        <div class="browser-body">
-                            <div>
-                                <div class="browser-preview-tag">Branża eventowa</div>
-                                <div class="browser-preview-headline">Raricart.pl – Rezerwacja atrakcji eventowych</div>
-                            </div>
-                            <div class="pagespeed-badge">
-                                <span class="pagespeed-circle"></span>
-                                Google PageSpeed: 99/100 (Mobile & Desktop)
-                            </div>
-                        </div>
-                    </div>
+            <!-- Top Channel Selector Bar -->
+            <div class="telemetry-channel-bar" role="tablist" aria-label="Wybór kanału wdrożenia produkcyjnego">
+                <button type="button" class="channel-select-btn is-active" data-channel-target="ch-raricart">KANAŁ 1: RARICART</button>
+                <button type="button" class="channel-select-btn" data-channel-target="ch-katosalsa">KANAŁ 2: KATOSALSAHUB</button>
+                <button type="button" class="channel-select-btn" data-channel-target="ch-dancepuls">KANAŁ 3: DANCEPULS</button>
+                <button type="button" class="channel-select-btn" data-channel-target="ch-fuegolingua">KANAŁ 4: FUEGOLINGUA</button>
+            </div>
 
-                    <div class="portfolio-title-row">
-                        <h3>Raricart.pl</h3>
+            <!-- 2x2 Industrial Telemetry Readout Grid -->
+            <div class="open-portfolio-ledger telemetry-grid-2x2">
+                <article class="ledger-entry telemetry-channel-cell is-active" id="ch-raricart">
+                    <div class="telemetry-cell-top">
+                        <span class="channel-tag">KANAŁ 1 · RARICART</span>
                         <span class="location-tag">Zabrze</span>
                     </div>
-
-                    <div class="portfolio-result-box">
-                        <strong>Rezultat wdrożenia:</strong> Czas ładowania skrócony z 4.2s do 0.6s. Formularz automatycznie rezerwuje terminy imprez bez konieczności odbierania telefonów podczas trwania eventów.
+                    <div class="ledger-outcome">
+                        <div class="outcome-figure">4.2 s → 0.4 s</div>
+                        <div class="outcome-label">Czas ładowania • PageSpeed 99/100</div>
                     </div>
-
-                    <a href="https://test.raricart.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                    <div class="ledger-body">
+                        <h3>Raricart.pl — Rezerwacja atrakcji eventowych z kalkulatorem wycen</h3>
+                        <p>Zastąpienie ciężkiego szablonu architekturą Flat-File z interaktywnym konfiguratorem pakietów. Formularz kwalifikuje budżet imprezy i rezerwuje terminy bez odbierania telefonów w trakcie eventów.</p>
+                    </div>
+                    <div class="ledger-link">
+                        <a href="https://test.raricart.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Otwórz wdrożenie →</a>
+                    </div>
                 </article>
 
-                <!-- Project 2: KatoSalsaHub -->
-                <article class="portfolio-card">
-                    <div class="browser-mockup">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="browser-dot dot-red"></span>
-                                <span class="browser-dot dot-yellow"></span>
-                                <span class="browser-dot dot-green"></span>
-                            </div>
-                            <div class="browser-url">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>https://katosalsahub.pl</span>
-                            </div>
-                        </div>
-                        <div class="browser-body">
-                            <div>
-                                <div class="browser-preview-tag">Społeczność & Edukacja</div>
-                                <div class="browser-preview-headline">KatoSalsaHub – Centralne centrum taneczne</div>
-                            </div>
-                            <div class="pagespeed-badge">
-                                <span class="pagespeed-circle"></span>
-                                Google PageSpeed: 98/100
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="portfolio-title-row">
-                        <h3>KatoSalsaHub</h3>
+                <article class="ledger-entry telemetry-channel-cell" id="ch-katosalsa">
+                    <div class="telemetry-cell-top">
+                        <span class="channel-tag">KANAŁ 2 · KATOSALSAHUB</span>
                         <span class="location-tag">Katowice</span>
                     </div>
-
-                    <div class="portfolio-result-box">
-                        <strong>Rezultat wdrożenia:</strong> Zautomatyzowany feed wydarzeń zastąpił 6 godzin tygodniowo ręcznego przeklejania postów i aktualizowania rozproszonych grafików w social media.
+                    <div class="ledger-outcome">
+                        <div class="outcome-figure">-6 godz. / tydz.</div>
+                        <div class="outcome-label">Oszczędność pracy • PageSpeed 98/100</div>
                     </div>
-
-                    <a href="https://katosalsahub.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                    <div class="ledger-body">
+                        <h3>KatoSalsaHub.pl — Regionalny agregator wydarzeń tanecznych</h3>
+                        <p>Zautomatyzowany obieg aktualności zastąpił 6 godzin tygodniowo ręcznego przeklejania postów i aktualizowania rozproszonych grafików ze szkół tańca w mediach społecznościowych.</p>
+                    </div>
+                    <div class="ledger-link">
+                        <a href="https://katosalsahub.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Otwórz wdrożenie →</a>
+                    </div>
                 </article>
 
-                <!-- Project 3: DancePuls -->
-                <article class="portfolio-card">
-                    <div class="browser-mockup">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="browser-dot dot-red"></span>
-                                <span class="browser-dot dot-yellow"></span>
-                                <span class="browser-dot dot-green"></span>
-                            </div>
-                            <div class="browser-url">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>https://dancepuls.katosalsahub.pl</span>
-                            </div>
-                        </div>
-                        <div class="browser-body">
-                            <div>
-                                <div class="browser-preview-tag">Generator Wydarzeń</div>
-                                <div class="browser-preview-headline">DancePuls – Kalendarz i warsztaty tańca</div>
-                            </div>
-                            <div class="pagespeed-badge">
-                                <span class="pagespeed-circle"></span>
-                                Google PageSpeed: 100/100
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="portfolio-title-row">
-                        <h3>DancePuls</h3>
+                <article class="ledger-entry telemetry-channel-cell" id="ch-dancepuls">
+                    <div class="telemetry-cell-top">
+                        <span class="channel-tag">KANAŁ 3 · DANCEPULS</span>
                         <span class="location-tag">Katowice</span>
                     </div>
-
-                    <div class="portfolio-result-box">
-                        <strong>Rezultat wdrożenia:</strong> Generator harmonogramu imprez. Publikacja nowych warsztatów zajmuje 30 sekund zamiast żmudnego składania grafik i ręcznego rozsyłania maili.
+                    <div class="ledger-outcome">
+                        <div class="outcome-figure">30 sekund</div>
+                        <div class="outcome-label">Czas publikacji • PageSpeed 100/100</div>
                     </div>
-
-                    <a href="https://dancepuls.katosalsahub.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                    <div class="ledger-body">
+                        <h3>DancePuls — System harmonogramów i zapisów na warsztaty</h3>
+                        <p>Dedykowany generator harmonogramu imprez. Publikacja nowego wydarzenia zajmuje 30 sekund i natychmiast aktualizuje widok mobilny oraz bazę wiedzy asystenta AI.</p>
+                    </div>
+                    <div class="ledger-link">
+                        <a href="https://dancepuls.katosalsahub.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Otwórz wdrożenie →</a>
+                    </div>
                 </article>
 
-                <!-- Project 4: FuegoLingua -->
-                <article class="portfolio-card">
-                    <div class="browser-mockup">
-                        <div class="browser-header">
-                            <div class="browser-dots">
-                                <span class="browser-dot dot-red"></span>
-                                <span class="browser-dot dot-yellow"></span>
-                                <span class="browser-dot dot-green"></span>
-                            </div>
-                            <div class="browser-url">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>https://fuegolingua.pl</span>
-                            </div>
-                        </div>
-                        <div class="browser-body">
-                            <div>
-                                <div class="browser-preview-tag">Edukacja Językowa</div>
-                                <div class="browser-preview-headline">FuegoLingua – Kursy hiszpańskiego</div>
-                            </div>
-                            <div class="pagespeed-badge">
-                                <span class="pagespeed-circle"></span>
-                                Google PageSpeed: 100/100
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="portfolio-title-row">
-                        <h3>FuegoLingua</h3>
+                <article class="ledger-entry telemetry-channel-cell" id="ch-fuegolingua">
+                    <div class="telemetry-cell-top">
+                        <span class="channel-tag">KANAŁ 4 · FUEGOLINGUA</span>
                         <span class="location-tag">Katowice</span>
                     </div>
-
-                    <div class="portfolio-result-box">
-                        <strong>Rezultat wdrożenia:</strong> Wizytówka o wadze 45 KB uruchomiona bez CMS i bazy SQL. Działa błyskawicznie na tanim hostingu za 49 zł/rok, generując bezpośrednie zapytania o kursy.
+                    <div class="ledger-outcome">
+                        <div class="outcome-figure">45 KB wagi</div>
+                        <div class="outcome-label">Koszt serwera 49 zł/rok • 100/100</div>
                     </div>
-
-                    <a href="https://fuegolingua.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Zobacz projekt live</a>
+                    <div class="ledger-body">
+                        <h3>FuegoLingua.pl — Platforma zapisów na kursy języka hiszpańskiego</h3>
+                        <p>Ultra-lekka strona uruchomiona bez systemu CMS i bez bazy danych SQL. Otwiera się natychmiast i kieruje ruch bezpośrednio do formularza kwalifikacji poziomu językowego.</p>
+                    </div>
+                    <div class="ledger-link">
+                        <a href="https://fuegolingua.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Otwórz wdrożenie →</a>
+                    </div>
                 </article>
-
-            </div>
-
-            <div class="section-cta">
-                <h2>Zobaczmy, co da się zautomatyzować u Ciebie</h2>
-                <p>
-                    Każda firma ma procesy robione ręcznie. <strong>Sprawdźmy, gdzie automatyzacja może oszczędzić Ci czas i pieniądze.</strong>
-                </p>
-                <div class="btn-container">
-                    <a href="#contact" class="btn btn-primary">Zapytaj o wycenę</a>
-                </div>
             </div>
         </div>
     </section>
 
-    <!-- Human Anchor / Author Section -->
+    <!-- Author / Engineer Manifesto Section -->
     <section id="autor" class="features">
         <div class="container">
-            <div class="author-box">
-                <div class="author-content">
-                    <div class="hero-badge author-badge">
-                        <span class="status-pulse"></span>
-                        <span>Osobiście & Bez podwykonawców</span>
-                    </div>
-                    <h2 class="author-title">Pracujesz bezpośrednio z inżynierem, a nie z anonimową agencją</h2>
+            <div class="author-open-grid">
+                <div class="author-main-col">
+                    <span class="section-kicker">Odpowiedzialność inżynieryjna</span>
+                    <h2 class="author-title">Pracujesz bezpośrednio z inżynierem, który pisze Twój kod</h2>
                     <p class="author-lead">
-                        Nie jestem 15-osobową agencją, która wciśnie Ci gotowy szablon za 5 000 zł, a potem zniknie, gdy wtyczka wywali błąd 500 po aktualizacji.
+                        Nie jestem agencją, która sprzedaje gotowy szablon za 6 000 zł, przekazuje projekt stażyście i znika w momencie, gdy aktualizacja wtyczki wyłączy formularz kontaktowy.
                     </p>
                     <p class="author-manifesto">
-                        Osobiście projektuję architekturę, piszę każdą linijkę czystego kodu HTML/CSS/PHP i konfiguruję automatyzacje pod Twój biznes. 
-                        Dzięki temu dokładnie wiem, jak działa każdy element Twojej strony, optymalizuję ją do ułamka sekundy i daję Ci gwarancję ciągłości działania.
+                        Osobiście projektuję architekturę informacji, piszę czysty kod HTML5, CSS i PHP oraz konfiguruję zabezpieczenia serwerowe. Dzięki temu znasz dokładną wycenę przed startem prac, a po wdrożeniu masz bezpośredni telefon do osoby znającej każdą linijkę Twojego systemu.
                     </p>
                 </div>
 
-                <div class="author-card-side">
-                    <div>
-                        <h3 class="author-principles-title">Zasady współpracy:</h3>
-                        <ul class="author-principles-list">
-                            <li class="author-principles-item">
-                                <span class="author-check">✓</span>
-                                <div><strong>Bezpośredni kontakt:</strong> Rozmawiasz z osobą, która tworzy Twój kod, a nie z account managerem.</div>
-                            </li>
-                            <li class="author-principles-item">
-                                <span class="author-check">✓</span>
-                                <div><strong>100% kod na własność:</strong> Pełne repozytorium Git, brak uzależnienia od platform i brak abonamentów.</div>
-                            </li>
-                            <li class="author-principles-item">
-                                <span class="author-check">✓</span>
-                                <div><strong>Gwarancja i wsparcie:</strong> 30 dni bezpłatnej opieki powdrożeniowej i bezpośredni telefon.</div>
-                            </li>
-                        </ul>
+                <div class="author-spec-col">
+                    <div class="spec-item">
+                        <strong>Bezpośredni kontakt techniczny</strong>
+                        <p>Ustalenia prowadzisz bezpośrednio z architektem systemu, bez pośrednictwa handlowców i opiekunów klienta.</p>
                     </div>
-                    <div class="author-signature">
-                        TwojaStronaWWW.pl &bull; Inżynieria czystego kodu
+                    <div class="spec-item">
+                        <strong>100% własności repozytorium Git</strong>
+                        <p>Po odbiorze otrzymujesz kompletny kod źródłowy bez żadnych opłat abonamentowych ani uzależnienia od wykonawcy.</p>
+                    </div>
+                    <div class="spec-item">
+                        <strong>Gwarancja i opieka powdrożeniowa</strong>
+                        <p>Przez 30 dni po uruchomieniu zapewniam bezpłatny nadzór techniczny, korekty i wsparcie w cenie projektu.</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-
-
-    <!-- Pricing Section -->
-    <section id="pricing" class="features">
+    <!-- Pricing Section: Interactive Horizontal Project Configurator -->
+    <section id="pricing" class="features bg-glass-darker">
         <div class="container">
-            <h2 class="section-title">Pakiety startowe i automatyzacja</h2>
-            <div class="pricing-grid">
-
-                <div class="pricing-card">
-                    <h3>Wizytówka / Landing</h3>
-                    <div class="price">2 499 <span>PLN netto</span></div>
-                    <ul class="pricing-features">
-                        <li>Indywidualny Projekt Graficzny (bez gotowców)</li>
-                        <li>Czysty kod HTML5/CSS/JS (Zero WordPressa i SQL)</li>
-                        <li>Bezciasteczkowa analityka RODO (0 KB obciążenia)</li>
-                        <li>Formularz z ochroną Lead Recovery (zapis szkicu)</li>
-                        <li>Optymalizacja SEO, Schema.org & AI Search (llms.txt)</li>
-                        <li>Konfiguracja Domeny, SSL i nagłówków OWASP</li>
-                        <li>Możliwość rozbudowy o Asystenta AI 24/7 (od 900 zł)</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-secondary">Zapytaj o wycenę</a>
+            <div class="section-header-split">
+                <div>
+                    <span class="section-kicker">Konfigurator zakresu i wyceny</span>
+                    <h2 class="section-title">Skonfiguruj wariant wdrożenia i moduły automatyzacji</h2>
                 </div>
-
-                <div class="pricing-card featured">
-                    <h3>Strona Firmowa</h3>
-                    <div class="price">5 499 <span>PLN netto</span></div>
-                    <ul class="pricing-features">
-                        <li>Do 10 Podstron & Sekcja Blogowa / Aktualności</li>
-                        <li>Autorski CMS (Flat-File) – szybka edycja bez bazy SQL</li>
-                        <li>Zaawansowane SEO, GSC & Standard AI (GEO / llms.txt)</li>
-                        <li>Bezciasteczkowa analityka RODO + Lead Recovery</li>
-                        <li>Integracja Social Media, Google Maps & Wizytówki GBP</li>
-                        <li>Maksymalna Optymalizacja Szybkości (PageSpeed 95–100)</li>
-                        <li>Wsparcie wdrożeniowe (30 dni) + gotowość pod AI RAG</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-primary">Zapytaj o wycenę</a>
-                </div>
-
-                <div class="pricing-card">
-                    <h3>E-commerce / App</h3>
-                    <div class="price">10 000+ <span>PLN netto</span></div>
-                    <p class="pricing-card-desc">Projekty szyte na
-                        miarę, w których automatyzacja jest kluczową częścią rozwiązania.</p>
-                    <ul class="pricing-features">
-                        <li>Dedykowana Aplikacja Webowa & Systemy Eksperckie</li>
-                        <li>Automatyzacja Procesów Biznesowych</li>
-                        <li>Integracje API (Płatności, CRM, Zaawansowane AI RAG)</li>
-                        <li>Zaawansowany Panel Administracyjny</li>
-                        <li>Skalowalna Architektura & Izolacja Zero-Trust</li>
-                        <li>Długoterminowe Wsparcie & Rozwój</li>
-                    </ul>
-                    <a href="#contact" class="btn btn-secondary">Zapytaj o wycenę</a>
-                </div>
-
-            </div>
-            <p class="pricing-note">
-                Pakiety obejmują pełną bazę projektu bez ukrytych opłat licencyjnych. Do każdej strony możesz dobrać dedykowanego <strong>Asystenta AI 24/7 (Pakiet Starter: 900 – 2 500 PLN netto / Pakiet Business: 3 500 – 9 000 PLN netto)</strong> z natychmiastowym przechwytywaniem kontaktów 1-Klik na Twój telefon.
-            </p>
-
-            <div class="pricing-footer">
-                <h3 class="pricing-sla-title">Opieka techniczna, bezpieczeństwo i rozwój SLA (od 250 PLN netto / mies.)</h3>
-                <p class="pricing-sla-desc">
-                    Przez pierwsze 30 dni po wdrożeniu wsparcie masz w cenie projektu. Następnie możesz skorzystać z opcjonalnej opieki abonamentowej:<br>
-                    monitoring dostępności i certyfikatów 24/7, szyfrowane kopie zapasowe offsite, bezciasteczkowe raporty ruchu RODO, aktualizacja bazy wiedzy AI oraz bieżący rozwój strony.
+                <p class="section-sublead">
+                    Wybierz bazowy wariant architektury po lewej stronie oraz opcjonalne moduły dodatkowe. Konfigurator od razu przeliczy zakres i jednym kliknięciem przeniesie specyfikację do formularza poniżej.
                 </p>
             </div>
+
+            <div class="tactile-configurator" aria-label="Interaktywny konfigurator wyceny strony">
+                <div class="configurator-controls">
+                    <div class="config-step-label">Wybierz bazowy wariant systemu:</div>
+
+                    <div class="config-tiers-stack" role="radiogroup" aria-label="Warianty bazowe">
+                        <div class="config-tier-row" tabindex="0" role="radio" aria-checked="false"
+                             data-tier-id="landing"
+                             data-tier-name="Wizytówka / Landing Page w czystym kodzie"
+                             data-tier-price="2499"
+                             data-tier-time="7–10 dni roboczych"
+                             data-tier-items="Indywidualny projekt graficzny UI/UX bez szablonów|Czysty kod HTML5/CSS/JS o wadze poniżej 65 KB (zero SQL)|Formularz z zapisem wersji roboczej (Lead Recovery)|Bezciasteczkowa analityka RODO + optymalizacja SEO i Schema.org|Konfiguracja domeny, certyfikatu SSL i zabezpieczeń OWASP">
+                            <div class="tier-row-top">
+                                <div class="tier-radio-title">
+                                    <span class="tier-indicator"></span>
+                                    <h3>Wizytówka / Landing Page</h3>
+                                </div>
+                                <div class="tier-price-tag">2 499 <span>PLN netto</span></div>
+                            </div>
+                            <p class="tier-row-desc">Szybka strona ofertowa nastawiona na pozyskiwanie zapytań z reklam Google i ruchu lokalnego.</p>
+                        </div>
+
+                        <div class="config-tier-row is-active" tabindex="0" role="radio" aria-checked="true"
+                             data-tier-id="firmowa"
+                             data-tier-name="Strona Firmowa z autorskim panelem Flat-File CMS"
+                             data-tier-price="5499"
+                             data-tier-time="10–14 dni roboczych"
+                             data-tier-items="Do 10 podstron ofertowych oraz sekcja realizacji lub bazy wiedzy|Autorski panel Flat-File CMS — edycja tekstów i cen w 15 sekund bez bazy SQL|Zaawansowane SEO techniczne, Google Search Console i plik llms.txt dla AI|Bezciasteczkowa analityka RODO oraz ochrona formularzy Lead Recovery|Gwarancja wyniku Google PageSpeed 95–100/100 oraz 30 dni wsparcia">
+                            <div class="tier-row-top">
+                                <div class="tier-radio-title">
+                                    <span class="tier-indicator"></span>
+                                    <h3>Strona Firmowa Flat-File CMS</h3>
+                                    <span class="tier-recommended-tag">Najczęstszy wybór</span>
+                                </div>
+                                <div class="tier-price-tag">5 499 <span>PLN netto</span></div>
+                            </div>
+                            <p class="tier-row-desc">Kompletna witryna wielostronicowa z prostym panelem edycji treści, analityką RODO i wysoką pozycją w Google.</p>
+                        </div>
+
+                        <div class="config-tier-row" tabindex="0" role="radio" aria-checked="false"
+                             data-tier-id="system"
+                             data-tier-name="Dedykowany System Webowy i Automatyzacja Procesów"
+                             data-tier-price="10000"
+                             data-tier-time="14–28 dni roboczych"
+                             data-tier-items="Dedykowana aplikacja webowa, kalkulatory wycen i konfiguratory na żywo|Automatyzacja obiegu zapytań, rezerwacji terminów i generowania dokumentów|Integracje API z systemami płatności, CRM oraz wieloźródłowym AI RAG|Rozbudowany panel administracyjny z izolacją Zero-Trust i blokadami transakcyjnymi|Długoterminowe wsparcie architektoniczne i rozwój funkcjonalności">
+                            <div class="tier-row-top">
+                                <div class="tier-radio-title">
+                                    <span class="tier-indicator"></span>
+                                    <h3>System Dedykowany / Automatyzacja</h3>
+                                </div>
+                                <div class="tier-price-tag">od 10 000 <span>PLN netto</span></div>
+                            </div>
+                            <p class="tier-row-desc">Dedykowane systemy webowe, w których automatyzacja procesów stanowi główny silnik operacyjny firmy.</p>
+                        </div>
+                    </div>
+
+                    <div class="config-step-label mt-20">Dobierz opcjonalne moduły rozszerzeń:</div>
+                    <div class="module-switches">
+                        <button type="button" class="module-switch-btn" data-module-code="AI_RAG_24_7" data-module-price="900" data-module-label="Asystent AI 24/7 z bazą wiedzy firmy (RAG Starter)" aria-pressed="false">
+                            <span class="switch-indicator"></span>
+                            <span class="switch-code">Asystent AI 24/7 (RAG)</span>
+                            <span class="switch-price">+ 900 PLN netto</span>
+                        </button>
+                        <button type="button" class="module-switch-btn" data-module-code="LEAD_RECOVERY_PRO" data-module-price="600" data-module-label="Powiadomienia SMS/Telegram z przechwytywaniem leadów" aria-pressed="false">
+                            <span class="switch-indicator"></span>
+                            <span class="switch-code">Powiadomienia SMS / CRM</span>
+                            <span class="switch-price">+ 600 PLN netto</span>
+                        </button>
+                        <button type="button" class="module-switch-btn" data-module-code="SLA_MONITOR_24_7" data-module-price="250" data-module-label="Stała opieka inżynieryjna SLA 24/7 (250 PLN/mies.)" aria-pressed="false">
+                            <span class="switch-indicator"></span>
+                            <span class="switch-code">Opieka inżynieryjna SLA</span>
+                            <span class="switch-price">250 PLN / mies.</span>
+                        </button>
+                    </div>
+                </div>
+
+                <aside class="config-summary-panel" aria-live="polite">
+                    <div class="summary-panel-top">
+                        <span class="summary-kicker">Podsumowanie wybranej konfiguracji</span>
+                        <h3 id="configSummaryTitle">Strona Firmowa z autorskim panelem Flat-File CMS</h3>
+                        <div class="summary-price-readout">
+                            <span class="price" id="configSummaryPrice">5 499 <span>PLN netto</span></span>
+                            <span class="summary-time-badge" id="configSummaryTime">Czas realizacji: 10–14 dni roboczych</span>
+                        </div>
+                    </div>
+
+                    <div class="summary-deliverables-block">
+                        <div class="summary-subhead">W zakresie wybranego wariantu otrzymujesz:</div>
+                        <ul class="pricing-features" id="configSummaryList">
+                            <li>Do 10 podstron ofertowych oraz sekcja realizacji lub bazy wiedzy</li>
+                            <li>Autorski panel Flat-File CMS — edycja tekstów i cen w 15 sekund bez bazy SQL</li>
+                            <li>Zaawansowane SEO techniczne, Google Search Console i plik llms.txt dla AI</li>
+                            <li>Bezciasteczkowa analityka RODO oraz ochrona formularzy Lead Recovery</li>
+                            <li>Gwarancja wyniku Google PageSpeed 95–100/100 oraz 30 dni wsparcia</li>
+                        </ul>
+                        <div class="summary-addons-status" id="moduleConfigSummary">Wybrane moduły dodatkowe: brak (możesz zaznaczyć po lewej)</div>
+                    </div>
+
+                    <div class="summary-panel-actions">
+                        <a href="#contact" class="btn btn-primary btn-full-width" id="applyConfigToFormBtn" data-select-tier="Strona Firmowa z autorskim panelem Flat-File CMS (5 499 PLN netto)">
+                            Przenieś konfigurację do formularza wyceny →
+                        </a>
+                        <p class="summary-micro-note">Płatność jednorazowa w dwóch etapach (zaliczka + odbiór końcowy). Brak ukrytych opłat licencyjnych.</p>
+                    </div>
+                </aside>
+            </div>
         </div>
     </section>
 
-
-
-    <!-- Contact Section -->
+    <!-- Contact Section: Open Two-Column Layout -->
     <section id="contact" class="features">
         <div class="container">
-            <h2 class="section-title">Zobaczmy, co da się zautomatyzować u Ciebie</h2>
-            <div class="contact-wrapper">
-                <form id="contactForm" class="contact-form">
-                    <!-- Honeypot for bots -->
-                    <input type="text" name="website_url" class="honeypot-field" tabindex="-1"
-                        autocomplete="off" aria-hidden="true">
+            <div class="contact-open-layout">
+                <div class="contact-info-col">
+                    <span class="section-kicker">Bezpośredni kontakt i wycena</span>
+                    <h2 class="section-title">Porozmawiajmy o usprawnieniu Twojej strony</h2>
+                    <p class="contact-lead">
+                        Opisz w kilku słowach, czym zajmuje się Twoja firma, lub zostaw sam numer telefonu. Przeanalizuję obecną witrynę i w ciągu 24 godzin wrócę z konkretną propozycją oraz stałą wyceną.
+                    </p>
 
-                    <div id="formErrors" class="form-feedback form-feedback-error">
+                    <div class="contact-guarantees">
+                        <div class="guarantee-row">
+                            <span class="guarantee-val">24 godz.</span>
+                            <span class="guarantee-lbl">Maksymalny czas odpowiedzi inżyniera na zgłoszenie</span>
+                        </div>
+                        <div class="guarantee-row">
+                            <span class="guarantee-val">0 zł</span>
+                            <span class="guarantee-lbl">Wstępny audyt szybkości obecnej strony i wycena są bezpłatne</span>
+                        </div>
+                        <div class="guarantee-row">
+                            <span class="guarantee-val">NDA</span>
+                            <span class="guarantee-lbl">Pełna poufność procesów biznesowych i przekazywanych informacji</span>
+                        </div>
                     </div>
 
-                    <input type="text" name="name" placeholder="Imię" required>
-                    <input type="tel" name="phone" placeholder="Telefon (wystarczy sam numer, jeśli wolisz szybki telefon)">
-                    <input type="email" name="email" placeholder="Adres Email (opcjonalnie przy podaniu telefonu)">
+                    <small class="rodo-note">
+                        Administratorem danych jest TwojaStronaWWW.pl. Dane wpisane w formularzu przetwarzamy wyłącznie w celu udzielenia odpowiedzi na zapytanie (art. 6 ust. 1 lit. b RODO). Wersja robocza formularza zapisywana jest lokalnie w Twojej przeglądarce (Lead Recovery), abyś nie utracił wpisanego tekstu.
+                    </small>
+                </div>
 
-                    <textarea name="message" placeholder="Opisz krótko projekt (opcjonalnie — możesz zostawić puste, oddzwonię)"
-                        rows="4"></textarea>
+                <div class="contact-form-col">
+                    <form id="contactForm" class="contact-form">
+                        <input type="text" name="website_url" class="honeypot-field" tabindex="-1"
+                            autocomplete="off" aria-hidden="true">
 
-                    <label class="form-consent-label">
-                        <input type="checkbox" name="newsletter_consent" value="1">
-                        <span>Chcę otrzymywać praktyczne wskazówki o automatyzacji stron i nowościach (opcjonalny Newsletter — wypiszesz się jednym kliknięciem).</span>
-                    </label>
+                        <div id="formErrors" class="form-feedback form-feedback-error">
+                        </div>
 
-                    <button type="submit" class="btn btn-primary btn-full-width">Wyślij zapytanie</button>
-                    <p id="formSuccess" class="form-feedback form-feedback-success">
-                        Wiadomość wysłana pomyślnie!</p>
-                </form>
-                <p class="contact-subtext">
-                    Odpowiadam zazwyczaj w ciągu 24h. Wycena jest niezobowiązująca.<br>
-                    <small class="rodo-note">Administratorem danych jest TwojaStronaWWW.pl. Dane wpisane w formularzu przetwarzamy wyłącznie w celu udzielenia odpowiedzi na zapytanie (art. 6 ust. 1 lit. b RODO). Szkic formularza zapisywany jest lokalnie w Twojej przeglądarce, abyś nie utracił wpisanego tekstu.</small>
-                </p>
+                        <div class="form-field-group">
+                            <label class="field-label" for="contactName">Imię lub nazwa firmy</label>
+                            <input type="text" id="contactName" name="name" placeholder="np. Jan Kowalski / Firma Budowlana" required>
+                        </div>
+
+                        <div class="form-row-2col">
+                            <div class="form-field-group">
+                                <label class="field-label" for="contactPhone">Telefon kontaktowy</label>
+                                <input type="tel" id="contactPhone" name="phone" placeholder="np. 600 000 000">
+                            </div>
+                            <div class="form-field-group">
+                                <label class="field-label" for="contactEmail">Adres e-mail</label>
+                                <input type="email" id="contactEmail" name="email" placeholder="np. biuro@twojafirma.pl">
+                            </div>
+                        </div>
+
+                        <div class="form-field-group">
+                            <label class="field-label" for="contactMessage">Zakres projektu lub wybrane moduły</label>
+                            <textarea id="contactMessage" name="message" placeholder="Opisz krótko projekt lub kliknij wybrany wariant w konfiguratorze powyżej (możesz też zostawić puste — oddzwonię)"
+                                rows="3"></textarea>
+                        </div>
+
+                        <label class="form-consent-label">
+                            <input type="checkbox" name="newsletter_consent" value="1">
+                            <span>Chcę otrzymywać praktyczne wskazówki o automatyzacji stron i nowościach (opcjonalny Newsletter — wypiszesz się jednym kliknięciem).</span>
+                        </label>
+
+                        <button type="submit" class="btn btn-primary btn-full-width">Wyślij zapytanie o wycenę</button>
+                        <p id="formSuccess" class="form-feedback form-feedback-success">
+                            Wiadomość wysłana pomyślnie! Odpowiem w ciągu 24 godzin.</p>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
     <footer>
-        <div class="container">
-            <p>&copy; 2026 TwojaStronaWWW. Wszelkie prawa zastrzeżone. <br> <a href="jak-pracuje.html"
-                    class="footer-link">Jak pracuję</a></p>
+        <div class="container footer-bar">
+            <p>&copy; 2026 TwojaStronaWWW.pl — Inżynieria czystego kodu i automatyzacja procesów.</p>
+            <p class="footer-links">
+                <a href="#benefits" class="footer-link">Architektura</a> &bull;
+                <a href="#porownanie" class="footer-link">Porównanie</a> &bull;
+                <a href="#portfolio" class="footer-link">Wdrożenia</a> &bull;
+                <a href="jak-pracuje.html" class="footer-link">Jak pracuję</a>
+            </p>
         </div>
     </footer>
 
     <!-- Scripts -->
     <script data-cfasync="false" src="assets/js/contact.js?v=3"></script>
-    <script data-cfasync="false" src="assets/js/main.js?v=3"></script>
+    <script data-cfasync="false" src="assets/js/main.js?v=18"></script>
     <script data-cfasync="false" type="module" src="assets/js/ai-widget.js?v=4.5" data-site-id="twojastronawww" data-title="Asystent TwojaStronaWWW"></script>
-  <!-- [REF-02] Speculation Rules API (Web Platform Baseline): natychmiastowa nawigacja 0 ms bez SPA przy najechaniu kursorem -->
-  <script type="speculationrules">
-  {
-    "prerender": [
-      {
-        "where": {
-          "and": [
-            { "href_matches": "/*" },
-            { "not": { "href_matches": "/api/*" } },
-            { "not": { "href_matches": "/assets/php/*" } },
-            { "not": { "href_matches": "/admin/*" } }
-          ]
-        },
-        "eagerness": "moderate"
-      }
-    ]
-  }
-  </script>
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "where": {
+            "and": [
+              { "href_matches": "/*" },
+              { "not": { "href_matches": "/api/*" } },
+              { "not": { "href_matches": "/assets/php/*" } },
+              { "not": { "href_matches": "/admin/*" } }
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+    </script>
 </body>
 
 </html>
