@@ -94,7 +94,7 @@ twojastronawww/
 ├── tests/                      # Skrypty audytowe i testy integralności backendu
 ├── index.html                  # Strona główna z prezentacją oferty
 ├── jak-pracuje.html            # Standardy procesowe, metodyka wdrożeń i SLA
-├── dokumentacja_systemu.md     # Szczegółowa specyfikacja modułów backendowych
+├── SECURITY.md                 # Polityka bezpieczeństwa i zgłaszania podatności (ISO 27001 / RFC 9116)
 └── README.md                   # Niniejsza dokumentacja techniczna
 ```
 

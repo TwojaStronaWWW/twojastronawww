@@ -1,5 +1,15 @@
-# Ochrona danych osobowych, sekretów .env i plików CSV/JSON (ISO 27001 & RODO)
-<FilesMatch "(\.env.*|\.(csv|json|log|lock|txt|md))$">
+Options -Indexes
+
+# [REF-05] Ochrona przed atakami PHP2Shell / CGI Argument Injection & Wrapper RCE (CVE-2024-4577)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{QUERY_STRING} (^|&)(%2d|%ad|-)(d|n|s|w) [NC,OR]
+    RewriteCond %{QUERY_STRING} (allow_url_include|auto_prepend_file|auto_append_file|php://|phar://|expect://) [NC]
+    RewriteRule ^ - [F,L]
+</IfModule>
+
+# Ochrona danych osobowych, sekretów .env, baz, kluczy i plików CSV/JSON (ISO 27001 & RODO)
+<FilesMatch "(^\.env.*|^\.npmrc$|^\.gitleaks\.toml$|^package(-lock)?\.json$|\.(csv|json|log|lock|txt|md|sql|sqlite|sqlite3|db|pem|key|kdbx|bak|sh|tmp))$">
     <IfModule mod_authz_core.c>
         Require all denied
     </IfModule>

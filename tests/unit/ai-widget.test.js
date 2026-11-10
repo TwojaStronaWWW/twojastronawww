@@ -2,6 +2,9 @@ import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { setupMockDom } from '../helpers/mock-dom.js';
 import {
+  MAX_CACHE_ENTRIES,
+  escapeHtml,
+  isOwnerAnalyticsIgnored,
   formatMarkdown,
   getLocalFallbackAnswer,
   computeKnowledgeVersion,
@@ -227,6 +230,84 @@ describe('Uniwersalny Widget Asystenta AI v3.0 (assets/js/ai-widget.js)', () => 
     const widget = initAiWidget(dom.mockDocument, dom.mockWindow);
     assert.equal(widget.getCachedAnswer('Ile kosztuje strona WWW?'), null);
     assert.equal(widget.getCachedAnswer('Jak wygląda współpraca?'), null);
+  });
+
+  test('Ochrona DOM XSS (escapeHtml na title i placeholder), bezpieczny linkifier @ w URL oraz opis 15-modelowej kaskady', () => {
+    assert.equal(escapeHtml('<img src=x onerror="alert(1)">'), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;');
+
+    const widget = initAiWidget(dom.mockDocument, dom.mockWindow, {
+      title: 'Asystent "XSS" <img src=x onerror=alert(1)>',
+      placeholder: 'Wpisz "pytanie" <script>alert(1)</script>'
+    });
+    assert.ok(widget);
+    assert.equal(widget.root.innerHTML.includes('<img src=x'), false, 'Tytuł musi być escapowany w root.innerHTML');
+    assert.equal(widget.root.innerHTML.includes('<script>alert(1)</script>'), false, 'Placeholder musi być escapowany w root.innerHTML');
+    assert.ok(widget.root.innerHTML.includes('&lt;img src=x onerror=alert(1)&gt;'));
+
+    // Linkifier @ nie może rozbijać URL-i z '@' ani tworzyć zagnieżdżonych <a>
+    const mdWithAtUrl = 'Zobacz https://www.tiktok.com/@raricart.pl oraz https://user@twojastronawww.pl/panel i napisz na biuro@twojastronawww.pl.';
+    const rendered = formatMarkdown(mdWithAtUrl);
+    assert.ok(rendered.includes('<a href="https://www.tiktok.com/@raricart.pl" target="_blank" rel="noopener noreferrer" class="tsw-ai-link">https://www.tiktok.com/@raricart.pl</a>'));
+    assert.ok(rendered.includes('<a href="https://user@twojastronawww.pl/panel" target="_blank" rel="noopener noreferrer" class="tsw-ai-link">https://user@twojastronawww.pl/panel</a>'));
+    assert.ok(rendered.includes('<a href="mailto:biuro@twojastronawww.pl" class="tsw-ai-link">biuro@twojastronawww.pl</a>'));
+    assert.equal(/<a\b[^>]*>[^<]*<a\b/i.test(rendered), false, 'Brak zagnieżdżonych tagów <a> w formatMarkdown');
+
+    // Opis 15-modelowej kaskady
+    assert.match(getLocalFallbackAnswer('Wdrożenie asystenta AI RAG'), /15-modelowej kaskady/);
+  });
+
+  test('MAX_CACHE_ENTRIES = 50: limituje rozmiar Response Cache i usuwa najstarsze wpisy', async () => {
+    assert.equal(MAX_CACHE_ENTRIES, 50);
+    dom.mockWindow.fetch = async (_, opts) => {
+      const body = JSON.parse(opts.body);
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          answer: `Odpowiedź dla: ${body.question}`
+        })
+      };
+    };
+
+    const widget = initAiWidget(dom.mockDocument, dom.mockWindow);
+    for (let i = 1; i <= 55; i++) {
+      await widget.sendQuestion(`Unikalne zapytanie testowe numer ${i}`);
+    }
+
+    assert.equal(widget.getCacheSize(), 50, 'Response Cache nie może przekroczyć MAX_CACHE_ENTRIES = 50');
+    assert.equal(widget.getCachedAnswer('Unikalne zapytanie testowe numer 1'), null, 'Najstarszy wpis powinien zostać usunięty');
+    assert.match(widget.getCachedAnswer('Unikalne zapytanie testowe numer 55') || '', /55/);
+  });
+
+  test('isOwnerAnalyticsIgnored wyklucza localhost, WebDriver i flagę właściciela, a przepuszcza ruch produkcyjny', () => {
+    assert.equal(isOwnerAnalyticsIgnored({ location: { hostname: 'localhost', search: '' }, navigator: {} }), true);
+    assert.equal(isOwnerAnalyticsIgnored({ location: { hostname: '127.0.0.1', search: '' }, navigator: {} }), true);
+    assert.equal(isOwnerAnalyticsIgnored({ location: { hostname: 'twojastronawww.pl', search: '' }, navigator: { webdriver: true } }), true);
+
+    const prodStorage = {
+      _map: new Map(),
+      getItem(k) { return this._map.get(k) || null; },
+      setItem(k, v) { this._map.set(k, String(v)); },
+      removeItem(k) { this._map.delete(k); }
+    };
+    assert.equal(
+      isOwnerAnalyticsIgnored({
+        location: { hostname: 'twojastronawww.pl', search: '' },
+        navigator: { webdriver: false },
+        localStorage: prodStorage
+      }),
+      false
+    );
+
+    assert.equal(
+      isOwnerAnalyticsIgnored({
+        location: { hostname: 'twojastronawww.pl', search: '?ignore_analytics=1' },
+        navigator: { webdriver: false },
+        localStorage: prodStorage
+      }),
+      true
+    );
+    assert.equal(prodStorage.getItem('tsw_ignore_analytics'), '1');
   });
 });
 

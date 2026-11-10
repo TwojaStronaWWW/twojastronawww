@@ -44,7 +44,7 @@ export const SECURITY_HEADERS = {
   'Cross-Origin-Resource-Policy': 'same-site',
 };
 
-const BLOCKED_FILE_PATTERN = /(^|[\/\\])(\.env.*|\.htaccess|\.git.*|\.gitleaks\.toml|api[\/\\](sessions|rate_limits)([\/\\].*|$)|.*\.(php|bak|tmp|log|sql|sh|swp|csv|lock))$/i;
+const BLOCKED_FILE_PATTERN = /(^|[\/\\])(\.env.*|\.htaccess|\.git.*|\.npmrc|\.editorconfig|\.gitleaks\.toml|package(-lock)?\.json|api[\/\\](sessions|rate_limits)([\/\\].*|$)|.*\.(php|bak|tmp|log|sql|sqlite|sqlite3|db|pem|key|kdbx|sh|swp|csv|lock))$/i;
 
 export function resolveSafeFilePath(rawUrl = '/', rootDir = ROOT_DIR) {
   let reqUrl;

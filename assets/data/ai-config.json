@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "siteId": "twojastronawww",
+  "title": "Asystent TwojaStronaWWW",
+  "routerUrl": "https://ai.twojastronawww.pl/chat-router.php",
+  "quickPrompts": [
+    "Ile kosztuje strona WWW?",
+    "Dlaczego kod zamiast WordPressa?",
+    "Wdrożenie czatbota AI (RAG)",
+    "Jak wygląda współpraca?"
+  ],
+  "theme": {
+    "primary": "var(--signal-orange, #00E599)",
+    "accent": "var(--signal-orange-hover, #00C482)",
+    "highlight": "#00E599",
+    "bg": "var(--surface-1, #0F1115)",
+    "surface": "var(--surface-2, #14171D)",
+    "text": "var(--text-color, #F3F4F6)",
+    "muted": "var(--text-muted, #8E95A2)",
+    "onPrimary": "#090A0C"
+  },
+  "fallbackFaq": [
+    {
+      "question": "Ile kosztuje strona WWW?",
+      "answer": "Wizytówka / Landing Page w czystym kodzie kosztuje 2 499 PLN netto, rozbudowana Strona Firmowa (do 10 podstron z Flat-File CMS) 5 499 PLN netto, a wdrożenie Asystenta AI (RAG) zaczyna się od 900 PLN netto."
+    },
+    {
+      "question": "Dlaczego czysty kod zamiast WordPressa?",
+      "answer": "Strona waży poniżej 65 KB, ładuje się w 0.38 s (PageSpeed 95-100/100), nie ma bazy SQL podatnej na włamania i nie wymaga płatnych wtyczek."
+    }
+  ]
+}

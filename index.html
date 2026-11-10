@@ -41,7 +41,7 @@
         rel="stylesheet">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=22">
+    <link rel="stylesheet" href="assets/css/style.css?v=26">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -132,6 +132,7 @@
 </head>
 
 <body>
+    <a href="#main" class="skip-link">Przejdź do głównej treści</a>
 
     <!-- Header: Persistent Left-Hand Vertical Instrument Sidebar on Desktop (250px Fixed Rail) -->
     <header>
@@ -168,7 +169,8 @@
         </nav>
     </header>
 
-    <!-- Hero Section: Asymmetric 2-Column Hardware Console Deck with Image 1 (hero-console-art.jpg) -->
+    <main id="main">
+    <!-- Hero Section: Asymmetric 2-Column Hardware Console Deck with Interactive XOR Viewport -->
     <section class="hero">
         <div class="container">
             <div class="hero-console-deck">
@@ -225,7 +227,7 @@
 
                         <div class="xor-hud-thumbs">
                             <canvas id="xorThumb1" class="xor-thumb-canvas xor-thumb-canvas--lg" width="52" height="52"></canvas>
-                            <canvas id="xorThumb2" class="xor-thumb-canvas xor-thumb-canvas--sm" width="38" height="38"></canvas>
+                            <canvas id="xorThumb2" class="xor-thumb-canvas xor-thumb-canvas--sm" width="156" height="52"></canvas>
                         </div>
 
                         <div class="xor-hud-bottomright">
@@ -592,7 +594,7 @@
                         <p>Zastąpienie ciężkiego szablonu architekturą Flat-File z interaktywnym konfiguratorem pakietów. Formularz kwalifikuje budżet imprezy i rezerwuje terminy bez odbierania telefonów w trakcie eventów.</p>
                     </div>
                     <div class="ledger-link">
-                        <a href="https://test.raricart.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Otwórz wdrożenie →</a>
+                        <a href="https://raricart.pl/" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Otwórz wdrożenie →</a>
                     </div>
                 </article>
 
@@ -843,7 +845,7 @@
                         <input type="text" name="website_url" class="honeypot-field" tabindex="-1"
                             autocomplete="off" aria-hidden="true">
 
-                        <div id="formErrors" class="form-feedback form-feedback-error">
+                        <div id="formErrors" class="form-feedback form-feedback-error" role="alert" aria-live="assertive" aria-atomic="true">
                         </div>
 
                         <div class="form-field-group">
@@ -874,13 +876,14 @@
                         </label>
 
                         <button type="submit" class="btn btn-primary btn-full-width">Wyślij zapytanie o wycenę</button>
-                        <p id="formSuccess" class="form-feedback form-feedback-success">
+                        <p id="formSuccess" class="form-feedback form-feedback-success" role="status" aria-live="polite">
                             Wiadomość wysłana pomyślnie! Odpowiem w ciągu 24 godzin.</p>
                     </form>
                 </div>
             </div>
         </div>
     </section>
+    </main>
 
     <!-- Footer -->
     <footer>
@@ -897,7 +900,7 @@
 
     <!-- Scripts -->
     <script data-cfasync="false" src="assets/js/contact.js?v=3"></script>
-    <script data-cfasync="false" src="assets/js/main.js?v=22"></script>
+    <script data-cfasync="false" src="assets/js/main.js?v=26"></script>
     <script data-cfasync="false" type="module" src="assets/js/ai-widget.js?v=4.5" data-site-id="twojastronawww" data-title="Asystent TwojaStronaWWW"></script>
     <script type="speculationrules">
     {

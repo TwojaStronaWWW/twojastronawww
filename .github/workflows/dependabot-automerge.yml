@@ -3,7 +3,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
   workflow_run:
-    workflows: ["CI & Quality Gate"]
+    workflows: ["CI/CD Pipeline & Deployment: TwojaStronaWWW.pl"]
     types: [completed]
 
 permissions:
@@ -47,11 +47,11 @@ jobs:
           CHANGED_FILES=$(gh pr view "$PR_NUMBER" --repo "${{ github.repository }}" --json files --jq '.files[].path')
           echo "Zmienione pliki w PR #${PR_NUMBER}:"
           echo "$CHANGED_FILES"
-          if echo "$CHANGED_FILES" | grep -E '^(\.env|\.gitleaks\.toml|\.github/workflows/(deploy|ai-security-review|dependabot-automerge))'; then
-            echo "::warning::PR od Google Jules modyfikuje chronione pliki CI/CD lub konfigurację sekretów — wymagana ręczna akceptacja właściciela."
+          if echo "$CHANGED_FILES" | grep -E '^(\.env|\.npmrc|\.htaccess|sw\.js|api/|\.gitleaks\.toml|\.github/workflows/(deploy|ai-security-review|dependabot-automerge))'; then
+            echo "::warning::PR od Google Jules modyfikuje chronione pliki backendowe, CI/CD lub konfigurację sekretów — wymagana ręczna akceptacja właściciela."
             exit 0
           fi
-          gh pr review "$PR_NUMBER" --repo "${{ github.repository }}" --approve --body "✅ **Automatyczna akceptacja (Zero-Touch Autopilot):** PR od Google Jules nie narusza chronionych plików wdrożeniowych. Oczekiwanie na zielony wynik *CI & Quality Gate* przed automatycznym scaleniem."
+          gh pr review "$PR_NUMBER" --repo "${{ github.repository }}" --approve --body "✅ **Automatyczna akceptacja (Zero-Touch Autopilot):** PR od Google Jules nie narusza chronionych plików wdrożeniowych. Oczekiwanie na zielony wynik *CI/CD Pipeline & Deployment: TwojaStronaWWW.pl* przed automatycznym scaleniem."
           gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --auto --squash --delete-branch || true
 
   automerge-on-ci-success:
@@ -87,10 +87,10 @@ jobs:
           fi
 
           CHANGED_FILES=$(echo "$PR_JSON" | jq -r '.files[].path')
-          if echo "$CHANGED_FILES" | grep -E '^(\.env|\.gitleaks\.toml|\.github/workflows/(deploy|ai-security-review|dependabot-automerge))'; then
-            echo "::warning::PR #${PR_NUMBER} dotyka chronionych plików CI/CD — pomijam automatyczne scalenie."
+          if echo "$CHANGED_FILES" | grep -E '^(\.env|\.npmrc|\.htaccess|sw\.js|api/|\.gitleaks\.toml|\.github/workflows/(deploy|ai-security-review|dependabot-automerge))'; then
+            echo "::warning::PR #${PR_NUMBER} dotyka chronionych plików backendowych lub CI/CD — pomijam automatyczne scalenie."
             exit 0
           fi
 
-          echo "✅ CI & Quality Gate zakończone sukcesem dla PR #${PR_NUMBER} (${PR_AUTHOR}). Wykonywanie automatycznego Squash & Merge..."
+          echo "✅ CI/CD Pipeline & Deployment zakończone sukcesem dla PR #${PR_NUMBER} (${PR_AUTHOR}). Wykonywanie automatycznego Squash & Merge..."
           gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --squash --delete-branch || gh pr merge "$PR_NUMBER" --repo "${{ github.repository }}" --auto --squash --delete-branch || true

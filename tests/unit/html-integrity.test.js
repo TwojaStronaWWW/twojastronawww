@@ -118,5 +118,22 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(styleCssContent, /html\s*\{[^}]*overflow-x:\s*hidden/is, 'Tag html w style.css musi mieć overflow-x: hidden, aby zablokować poziomy scroll na telefonie');
     assert.match(styleCssContent, /\.hero-btns\s*\{[^}]*flex-wrap:\s*wrap/is, '.hero-btns musi posiadać flex-wrap: wrap, aby przyciski nie rozpychały ekranu mobilnego w prawo');
   });
+
+  test('WCAG 2.2 AA ([REF-04]) i Portfolio: .skip-link, <main id="main">, role ARIA formularza oraz produkcyjny link raricart.pl', () => {
+    for (const [name, content] of [['index.html', indexContent], ['jak-pracuje.html', jakPracujeContent]]) {
+      assert.match(content, /<a[^>]+href=["']#main["'][^>]*class=["'][^"']*skip-link[^"']*["']/i, `Brak .skip-link prowadzącego do #main w ${name}`);
+      assert.match(content, /<main[^>]+id=["']main["']/i, `Brak semantycznego kontenera <main id="main"> w ${name}`);
+      assert.doesNotMatch(content, /\s(?:style|onclick|onsubmit)=["']/i, `Wykryto niedozwolony atrybut inline (style/onclick/onsubmit) w ${name}`);
+    }
+
+    assert.doesNotMatch(indexContent, /test\.raricart\.pl/i, 'W index.html nie może występować roboczy adres test.raricart.pl');
+    assert.match(indexContent, /href=["']https:\/\/raricart\.pl\/["']/i, 'Portfolio w index.html musi wskazywać na produkcyjny adres https://raricart.pl/');
+
+    assert.match(indexContent, /id=["']formErrors["'][^>]*role=["']alert["']/i, '#formErrors musi posiadać role="alert"');
+    assert.match(indexContent, /id=["']formSuccess["'][^>]*role=["']status["'][^>]*aria-live=["']polite["']/i, '#formSuccess musi posiadać role="status" i aria-live="polite"');
+
+    const styleCssContent = fs.readFileSync(path.join(ROOT_DIR, 'assets', 'css', 'style.css'), 'utf8');
+    assert.match(styleCssContent, /\.skip-link\s*\{/i, 'Brak definicji klasy .skip-link w assets/css/style.css');
+  });
 });
 

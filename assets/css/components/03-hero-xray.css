@@ -88,7 +88,7 @@
     right: 0;
     bottom: 0;
     height: 36%;
-    background: linear-gradient(to top, rgba(45, 76, 110, 0.42) 0%, rgba(18, 36, 58, 0.16) 55%, transparent 100%);
+    background: linear-gradient(to top, rgba(0, 229, 153, 0.22) 0%, rgba(0, 140, 96, 0.08) 55%, transparent 100%);
     pointer-events: none;
     z-index: 2;
 }
@@ -100,7 +100,9 @@
     isolation: isolate;
     background-color: #000000;
     overflow: hidden;
-    z-index: 1;
+    z-index: 2;
+    opacity: 0.56;
+    mix-blend-mode: screen;
 }
 
 .xor-mask-layer {
@@ -145,17 +147,17 @@
     pointer-events: none;
 }
 
-/* Subtelna poświata bazowa formy organicznej poza oknami XOR */
+/* Pełna bioluminescencyjna poświata bazowa motyla pod oknami XOR */
 .xor-ambient-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     display: block;
-    opacity: 0.34;
+    opacity: 0.82;
     mix-blend-mode: screen;
     pointer-events: none;
-    z-index: 2;
+    z-index: 1;
 }
 
 /* 3. Warstwa UI / HUD nad maską (nie podlega wycinaniu XOR) */
@@ -232,10 +234,24 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 3px;
-    height: 3px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(0, 229, 153, 0.85);
+    background-color: rgba(0, 229, 153, 0.16);
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 12px rgba(0, 229, 153, 0.45);
+}
+
+.xor-frame-node::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: #00E599;
     transform: translate(-50%, -50%);
 }
 
@@ -250,8 +266,8 @@
 
 .xor-thumb-canvas {
     display: block;
-    border: 1px solid rgba(255, 255, 255, 0.32);
-    background-color: #050a14;
+    border: 1px solid rgba(0, 229, 153, 0.36);
+    background-color: rgba(6, 12, 10, 0.88);
 }
 
 .xor-thumb-canvas--lg {
@@ -260,8 +276,8 @@
 }
 
 .xor-thumb-canvas--sm {
-    width: 38px;
-    height: 38px;
+    width: 156px;
+    height: 52px;
 }
 
 .xor-hud-bottomright {

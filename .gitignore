@@ -3,14 +3,26 @@ node_modules/
 package-lock.json
 npm-debug.log*
 
-# Environment & local secrets
+# Environment & local secrets (ISO 27001)
 .env
 .env.*
+.env.bak*
 !.env.example
+*.pem
+*.key
+*.kdbx
+id_ed25519*
 
-# Test coverage & builds
+# Local databases & dumps
+*.sqlite
+*.sqlite3
+*.db
+
+# Test coverage, diagnostics & generated client audits
 coverage/
 dist/
+smoke-diagnostics/
+docs/audits/
 
 # OS metadata
 .DS_Store

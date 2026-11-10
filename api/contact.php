@@ -2,36 +2,30 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/bootstrap.php';
-header("Content-Type: application/json; charset=UTF-8");
+header('Content-Type: application/json; charset=UTF-8');
 
 /**
- * Pobiera zmienną środowiskową z getenv(), $_ENV lub pliku .env poza webrootem
+ * Pobiera zmienną środowiskową z getenv(), $_ENV lub pliku .env poza webrootem.
  */
 function get_tsw_env(string $key, string $default = ''): string {
-    $val = getenv($key);
-    if ($val !== false && $val !== '') {
-        return (string)$val;
+    if (function_exists('get_env_secret')) {
+        $secret = get_env_secret($key, '');
+        if ($secret !== '') {
+            return $secret;
+        }
     }
-    if (!empty($_ENV[$key])) {
-        return (string)$_ENV[$key];
-    }
-    $envPaths = [
-        __DIR__ . '/../.env',
-        __DIR__ . '/.env',
-    ];
-    foreach ($envPaths as $envPath) {
-        if (@is_readable($envPath)) {
-            $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            if (is_array($lines)) {
-                foreach ($lines as $line) {
-                    $line = trim($line);
-                    if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
-                        continue;
-                    }
-                    [$k, $v] = explode('=', $line, 2);
-                    if (trim($k) === $key) {
-                        return trim($v, " \t\n\r\0\x0B\"'");
-                    }
+    $envPath = __DIR__ . '/.env';
+    if (@is_readable($envPath)) {
+        $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if (is_array($lines)) {
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
+                    continue;
+                }
+                [$k, $v] = explode('=', $line, 2);
+                if (trim($k) === $key) {
+                    return trim($v, " \t\n\r\0\x0B\"'");
                 }
             }
         }
@@ -39,41 +33,141 @@ function get_tsw_env(string $key, string $default = ''): string {
     return $default;
 }
 
+/**
+ * Koduje temat wiadomości e-mail zgodnie ze standardem RFC 2047 (UTF-8 Base64) i usuwa CRLF.
+ */
+function encode_rfc2047_subject(string $subject): string {
+    $clean = trim((string)preg_replace('/[\r\n\x00-\x1F]+/', ' ', $subject));
+    return '=?UTF-8?B?' . base64_encode($clean) . '?=';
+}
+
+/**
+ * Sanityzacja wartości nagłówków HTTP Ntfy (ochrona przed CRLF Header Injection).
+ */
+function sanitize_ntfy_header_value(string $value): string {
+    return trim((string)preg_replace('/[\r\n\x00-\x1F]+/', ' ', $value));
+}
+
+/**
+ * Sanityzacja parametrów akcji Ntfy (usuwa separatory akcji ';', ',' oraz cudzysłowy i CRLF).
+ */
+function sanitize_ntfy_action_token(string $value): string {
+    return trim((string)preg_replace('/[\r\n\x00-\x1F;,"]+/', ' ', $value));
+}
+
+/**
+ * Filtr WAF Warstwy 7 (SQLi, XSS, Path Traversal, Stream Wrapper RCE, Null-Byte, Prompt Injection).
+ */
+function detect_waf_l7_attack(array $fields): bool {
+    $patterns = [
+        '/\x00/',
+        '/<\s*script\b/i',
+        '/javascript\s*:/i',
+        '/\bon(?:error|load|click|mouseover|focus|submit|toggle)\s*=/i',
+        '/<\s*(?:iframe|object|embed|applet|meta|base)\b/i',
+        '/\b(?:union\s+(?:all\s+)?select|select\s+.+\s+from\s+information_schema|drop\s+table|insert\s+into\s+\w+\s+values|sleep\s*\(\s*\d+\s*\)|benchmark\s*\()\b/i',
+        '/(?:\.\.\/|\.\.\\\\|\/etc\/passwd|\/proc\/self\/environ|(?:php|phar|expect|file|gopher|dict):\/\/)/i',
+        '/\b(?:ignore\s+(?:all\s+)?previous\s+instructions|system\s+prompt\s+override)\b/i',
+    ];
+
+    foreach ($fields as $value) {
+        if (!is_scalar($value)) {
+            continue;
+        }
+        $str = (string)$value;
+        if ($str === '') {
+            continue;
+        }
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $str) === 1) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 // 0a. [REF-05] Zabezpieczenie OWASP Fetch Metadata (Sec-Fetch-Site) przed żądaniami Cross-Site
 if (isset($_SERVER['HTTP_SEC_FETCH_SITE']) && strtolower(trim((string)$_SERVER['HTTP_SEC_FETCH_SITE'])) === 'cross-site') {
+    @session_write_close();
     http_response_code(403);
     echo json_encode([
-        "status" => "error",
-        "success" => false,
-        "message" => "Niedozwolone żądanie międzywitrynowe (Cross-Site Request Blocked)."
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Niedozwolone żądanie międzywitrynowe (Cross-Site Request Blocked).',
     ]);
     exit;
 }
 
-// Rzeczywiste IP klienta (uwzględnienie Cloudflare Proxy Anycast)
-$ip = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+if (($_SERVER['REQUEST_METHOD'] ?? 'POST') !== 'POST') {
+    @session_write_close();
+    http_response_code(405);
+    header('Allow: POST');
+    echo json_encode([
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Method Not Allowed',
+    ]);
+    exit;
+}
 
-// 0. Zabezpieczenie Rate Limiting (ISO 27001): maks. 5 prób wysyłki na 5 minut
-if (!rate_limit('contact_' . md5($ip), 5, 300)) {
+// Rzeczywiste IP klienta (z ochroną przed spoofingiem poza Cloudflare) oraz maska RODO
+$ip = get_client_ip();
+$maskedIp = mask_ip($ip);
+
+// 0b. Sprawdzenie 15-minutowego IP Penalty Box
+if (is_client_ip_banned($ip)) {
+    @session_write_close();
+    http_response_code(403);
+    echo json_encode([
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Adres IP jest tymczasowo zablokowany ze względów bezpieczeństwa (15 min).',
+    ]);
+    exit;
+}
+
+// 0c. Zabezpieczenie Rate Limiting (ISO 27001 / Zero-PII): maks. 5 prób wysyłki na 5 minut
+if (!rate_limit('contact_' . $maskedIp, 5, 300)) {
+    @session_write_close();
     http_response_code(429);
     echo json_encode([
-        "status" => "error",
-        "success" => false,
-        "message" => "Zbyt wiele prób wysłania wiadomości. Odczekaj chwilę przed kolejną próbą."
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Zbyt wiele prób wysłania wiadomości. Odczekaj chwilę przed kolejną próbą.',
     ]);
     exit;
 }
 
 $data = get_json_request();
 
+// 0d. Filtr WAF Warstwy 7 -> 15-minutowy IP Penalty Box (HTTP 403)
+if (detect_waf_l7_attack([
+    $data['name'] ?? '',
+    $data['email'] ?? '',
+    $data['phone'] ?? '',
+    $data['message'] ?? '',
+])) {
+    ban_client_ip($ip, 900, 'waf_l7_blocked');
+    @session_write_close();
+    http_response_code(403);
+    echo json_encode([
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Żądanie zostało zablokowane przez zaporę bezpieczeństwa aplikacji (WAF).',
+    ]);
+    exit;
+}
+
 // 1. Zabezpieczenie Anty-Bot: Wielopolowy Honeypot (pola pułapki ukryte CSS-em dla ludzi)
 $honeypots = ['website_url', 'hp_chk', 'website', 'company_name', 'phone_extra'];
 foreach ($honeypots as $hp) {
     if (!empty($data[$hp])) {
+        @session_write_close();
         echo json_encode([
-            "status" => "success",
-            "success" => true,
-            "message" => "Dziękujemy! Twoja wiadomość została wysłana pomyślnie."
+            'status' => 'success',
+            'success' => true,
+            'message' => 'Dziękujemy! Twoja wiadomość została wysłana pomyślnie.',
         ]);
         exit;
     }
@@ -84,10 +178,11 @@ if (isset($data['submission_seconds'])) {
     $rawSubSec = $data['submission_seconds'];
     $subSecFloat = (is_numeric($rawSubSec) && !is_bool($rawSubSec)) ? (float)$rawSubSec : 0.0;
     if (!is_finite($subSecFloat) || $subSecFloat < 2.0) {
+        @session_write_close();
         echo json_encode([
-            "status" => "success",
-            "success" => true,
-            "message" => "Dziękujemy! Twoja wiadomość została wysłana pomyślnie."
+            'status' => 'success',
+            'success' => true,
+            'message' => 'Dziękujemy! Twoja wiadomość została wysłana pomyślnie.',
         ]);
         exit;
     }
@@ -98,8 +193,9 @@ $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 $referer = $_SERVER['HTTP_REFERER'] ?? '';
 
 if (!$origin && !$referer) {
+    @session_write_close();
     http_response_code(403);
-    echo json_encode(["status" => "error", "success" => false, "message" => "Forbidden (Missing Origin/Referer)"]);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Forbidden (Missing Origin/Referer)']);
     exit;
 }
 
@@ -113,16 +209,17 @@ if ($parsedHost !== '' && in_array($parsedHost, $allowedDomains, true)) {
 }
 
 if (!$isAllowed) {
+    @session_write_close();
     http_response_code(403);
-    echo json_encode(["status" => "error", "success" => false, "message" => "Forbidden Origin"]);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Forbidden Origin']);
     exit;
 }
 
-// 4. CSRF Check
-if (!csrf_check($data['csrf_token'] ?? '')) {
+// 4. Jednorazowy token CSRF (hash_equals) + natychmiastowy zapis i zamknięcie sesji przed I/O i cURL
+if (!csrf_check(isset($data['csrf_token']) ? (string)$data['csrf_token'] : '')) {
     @session_write_close();
     http_response_code(403);
-    echo json_encode(["status" => "error", "success" => false, "message" => "Błąd zabezpieczeń (CSRF). Odśwież stronę."]);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Błąd zabezpieczeń (CSRF). Odśwież stronę.']);
     exit;
 }
 
@@ -130,194 +227,209 @@ if (session_status() === PHP_SESSION_ACTIVE) {
     @session_write_close();
 }
 
-// Wczesne zwolnienie sesji PHP przed operacjami plikowymi i cURL (osTicket / Ntfy)
-@session_write_close();
-
-// 5. Oczyszczenie i normalizacja danych wejściowych
+// 5. Oczyszczenie i normalizacja danych wejściowych (brak \s w telefonie — ochrona przed CRLF Injection)
 $name = isset($data['name']) ? htmlspecialchars(strip_tags(trim((string)$data['name'])), ENT_QUOTES, 'UTF-8') : '';
-$email = isset($data['email']) ? filter_var(trim((string)$data['email']), FILTER_SANITIZE_EMAIL) : '';
+$emailRaw = isset($data['email']) ? (string)preg_replace('/[\r\n\x00-\x1F]+/', '', trim((string)$data['email'])) : '';
+$email = $emailRaw !== '' ? (string)filter_var($emailRaw, FILTER_SANITIZE_EMAIL) : '';
 $phoneRaw = isset($data['phone']) ? trim(strip_tags((string)$data['phone'])) : '';
-$phone = preg_replace('/[^0-9+\-\s()]/', '', $phoneRaw) ?: '-';
+$phone = preg_replace('/[^0-9+\- ()]/', '', $phoneRaw) ?: '-';
 $messageRaw = isset($data['message']) ? htmlspecialchars(strip_tags(trim((string)$data['message'])), ENT_QUOTES, 'UTF-8') : '';
 $message = $messageRaw !== '' ? $messageRaw : '[Szybki kontakt — klient prosi o rozmowę bez opisu tekstowego]';
 $newsletterConsent = !empty($data['newsletter_consent']) && $data['newsletter_consent'] !== 'false' && $data['newsletter_consent'] !== '0' ? 'TAK' : 'NIE';
 
-$hasPhone = ($phone !== '-' && strlen(preg_replace('/\D/', '', $phone)) >= 7);
+$hasPhone = ($phone !== '-' && strlen((string)preg_replace('/\D/', '', $phone)) >= 7);
 $hasEmail = ($email !== '' && filter_var($email, FILTER_VALIDATE_EMAIL) !== false);
 
 if (!$name || (!$hasPhone && !$hasEmail)) {
     http_response_code(400);
     echo json_encode([
-        "status" => "error",
-        "success" => false,
-        "message" => "Podaj imię oraz numer telefonu lub poprawny adres e-mail."
+        'status' => 'error',
+        'success' => false,
+        'message' => 'Podaj imię oraz numer telefonu lub poprawny adres e-mail.',
     ]);
     exit;
 }
 
 if ($email !== '' && !$hasEmail) {
     http_response_code(400);
-    echo json_encode(["status" => "error", "success" => false, "message" => "Nieprawidłowy adres e-mail."]);
+    echo json_encode(['status' => 'error', 'success' => false, 'message' => 'Nieprawidłowy adres e-mail.']);
     exit;
 }
 
 // 6. Zabezpieczenie Anty-Spam: Wykrywanie cyrylicy oraz nadmiernej ilości odnośników URL
 if (preg_match('/\p{Cyrillic}/u', $message) || preg_match_all('/https?:\/\//i', $message) > 2) {
     echo json_encode([
-        "status" => "success",
-        "success" => true,
-        "message" => "Dziękujemy! Twoja wiadomość została wysłana pomyślnie."
+        'status' => 'success',
+        'success' => true,
+        'message' => 'Dziękujemy! Twoja wiadomość została wysłana pomyślnie.',
     ]);
     exit;
 }
 
-// 7. Zapis finalnego leada przed wysyłką (Zero-Data-Loss)
+// 7. Zapis finalnego leada przed wysyłką (Zero-Data-Loss, zanonimizowany hash IP RODO)
 save_lead([
     date('Y-m-d'),
     date('H:i:s'),
     $name,
     $hasEmail ? $email : '-',
     $message,
-    hash('sha256', $ip),
+    hash('sha256', $maskedIp . '|' . date('Y-m-d')),
     $phone,
-    $newsletterConsent
+    $newsletterConsent,
 ], false);
 
+$plainName = html_entity_decode($name, ENT_QUOTES, 'UTF-8');
+$plainMessage = html_entity_decode($message, ENT_QUOTES, 'UTF-8');
+
 $baseSubject = $messageRaw === ''
-    ? "[TwojaStronaWWW.pl] SZYBKI TELEFON: $name ($phone)"
-    : "[TwojaStronaWWW.pl] Nowe zapytanie: $name";
+    ? "[TwojaStronaWWW.pl] SZYBKI TELEFON: {$plainName} ({$phone})"
+    : "[TwojaStronaWWW.pl] Nowe zapytanie: {$plainName}";
 
-// 8. Rejestracja zgłoszenia w centralnym systemie ticketowym osTicket (hd.twojastronawww.pl)
+// 8. Rejestracja zgłoszenia w centralnym systemie ticketowym osTicket (wyłącznie HTTPS: https://hd.twojastronawww.pl/ticket_hook.php)
 $osTicketApiKey = get_tsw_env('OSTICKET_API_KEY');
-$ticketCreated  = false;
-$ticketNum      = 'BRAK';
+$osTicketUrl = get_tsw_env('OSTICKET_URL', 'https://hd.twojastronawww.pl/ticket_hook.php');
+if (!filter_var($osTicketUrl, FILTER_VALIDATE_URL) || strpos($osTicketUrl, 'https://') !== 0) {
+    $osTicketUrl = 'https://hd.twojastronawww.pl/ticket_hook.php';
+}
 
-if (!empty($osTicketApiKey) && function_exists('curl_init')) {
+$ticketCreated = false;
+$ticketNum = 'BRAK';
+
+if ($osTicketApiKey !== '' && function_exists('curl_init')) {
     $digits = preg_replace('/\D+/', '', $phone) ?: date('YmdHis');
     $ticketEmail = $hasEmail ? $email : "tel-{$digits}@twojastronawww.pl";
     $ticketPayload = [
-        'name'        => html_entity_decode($name, ENT_QUOTES, 'UTF-8'),
+        'site'        => 'twojastronawww',
+        'name'        => $plainName,
         'email'       => $ticketEmail,
         'phone'       => $hasPhone ? $phone : '',
-        'subject'     => html_entity_decode($baseSubject, ENT_QUOTES, 'UTF-8'),
-        'message'     => "Imię i nazwisko: " . html_entity_decode($name, ENT_QUOTES, 'UTF-8') . "\n"
+        'subject'     => $baseSubject,
+        'message'     => "Imię i nazwisko: {$plainName}\n"
                        . "Telefon: " . ($hasPhone ? $phone : '-') . "\n"
                        . "E-mail: " . ($hasEmail ? $email : '-') . "\n"
-                       . "Newsletter: $newsletterConsent\n"
+                       . "Newsletter: {$newsletterConsent}\n"
                        . "-----------------------------------------\n"
-                       . html_entity_decode($message, ENT_QUOTES, 'UTF-8'),
+                       . $plainMessage,
         'topicId'     => 10,
-        'ip'          => $ip,
+        'ip'          => $maskedIp,
         'source'      => 'Web',
         'autorespond' => false,
         'send_email'  => false,
     ];
 
-    $endpoints = [
-        ['url' => 'http://hd.twojastronawww.pl:8080/ticket_hook.php', 'resolve' => ['hd.twojastronawww.pl:8080:127.0.0.1']],
-        ['url' => 'https://hd.twojastronawww.pl/ticket_hook.php',     'resolve' => []],
-    ];
-
-    foreach ($endpoints as $ep) {
-        $ch = curl_init($ep['url']);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'X-API-Key: ' . $osTicketApiKey,
+    $ch = curl_init($osTicketUrl);
+    curl_setopt_array($ch, [
+        CURLOPT_HTTPHEADER     => [
+            'X-API-Key: ' . sanitize_ntfy_header_value($osTicketApiKey),
             'Content-Type: application/json',
-            'Expect:'
-        ]);
-        if (!empty($ep['resolve'])) {
-            curl_setopt($ch, CURLOPT_RESOLVE, $ep['resolve']);
-        }
-        curl_setopt($ch, CURLOPT_USERAGENT, 'TwojaStronaWWW-HelpdeskClient/2.0');
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($ticketPayload, JSON_UNESCAPED_UNICODE));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 8);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
-        curl_setopt($ch, CURLOPT_MAXREDIRS, 0);
-        if (defined('CURLPROTO_HTTPS') && defined('CURLPROTO_HTTP')) {
-            curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTP);
-        }
+            'Expect:',
+        ],
+        CURLOPT_USERAGENT      => 'TwojaStronaWWW-HelpdeskClient/2.1',
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => (string)json_encode($ticketPayload, JSON_UNESCAPED_UNICODE),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 8,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_MAXREDIRS      => 0,
+    ]);
+    if (defined('CURLPROTO_HTTPS')) {
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+    }
 
-        $apiResponse = @curl_exec($ch);
-        if (is_string($apiResponse) && strlen($apiResponse) > 65536) {
-            $apiResponse = substr($apiResponse, 0, 65536);
-        }
-        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
+    $apiResponse = @curl_exec($ch);
+    if (is_string($apiResponse) && strlen($apiResponse) > 65536) {
+        $apiResponse = substr($apiResponse, 0, 65536);
+    }
+    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    unset($ch);
 
-        $resArr = is_string($apiResponse) ? json_decode($apiResponse, true) : null;
-        if ($httpCode === 201 && !empty($resArr['success'])) {
-            $ticketCreated = true;
-            $ticketNum = (string)($resArr['number'] ?? 'OK');
-            break;
-        }
+    $resArr = is_string($apiResponse) ? json_decode($apiResponse, true, 8) : null;
+    if (($httpCode === 200 || $httpCode === 201) && !empty($resArr['success'])) {
+        $ticketCreated = true;
+        $ticketNum = (string)preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($resArr['number'] ?? 'OK'));
     }
 }
 
-// 9. Wysyłka scentralizowanego powiadomienia e-mail na poczatek.krzysztof@gmail.com
+// 9. Wysyłka scentralizowanego powiadomienia e-mail z kodowaniem tematu RFC 2047
 $centralEmail = get_tsw_env('CENTRAL_LEAD_EMAIL', 'poczatek.krzysztof@gmail.com');
-$fromSender   = "kontakt@twojastronawww.pl";
-$subject      = $baseSubject . ($ticketCreated ? " [Ticket #$ticketNum]" : "");
+$fromSender   = 'kontakt@twojastronawww.pl';
+$subject      = encode_rfc2047_subject($baseSubject . ($ticketCreated ? " [Ticket #{$ticketNum}]" : ''));
 
 $body  = "Nowe zgłoszenie z formularza kontaktowego (TwojaStronaWWW.pl):\n";
 $body .= "=========================================\n";
-$body .= "Imię i nazwisko: " . html_entity_decode($name, ENT_QUOTES, 'UTF-8') . "\n";
-$body .= "Telefon:         $phone\n";
+$body .= "Imię i nazwisko: {$plainName}\n";
+$body .= "Telefon:         {$phone}\n";
 $body .= "E-mail:          " . ($hasEmail ? $email : '-') . "\n";
-$body .= "Ticket osTicket: " . ($ticketCreated ? "#$ticketNum (https://hd.twojastronawww.pl/scp/)" : "Brak") . "\n";
-$body .= "Newsletter:      $newsletterConsent\n";
+$body .= "Ticket osTicket: " . ($ticketCreated ? "#{$ticketNum} (https://hd.twojastronawww.pl/scp/)" : 'Brak') . "\n";
+$body .= "Newsletter:      {$newsletterConsent}\n";
+$body .= "IP (RODO):       {$maskedIp}\n";
 $body .= "Data:            " . date('Y-m-d H:i:s') . "\n";
 $body .= "-----------------------------------------\n";
-$body .= "Treść wiadomości:\n" . html_entity_decode($message, ENT_QUOTES, 'UTF-8') . "\n";
+$body .= "Treść wiadomości:\n{$plainMessage}\n";
 
-$headers  = "From: TwojaStronaWWW <$fromSender>\r\n";
+$headers  = "From: TwojaStronaWWW <{$fromSender}>\r\n";
 if ($hasEmail) {
-    $headers .= "Reply-To: $email\r\n";
+    $safeReplyEmail = (string)preg_replace('/[\r\n\x00-\x1F]+/', '', $email);
+    $headers .= "Reply-To: {$safeReplyEmail}\r\n";
 }
+$headers .= "MIME-Version: 1.0\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
-@mail($centralEmail, $subject, $body, $headers, "-f$fromSender");
+@mail($centralEmail, $subject, $body, $headers, "-f{$fromSender}");
 
-// 10. Powiadomienie Push na Ntfy.sh (z przyciskami akcji 1-Klik)
-$ntfyTopic = get_tsw_env('NTFY_TOPIC');
+// 10. Powiadomienie Push Ntfy (wsparcie self-hosted NTFY_BASE_URL + NTFY_TOKEN + sanityzacja Title/Actions)
+$ntfyTopic = (string)preg_replace('/[^a-zA-Z0-9_-]/', '', get_tsw_env('NTFY_TOPIC'));
+$ntfyBaseUrl = rtrim(get_tsw_env('NTFY_BASE_URL', 'https://ntfy.sh'), '/');
+if (!filter_var($ntfyBaseUrl, FILTER_VALIDATE_URL) || strpos($ntfyBaseUrl, 'https://') !== 0) {
+    $ntfyBaseUrl = 'https://ntfy.sh';
+}
+$ntfyToken = sanitize_ntfy_header_value(get_tsw_env('NTFY_TOKEN'));
+
 if ($ntfyTopic !== '' && function_exists('curl_init')) {
-    $cleanName = html_entity_decode($name, ENT_QUOTES, 'UTF-8');
-    $cleanMsg  = html_entity_decode($message, ENT_QUOTES, 'UTF-8');
+    $safeTitleName = sanitize_ntfy_action_token(mb_substr($plainName, 0, 60));
     $ntfyLines = [];
     $ntfyActions = [];
-    $titleParts = [$cleanName];
+    $titleParts = [$safeTitleName];
 
-    $ntfyLines[] = "👤 IMIĘ: {$cleanName}";
+    $ntfyLines[] = "IMIĘ: {$plainName}";
     if ($hasPhone) {
         $digits = preg_replace('/\D+/', '', $phone) ?: '';
         $dial = (strlen($digits) === 9) ? '+48' . $digits : '+' . $digits;
-        $ntfyLines[]   = "📞 TELEFON: {$phone}";
-        $titleParts[]  = "TEL: {$phone}";
-        $ntfyActions[] = "view, Zadzwon ({$phone}), tel:{$dial}";
+        $safePhoneLabel = sanitize_ntfy_action_token($phone);
+        $ntfyLines[]   = "TELEFON: {$phone}";
+        $titleParts[]  = "TEL: {$safePhoneLabel}";
+        $ntfyActions[] = "view, Zadzwon ({$safePhoneLabel}), tel:{$dial}";
     }
     if ($hasEmail) {
-        $ntfyLines[]   = "✉️ E-MAIL: {$email}";
-        $titleParts[]  = "EMAIL: {$email}";
-        $ntfyActions[] = "view, Napisz e-mail ({$email}), mailto:{$email}";
+        $safeEmailToken = sanitize_ntfy_action_token($email);
+        $ntfyLines[]   = "E-MAIL: {$email}";
+        $titleParts[]  = "EMAIL: {$safeEmailToken}";
+        $ntfyActions[] = "view, Napisz e-mail ({$safeEmailToken}), mailto:{$safeEmailToken}";
     }
-    $ntfyLines[] = "🎫 TICKET: " . ($ticketCreated ? "#{$ticketNum}" : "brak");
-    $ntfyLines[] = "🌐 ŹRÓDŁO: Formularz twojastronawww.pl";
-    $ntfyLines[] = "────────────────────────";
-    $ntfyLines[] = "💬 Wiadomość:";
-    $ntfyLines[] = $cleanMsg;
+    $ntfyLines[] = 'TICKET: ' . ($ticketCreated ? "#{$ticketNum}" : 'brak');
+    $ntfyLines[] = 'ŹRÓDŁO: Formularz twojastronawww.pl';
+    $ntfyLines[] = '------------------------';
+    $ntfyLines[] = 'Wiadomość:';
+    $ntfyLines[] = $plainMessage;
 
-    $ntfyActions[] = "view, Otworz Helpdesk, https://hd.twojastronawww.pl/scp/";
+    $ntfyActions[] = 'view, Otworz Helpdesk, https://hd.twojastronawww.pl/scp/';
 
+    $rawNtfyTitle = 'Formularz (twojastronawww) - ' . implode(' | ', $titleParts);
     $ntfyHeaders = [
-        'Title: Formularz (twojastronawww) - ' . implode(' | ', $titleParts),
+        'Title: ' . encode_rfc2047_subject($rawNtfyTitle),
         'Priority: high',
         'Tags: incoming_envelope,telephone_receiver',
-        'Actions: ' . implode('; ', array_slice($ntfyActions, 0, 3))
+        'Actions: ' . sanitize_ntfy_header_value(implode('; ', array_slice($ntfyActions, 0, 3))),
     ];
+    if ($ntfyToken !== '') {
+        $ntfyHeaders[] = 'Authorization: Bearer ' . $ntfyToken;
+    }
 
-    $chNtfy = curl_init("https://ntfy.sh/{$ntfyTopic}");
+    $chNtfy = curl_init("{$ntfyBaseUrl}/{$ntfyTopic}");
     curl_setopt_array($chNtfy, [
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => implode("\n", $ntfyLines),
@@ -325,29 +437,32 @@ if ($ntfyTopic !== '' && function_exists('curl_init')) {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT        => 3,
         CURLOPT_CONNECTTIMEOUT => 2,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
         CURLOPT_FOLLOWLOCATION => false,
-        CURLOPT_MAXREDIRS      => 0
+        CURLOPT_MAXREDIRS      => 0,
     ]);
     if (defined('CURLPROTO_HTTPS')) {
         curl_setopt($chNtfy, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_setopt($chNtfy, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
     }
     @curl_exec($chNtfy);
-    curl_close($chNtfy);
+    unset($chNtfy);
 }
 
-// 11. Profesjonalny Autoresponder dla klienta (gdy podał e-mail)
+// 11. Profesjonalny Autoresponder dla klienta (kodowanie Subject RFC 2047)
 if ($hasEmail) {
-    $autoSubject = "Potwierdzenie otrzymania zgłoszenia — TwojaStronaWWW.pl";
-    $autoBody  = "Cześć " . html_entity_decode($name, ENT_QUOTES, 'UTF-8') . ",\n\n";
+    $autoSubject = encode_rfc2047_subject('Potwierdzenie otrzymania zgłoszenia — TwojaStronaWWW.pl');
+    $autoBody  = "Cześć {$plainName},\n\n";
     $autoBody .= "Dziękuję za kontakt z TwojaStronaWWW.pl!\n";
     $autoBody .= "Twoje zgłoszenie dotarło do mnie bezpiecznie. Odezwę się najpóźniej w ciągu 24 godzin.\n\n";
     $autoBody .= "Podsumowanie Twojego zgłoszenia:\n";
     $autoBody .= "-----------------------------------------\n";
     if ($ticketCreated) {
-        $autoBody .= "Numer zgłoszenia: #$ticketNum\n";
+        $autoBody .= "Numer zgłoszenia: #{$ticketNum}\n";
     }
-    $autoBody .= "Telefon kontaktowy: $phone\n";
-    $autoBody .= "Twoja wiadomość:\n" . html_entity_decode($message, ENT_QUOTES, 'UTF-8') . "\n";
+    $autoBody .= "Telefon kontaktowy: {$phone}\n";
+    $autoBody .= "Twoja wiadomość:\n{$plainMessage}\n";
     $autoBody .= "-----------------------------------------\n\n";
     if ($newsletterConsent === 'TAK') {
         $autoBody .= "PS. Odnotowałem również Twoją zgodę na otrzymywanie praktycznych wskazówek o automatyzacji i nowościach (możesz zrezygnować w każdej chwili, odpowiadając na tę wiadomość).\n\n";
@@ -356,18 +471,20 @@ if ($hasEmail) {
     $autoBody .= "Krzysztof | TwojaStronaWWW.pl\n";
     $autoBody .= "https://twojastronawww.pl\n";
 
-    $autoHeaders  = "From: TwojaStronaWWW <$fromSender>\r\n";
-    $autoHeaders .= "Reply-To: $fromSender\r\n";
+    $autoHeaders  = "From: TwojaStronaWWW <{$fromSender}>\r\n";
+    $autoHeaders .= "Reply-To: {$fromSender}\r\n";
+    $autoHeaders .= "MIME-Version: 1.0\r\n";
     $autoHeaders .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
-    @mail($email, $autoSubject, $autoBody, $autoHeaders, "-f$fromSender");
+    $safeRecipientEmail = (string)preg_replace('/[\r\n\x00-\x1F]+/', '', $email);
+    @mail($safeRecipientEmail, $autoSubject, $autoBody, $autoHeaders, "-f{$fromSender}");
 }
 
 echo json_encode([
-    "status" => "success",
-    "success" => true,
-    "ticket" => $ticketCreated ? $ticketNum : null,
-    "message" => $hasEmail
-        ? "Dziękujemy! Zgłoszenie wysłane. Sprawdź potwierdzenie na swojej skrzynce e-mail."
-        : "Dziękujemy! Twój numer został przekazany — oddzwonię najszybciej jak to możliwe."
+    'status' => 'success',
+    'success' => true,
+    'ticket' => $ticketCreated ? $ticketNum : null,
+    'message' => $hasEmail
+        ? 'Dziękujemy! Zgłoszenie wysłane. Sprawdź potwierdzenie na swojej skrzynce e-mail.'
+        : 'Dziękujemy! Twój numer został przekazany — oddzwonię najszybciej jak to możliwe.',
 ]);

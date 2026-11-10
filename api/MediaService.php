@@ -6,10 +6,14 @@ namespace TwojaStronaWWW\Api;
 require_once __DIR__ . '/R2Client.php';
 
 /**
- * Serwis optymalizacji multimediów (ścisła walidacja MIME, konwersja GD do WebP i wysyłka do Cloudflare R2).
+ * Serwis optymalizacji multimediów (ścisła walidacja MIME, ochrona Decompression Bomb, konwersja GD do WebP i wysyłka do Cloudflare R2).
  */
 class MediaService
 {
+    public const MAX_FILE_BYTES = 15728640; // 15 MB
+    public const MAX_IMAGE_DIMENSION = 8000;
+    public const MAX_IMAGE_PIXELS = 32000000; // 32 MP
+
     private ?R2Client $r2Client;
     private string $cdnBaseUrl;
 
@@ -20,8 +24,8 @@ class MediaService
     }
 
     /**
-     * Waliduje plik tymczasowy, konwertuje obrazy (JPG/PNG/GIF) do formatu WebP (max 1920px)
-     * i przesyła bezpośrednio do Cloudflare R2.
+     * Waliduje plik tymczasowy, chroni przed bombą dekompresyjną obrazu (getimagesize przed GD),
+     * konwertuje obrazy (JPG/PNG/GIF/WEBP) do formatu WebP (max 1920px) i przesyła do Cloudflare R2.
      */
     public function processAndUpload(string $tmpFilePath, string $originalName, string $target = 'gallery'): array
     {
@@ -29,13 +33,16 @@ class MediaService
             return ['status' => 'error', 'message' => 'Plik tymczasowy nie istnieje lub jest nieczytelny.'];
         }
 
+        $fileBytes = @filesize($tmpFilePath);
+        if ($fileBytes === false || $fileBytes <= 0 || $fileBytes > self::MAX_FILE_BYTES) {
+            return ['status' => 'error', 'message' => 'Rozmiar pliku jest nieprawidłowy lub przekracza limit 15 MB.'];
+        }
+
         $target = ($target === 'content') ? 'content' : 'gallery';
 
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = $finfo ? (string)finfo_file($finfo, $tmpFilePath) : '';
-        if ($finfo) {
-            finfo_close($finfo);
-        }
+        unset($finfo);
 
         $allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         $allowedVideoTypes = ['video/mp4', 'video/webm', 'video/ogg'];
@@ -46,10 +53,29 @@ class MediaService
         }
 
         $isImage = in_array($mimeType, $allowedImageTypes, true);
-        $ext = $isImage ? 'webp' : strtolower((string)pathinfo($originalName, PATHINFO_EXTENSION));
-        if (!$isImage && $ext === '') {
-            $ext = 'mp4';
+
+        // Strażnik bomby dekompresyjnej (OOM Decompression Bomb Guard) przed alokacją bufora GD
+        if ($isImage) {
+            $imageInfo = @getimagesize($tmpFilePath);
+            if (!is_array($imageInfo) || ($imageInfo[0] ?? 0) <= 0 || ($imageInfo[1] ?? 0) <= 0) {
+                return ['status' => 'error', 'message' => 'Uszkodzony lub nieprawidłowy nagłówek obrazu.'];
+            }
+            $origWidth = (int)$imageInfo[0];
+            $origHeight = (int)$imageInfo[1];
+            if (
+                $origWidth > self::MAX_IMAGE_DIMENSION ||
+                $origHeight > self::MAX_IMAGE_DIMENSION ||
+                ($origWidth * $origHeight) > self::MAX_IMAGE_PIXELS
+            ) {
+                return [
+                    'status' => 'error',
+                    'message' => 'Wymiary obrazu przekraczają bezpieczny limit pamięci (maks. 8000x8000 px / 32 MP).',
+                ];
+            }
         }
+
+        $rawExt = strtolower((string)preg_replace('/[^a-zA-Z0-9]/', '', (string)pathinfo($originalName, PATHINFO_EXTENSION)));
+        $ext = $isImage ? 'webp' : ($rawExt !== '' ? $rawExt : 'mp4');
 
         $prefix = $isImage ? 'img_' : 'vid_';
         $filename = $prefix . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
@@ -86,19 +112,19 @@ class MediaService
 
                 if ($width > $maxWidth) {
                     $newWidth = $maxWidth;
-                    $newHeight = (int)floor($height * ($maxWidth / $width));
+                    $newHeight = max(1, (int)floor($height * ($maxWidth / $width)));
                     $resized = imagecreatetruecolor($newWidth, $newHeight);
                     imagealphablending($resized, false);
                     imagesavealpha($resized, true);
                     imagecopyresampled($resized, $sourceImage, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-                    imagedestroy($sourceImage);
+                    unset($sourceImage);
                     $sourceImage = $resized;
                 }
 
                 ob_start();
                 imagewebp($sourceImage, null, 82);
                 $payloadData = (string)ob_get_clean();
-                imagedestroy($sourceImage);
+                unset($sourceImage);
             }
         }
 
@@ -119,7 +145,7 @@ class MediaService
             'url' => "{$this->cdnBaseUrl}/{$r2Key}",
             'key' => $r2Key,
             'mime' => $outputMime,
-            'size' => strlen($payloadData)
+            'size' => strlen($payloadData),
         ];
     }
 }

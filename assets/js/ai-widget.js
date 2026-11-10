@@ -7,7 +7,7 @@
  * - Warstwa Kolorów oparta o CSS Custom Properties (--tsw-ai-*), dziedzicząca z lokalnego CSS strony,
  *   presetów per site_id lub atrybutów HTML (data-primary, data-accent, data-bg, data-surface)
  * - Komunikacja z centralnym routerem AI na VPS (https://ai.twojastronawww.pl/chat-router.php)
- * - Obsługa 11-modelowej kaskady High-Availability (6 dostawców API) po stronie VPS
+ * - Obsługa 15-modelowej kaskady High-Availability (7 dostawców API) po stronie VPS
  * - Priorytetowe przekazywanie leadów kontaktowych (telefon / e-mail omija cache i wyzwala Ntfy 1-Klik)
  * - Dynamiczne Centrum Wiedzy ze strony i bazy JSON/Wiki (np. Salsopedia) z wyszukiwaniem fleksyjnym
  * - Dwupoziomowy Response Cache z automatyczną inwalidacją po zmianie wersji wiedzy (kbVersion)
@@ -340,6 +340,76 @@ export function buildDynamicContext(question, entries) {
   );
 }
 
+export const MAX_CACHE_ENTRIES = 50;
+
+/**
+ * Bezpieczne escapowanie encji HTML (ochrona przed DOM XSS w atrybutach i treściach)
+ * @param {unknown} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Sprawdza, czy analityka powinna zignorować bieżącą sesję (właściciel, localhost, WebDriver, flaga opt-out)
+ * @param {Window} [win]
+ * @returns {boolean}
+ */
+export function isOwnerAnalyticsIgnored(win = globalThis.window) {
+  try {
+    if (!win) return true;
+    const nav = win.navigator;
+    if (nav && nav.webdriver === true) return true;
+
+    const loc = win.location;
+    const host = String(loc?.hostname || '').toLowerCase();
+    if (
+      !host ||
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '::1' ||
+      host === '[::1]' ||
+      host.endsWith('.local') ||
+      host.endsWith('.localhost') ||
+      host.endsWith('.trycloudflare.com')
+    ) {
+      return true;
+    }
+
+    const storage = win.localStorage;
+    const params = new URLSearchParams(String(loc?.search || ''));
+    const toggleParam = params.get('ignore_analytics') ?? params.get('tsw_ignore');
+    if (toggleParam === '1' || toggleParam === 'true') {
+      try {
+        storage?.setItem?.('tsw_ignore_analytics', '1');
+      } catch (_) {}
+      return true;
+    }
+    if (toggleParam === '0' || toggleParam === 'false') {
+      try {
+        storage?.removeItem?.('tsw_ignore_analytics');
+      } catch (_) {}
+    }
+
+    if (
+      storage?.getItem?.('tsw_ignore_analytics') === '1' ||
+      storage?.getItem?.('tsw_owner_ignore') === '1'
+    ) {
+      return true;
+    }
+  } catch (_) {
+    return false;
+  }
+  return false;
+}
+
 /**
  * Bezpieczny mikro-parser Markdown (100% odporny na XSS)
  * @param {string} rawText
@@ -347,12 +417,7 @@ export function buildDynamicContext(question, entries) {
  */
 export function formatMarkdown(rawText) {
   if (!rawText) return '';
-  let safe = String(rawText)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  let safe = escapeHtml(rawText);
 
   // Pogrubienia **tekst**
   safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -360,16 +425,21 @@ export function formatMarkdown(rawText) {
   // Kursywa *tekst*
   safe = safe.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
 
-  // Klikalne adresy URL (https://...)
+  // Klikalne adresy URL (https://...) — izolowane przed linkifierem '@' i kotwicami
+  const urlPlaceholders = [];
   safe = safe.replace(
     /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="tsw-ai-link">$1</a>'
+    (match) => {
+      const token = `\x00TSWURL${urlPlaceholders.length}\x00`;
+      urlPlaceholders.push(`<a href="${match}" target="_blank" rel="noopener noreferrer" class="tsw-ai-link">${match}</a>`);
+      return token;
+    }
   );
 
   // Klikalne adresy e-mail oraz linki wewnętrzne (#kontakt, salsopedia.html, grafik.html, cennik.html, /pakiety)
   safe = safe.replace(
-    /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
-    '<a href="mailto:$1" class="tsw-ai-link">$1</a>'
+    /(^|[\s(>:,;])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=$|[\s)<.,:;!?\]])/g,
+    '$1<a href="mailto:$2" class="tsw-ai-link">$2</a>'
   );
   safe = safe.replace(
     /(^|\s)(#[a-zA-Z0-9_-]+)\b/g,
@@ -379,6 +449,10 @@ export function formatMarkdown(rawText) {
     /(^|[\s(])((?:salsopedia|grafik|cennik|jak-pracuje)\.html(?:#[a-zA-Z0-9_-]+)?)/g,
     '$1<a href="$2" class="tsw-ai-link">$2</a>'
   );
+
+  for (let idx = 0; idx < urlPlaceholders.length; idx++) {
+    safe = safe.replace(`\x00TSWURL${idx}\x00`, urlPlaceholders[idx]);
+  }
 
   const lines = safe.split(/\r?\n/);
   let html = '';
@@ -702,7 +776,7 @@ export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) 
   }
 
   if (q.includes('ai') || q.includes('czat') || q.includes('bot') || q.includes('asystent') || q.includes('rag')) {
-    return 'Wdrażamy dedykowanych **Asystentów AI z bazą wiedzy firmy (RAG)** zintegrowanych z centralną bramką kaskadową (11 modeli LLM, pamięć podręczna zapytań `< 5 ms`):\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na telefon (z numerem telefonu i e-mailem na samej górze wiadomości), gdy klient zostawi namiar kontaktowy.';
+    return 'Wdrażamy dedykowanych **Asystentów AI z bazą wiedzy firmy (RAG)** korzystających z centralnej **15-modelowej kaskady** High-Availability (15 modeli LLM, pamięć podręczna zapytań `< 5 ms`):\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na telefon (z numerem telefonu i e-mailem na samej górze wiadomości), gdy klient zostawi namiar kontaktowy.';
   }
 
   if (q.includes('współprac') || q.includes('wspolprac') || q.includes('krok') || q.includes('proces') || q.includes('etap') || q.includes('czas') || q.includes('ile trwa') || q.includes('jak wygląda')) {
@@ -724,6 +798,11 @@ export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) 
   return `Jestem wirtualnym doradcą serwisu **${resolvedSiteId}**. Chętnie odpowiem na pytania o ofertę, wycenę, wdrożenie asystenta AI lub przebieg współpracy. Możesz też zostawić wiadomość w formularzu kontaktowym na dole strony!`;
 }
 
+function sanitizeCssVarValue(val, fallback = '') {
+  if (!val || typeof val !== 'string') return fallback;
+  return val.replace(/[;<>{}\r\n]/g, '').trim() || fallback;
+}
+
 /**
  * Inicjalizuje widget czatu AI w drzewie DOM
  * @param {Document} doc
@@ -732,6 +811,9 @@ export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) 
  */
 export function initAiWidget(doc = document, win = globalThis.window, options = {}) {
   if (!doc || !doc.body) return null;
+  const aiConfig = options.aiConfig || win?.__TSW_AI_CONFIG__ || null;
+  if (aiConfig && aiConfig.enabled === false) return null;
+
   const existingRoot = doc.getElementById('tsw-ai-widget-root');
   if (existingRoot && !options.forceReinit) return null;
   if (existingRoot && options.forceReinit && existingRoot.parentNode) {
@@ -747,6 +829,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   const siteId = (
     options.siteId ||
     scriptEl?.getAttribute('data-site-id') ||
+    aiConfig?.siteId ||
     'twojastronawww'
   ).toLowerCase();
 
@@ -756,9 +839,9 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     ? 'http://localhost:8085/chat-router.php'
     : 'https://ai.twojastronawww.pl/chat-router.php';
   const routerUrl =
-    options.routerUrl || scriptEl?.getAttribute('data-router-url') || defaultRouterUrl;
+    options.routerUrl || scriptEl?.getAttribute('data-router-url') || aiConfig?.routerUrl || defaultRouterUrl;
   const title =
-    options.title || scriptEl?.getAttribute('data-title') || 'Asystent AI';
+    options.title || scriptEl?.getAttribute('data-title') || aiConfig?.title || 'Asystent AI';
   const kbUrl =
     options.kbUrl ||
     scriptEl?.getAttribute('data-kb-url') ||
@@ -768,16 +851,17 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     scriptEl?.getAttribute('data-kb-api') ||
     (siteId === 'katosalsahub' ? 'assets/php/wiki.php?action=list' : '');
 
-  // Konfiguracja kolorów: atrybuty HTML data-* -> opcje JS -> THEME_PRESETS[siteId] -> zmienne CSS strony
+  // Konfiguracja kolorów: atrybuty HTML data-* -> opcje JS -> ai-config.json -> THEME_PRESETS[siteId]
   const preset = THEME_PRESETS[siteId] || THEME_PRESETS.twojastronawww;
-  const themePrimary = options.primaryColor || scriptEl?.getAttribute('data-primary') || preset.primary;
-  const themeAccent = options.accentColor || scriptEl?.getAttribute('data-accent') || preset.accent;
-  const themeHighlight = options.highlightColor || scriptEl?.getAttribute('data-highlight') || preset.highlight;
-  const themeBg = options.bgColor || scriptEl?.getAttribute('data-bg') || preset.bg;
-  const themeSurface = options.surfaceColor || scriptEl?.getAttribute('data-surface') || preset.surface;
-  const themeText = options.textColor || scriptEl?.getAttribute('data-text') || preset.text;
-  const themeMuted = options.mutedColor || scriptEl?.getAttribute('data-muted') || preset.muted;
-  const themeOnPrimary = options.onPrimaryColor || scriptEl?.getAttribute('data-on-primary') || preset.onPrimary;
+  const cfgTheme = aiConfig?.theme && typeof aiConfig.theme === 'object' ? aiConfig.theme : {};
+  const themePrimary = sanitizeCssVarValue(options.primaryColor || scriptEl?.getAttribute('data-primary') || cfgTheme.primary || preset.primary, preset.primary);
+  const themeAccent = sanitizeCssVarValue(options.accentColor || scriptEl?.getAttribute('data-accent') || cfgTheme.accent || preset.accent, preset.accent);
+  const themeHighlight = sanitizeCssVarValue(options.highlightColor || scriptEl?.getAttribute('data-highlight') || cfgTheme.highlight || preset.highlight, preset.highlight);
+  const themeBg = sanitizeCssVarValue(options.bgColor || scriptEl?.getAttribute('data-bg') || cfgTheme.bg || preset.bg, preset.bg);
+  const themeSurface = sanitizeCssVarValue(options.surfaceColor || scriptEl?.getAttribute('data-surface') || cfgTheme.surface || preset.surface, preset.surface);
+  const themeText = sanitizeCssVarValue(options.textColor || scriptEl?.getAttribute('data-text') || cfgTheme.text || preset.text, preset.text);
+  const themeMuted = sanitizeCssVarValue(options.mutedColor || scriptEl?.getAttribute('data-muted') || cfgTheme.muted || preset.muted, preset.muted);
+  const themeOnPrimary = sanitizeCssVarValue(options.onPrimaryColor || scriptEl?.getAttribute('data-on-primary') || cfgTheme.onPrimary || preset.onPrimary, preset.onPrimary);
 
   // Automatyczne wykrycie, czy na stronie jest pływający przycisk CTA (np. #floatingCta na Raricart)
   const hasFloatingCta = Boolean(doc.getElementById('floatingCta') || doc.querySelector('.floating-cta'));
@@ -785,7 +869,11 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   const storageKey = 'tsw_ai_history_' + siteId;
   const cacheStorageKey = 'tsw_ai_cache_' + siteId;
   const cacheTtlMs = Number(options.cacheTtlMs) || 24 * 60 * 60 * 1000;
-  const quickPrompts = QUICK_PROMPTS_MAP[siteId] || QUICK_PROMPTS_MAP.twojastronawww;
+  const quickPrompts = Array.isArray(options.quickPrompts) && options.quickPrompts.length > 0
+    ? options.quickPrompts
+    : Array.isArray(aiConfig?.quickPrompts) && aiConfig.quickPrompts.length > 0
+    ? aiConfig.quickPrompts
+    : (QUICK_PROMPTS_MAP[siteId] || QUICK_PROMPTS_MAP.twojastronawww);
 
   const existingGlobalTerms = Array.isArray(win?.__SALSOPEDIA_TERMS__) && win.__SALSOPEDIA_TERMS__.length > 0
     ? win.__SALSOPEDIA_TERMS__
@@ -804,6 +892,19 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       if (Number.isFinite(t)) return t;
     }
     return Date.now();
+  }
+
+  function pruneCacheEntries() {
+    if (!responseCache?.entries || typeof responseCache.entries !== 'object') return;
+    const keys = Object.keys(responseCache.entries);
+    if (keys.length <= MAX_CACHE_ENTRIES) return;
+    const sorted = keys.sort(
+      (a, b) => (responseCache.entries[a]?.ts || 0) - (responseCache.entries[b]?.ts || 0)
+    );
+    const excess = sorted.length - MAX_CACHE_ENTRIES;
+    for (let i = 0; i < excess; i++) {
+      delete responseCache.entries[sorted[i]];
+    }
   }
 
   function invalidateResponseCache() {
@@ -832,6 +933,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
               kbVersion: parsed.kbVersion || kbVersion,
               entries: parsed.entries
             };
+            pruneCacheEntries();
           }
         } else {
           invalidateResponseCache();
@@ -908,6 +1010,9 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       responseCache = { kbVersion, entries: {} };
     }
     responseCache.kbVersion = kbVersion;
+    if (Object.prototype.hasOwnProperty.call(responseCache.entries, normQ)) {
+      delete responseCache.entries[normQ];
+    }
     responseCache.entries[normQ] = {
       answer: String(answer),
       kbVersion,
@@ -915,6 +1020,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       ts: Date.now(),
       monotonicMs: getMonotonicTimeMs()
     };
+    pruneCacheEntries();
     saveResponseCache();
   }
 
@@ -1283,13 +1389,15 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   // @tsw-css-end
 
   const placeholderText =
-    siteId === 'katosalsahub'
+    options.placeholder ||
+    aiConfig?.placeholder ||
+    (siteId === 'katosalsahub'
       ? 'Zapytaj o hasło z Salsopedii, style, radio lub eventy...'
       : siteId === 'fuegolingua'
       ? 'Napisz pytanie o kurs lub cennik...'
       : siteId === 'raricart'
       ? 'Zapytaj o stacje Live Food, pakiety lub wolny termin...'
-      : 'Napisz pytanie o ofertę lub wycenę...';
+      : 'Napisz pytanie o ofertę lub wycenę...');
 
   const root = doc.createElement('div');
   root.id = 'tsw-ai-widget-root';
@@ -1300,11 +1408,11 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       <span class="tsw-ai-btn-badge" aria-hidden="true">AI</span>
     </button>
 
-    <div class="tsw-ai-window" id="tswAiWindow" role="dialog" aria-label="${title}">
+    <div class="tsw-ai-window" id="tswAiWindow" role="dialog" aria-label="${escapeHtml(title)}">
       <div class="tsw-ai-header">
         <div class="tsw-ai-header-title tsw-ai-title">
           <span class="tsw-ai-status-dot tsw-ai-dot" aria-hidden="true"></span>
-          <span>${title}</span>
+          <span>${escapeHtml(title)}</span>
         </div>
         <div class="tsw-ai-header-actions tsw-ai-actions">
           <button type="button" class="tsw-ai-icon-btn" id="tswAiClearBtn" title="Nowa rozmowa" aria-label="Nowa rozmowa">&#x21bb;</button>
@@ -1316,7 +1424,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       <div class="tsw-ai-chips" id="tswAiChips"></div>
 
       <form class="tsw-ai-input-bar tsw-ai-form" id="tswAiForm">
-        <input type="text" class="tsw-ai-input" id="tswAiInput" placeholder="${placeholderText}" aria-label="Zadaj pytanie asystentowi" maxlength="500" required autocomplete="off" />
+        <input type="text" class="tsw-ai-input" id="tswAiInput" placeholder="${escapeHtml(placeholderText)}" aria-label="Zadaj pytanie asystentowi" maxlength="500" required autocomplete="off" />
         <button type="button" class="tsw-ai-voice-btn" id="tswAiVoiceBtn" title="Zadaj pytanie głosem (mikrofon)" aria-label="Zadaj pytanie głosem" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
         </button>
@@ -1559,6 +1667,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
 
   function sendAnalyticsBeacon(extra) {
     try {
+      if (isOwnerAnalyticsIgnored(win)) return;
       const nav = win?.navigator || (typeof navigator !== 'undefined' ? navigator : null);
       const loc = win?.location || {};
       const params = new URLSearchParams(loc.search || '');
@@ -1813,7 +1922,8 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     } catch (_) {}
 
     setTimeout(() => {
-      sendAnalyticsBeacon(lcpMeasured > 0 ? { type: 'pageview', lcp_ms: lcpMeasured } : { type: 'pageview' });
+      const validLcp = lcpMeasured >= 50 && lcpMeasured <= 8000;
+      sendAnalyticsBeacon(validLcp ? { type: 'pageview', lcp_ms: lcpMeasured } : { type: 'pageview' });
     }, 600);
 
     win.addEventListener?.('hashchange', () => {
@@ -1858,7 +1968,12 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
 
     doc.addEventListener?.('submit', (e) => {
       const form = e?.target;
-      if (form && form.id !== 'tsw-ai-form' && (form.id === 'contactForm' || form.classList?.contains?.('contact-form'))) {
+      if (
+        form &&
+        form.id !== 'tswAiForm' &&
+        form.id !== 'tsw-ai-form' &&
+        (form.id === 'contactForm' || form.classList?.contains?.('contact-form'))
+      ) {
         sendAnalyticsBeacon({ type: 'event', event: 'contact_form_submit' });
       }
     });
@@ -1915,6 +2030,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     updateKnowledgeEntries,
     refreshKnowledge,
     getCachedAnswer,
+    getCacheSize: () => Object.keys(responseCache?.entries || {}).length,
     clearCache: () => {
       responseCache = { kbVersion, entries: {} };
       saveResponseCache();
@@ -1928,11 +2044,31 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   return instance;
 }
 
-function autoInitAiWidget() {
-  if (typeof document === 'undefined') return;
-  if (document.getElementById('tsw-ai-widget-root')) return;
-  if (document.body) {
-    initAiWidget(document, globalThis.window);
+let autoInitInProgress = false;
+
+async function autoInitAiWidget() {
+  if (typeof document === 'undefined' || !document.body) return;
+  if (document.getElementById('tsw-ai-widget-root') || autoInitInProgress) return;
+  autoInitInProgress = true;
+  try {
+    const win = globalThis.window;
+    let aiConfig = win?.__TSW_AI_CONFIG__ || null;
+    const isBrowserEnv = Boolean(win?.location?.protocol && /^https?:$/i.test(win.location.protocol));
+    if (!aiConfig && isBrowserEnv && typeof win?.fetch === 'function') {
+      try {
+        const res = await win.fetch('assets/data/ai-config.json', { credentials: 'same-origin' });
+        if (res && res.ok) {
+          aiConfig = await res.json();
+          if (win) win.__TSW_AI_CONFIG__ = aiConfig;
+        }
+      } catch (_) {}
+    }
+    if (aiConfig && aiConfig.enabled === false) return;
+    if (!document.getElementById('tsw-ai-widget-root') && document.body) {
+      initAiWidget(document, win, aiConfig ? { aiConfig } : {});
+    }
+  } finally {
+    autoInitInProgress = false;
   }
 }
 

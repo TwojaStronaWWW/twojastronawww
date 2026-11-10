@@ -50,13 +50,17 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     scanDir(ROOT_DIR);
   });
 
-  it('pliki dokumentacji i standardów AGENTS.md, GEMINI.md, README.md, ROADMAP.md, sw.js, .gitleaks.toml oraz docs/ istnieją', () => {
+  it('pliki dokumentacji i standardów AGENTS.md, GEMINI.md, README.md, ROADMAP.md, SECURITY.md, .editorconfig, .npmrc, sw.js, .gitleaks.toml oraz assets/data/ai-config.json istnieją', () => {
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'AGENTS.md')), 'Brak AGENTS.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'GEMINI.md')), 'Brak GEMINI.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'README.md')), 'Brak README.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'ROADMAP.md')), 'Brak ROADMAP.md');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'SECURITY.md')), 'Brak SECURITY.md');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, '.editorconfig')), 'Brak .editorconfig');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, '.npmrc')), 'Brak .npmrc');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'sw.js')), 'Brak sw.js');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, '.gitleaks.toml')), 'Brak .gitleaks.toml');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'assets', 'data', 'ai-config.json')), 'Brak assets/data/ai-config.json');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'docs', 'SEO_GBP_PLAYBOOK.md')), 'Brak docs/SEO_GBP_PLAYBOOK.md');
     assert.ok(fs.existsSync(path.join(ROOT_DIR, 'tests', 'smoke', 'ui-smoke.js')), 'Brak tests/smoke/ui-smoke.js');
   });

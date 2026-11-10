@@ -32,7 +32,7 @@ jobs:
 
       - name: 1.3 Skaner sekretów Gitleaks i ochrona przed wyciekiem danych (ISO 27001)
         run: |
-          if git ls-files | grep -E "(\.env$|config/secrets\.php|\.htpasswd|leads_.*\.csv)$"; then
+          if git ls-files | grep -E "(\.env$|\.env\.bak|config/secrets\.php|\.htpasswd|leads_.*\.csv|\.(sqlite|sqlite3|db|pem|key|kdbx))$"; then
             echo "❌ Wykryto plik z wrażliwymi danymi w repozytorium!"
             exit 1
           fi
@@ -134,7 +134,7 @@ jobs:
 
       - name: 3.4 Oczyszczenie zbędnych plików deweloperskich przed wysłaniem na serwer
         run: |
-          rm -rf .git .github .gemini .githooks tests scripts docs node_modules smoke-diagnostics .lighthouserc.json .gitleaks.toml .env.example eslint.config.mjs .htmlhintrc .gitattributes .gitignore .editorconfig package*.json *.bak *.md
+          rm -rf .git .github .gemini .githooks tests scripts docs node_modules smoke-diagnostics .lighthouserc.json .gitleaks.toml .npmrc .env.example eslint.config.mjs .htmlhintrc .gitattributes .gitignore .editorconfig package*.json *.bak *.md
           rm -f api/leads_*.csv api/rate_limits/*.json api/sessions/sess_*
 
       - name: 3.5 Wdrożenie plików przez SFTP (z ochroną sesji i leadów CSV)

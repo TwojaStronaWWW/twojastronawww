@@ -1,4 +1,4 @@
-title = "Enterprise Site Template Secret Scanner Rules (ISO 27001)"
+title = "TwojaStronaWWW Secret Scanner Rules (ISO 27001)"
 
 [extend]
 useDefault = true
@@ -11,9 +11,15 @@ tags = ["key", "osticket"]
 
 [[rules]]
 id = "hardcoded-admin-password"
-description = "Hardcoded Admin Password"
-regex = '''(?i)(admin_secret|admin_pass)\s*[:=]\s*['"][^'"$]{8,}['"]'''
+description = "Hardcoded Admin Password or PIN"
+regex = '''(?i)(admin_secret|admin_pass|admin_pin)\s*[:=]\s*['"][^'"$]{8,}['"]'''
 tags = ["password", "admin"]
+
+[[rules]]
+id = "hardcoded-ntfy-token"
+description = "Hardcoded Ntfy Bearer Token"
+regex = '''(?i)(ntfy_token)\s*[:=]\s*['"]tk_[a-zA-Z0-9]{16,}['"]'''
+tags = ["token", "ntfy"]
 
 [allowlist]
 description = "Allowlist for template examples, tests and legacy rotated commits"

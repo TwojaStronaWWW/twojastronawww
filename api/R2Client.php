@@ -139,6 +139,10 @@ class R2Client
 
     private function sendRequest(string $method, string $host, string $uri, string $payload, string $contentType): array
     {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+
         $service = 's3';
         $now = time();
         $amzDate = gmdate('Ymd\THis\Z', $now);
@@ -199,9 +203,12 @@ class R2Client
 
         $url = "https://{$host}{$uri}";
 
+        $responseBody = '';
+        $exceededLimit = false;
+
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $curlHeaders);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
@@ -216,22 +223,39 @@ class R2Client
 
         if ($method === 'HEAD') {
             curl_setopt($ch, CURLOPT_NOBODY, true);
-        } elseif ($method === 'PUT' || $method === 'POST') {
+        } else {
+            curl_setopt($ch, CURLOPT_WRITEFUNCTION, static function ($curlHandle, string $chunk) use (&$responseBody, &$exceededLimit): int {
+                $chunkLen = strlen($chunk);
+                if (strlen($responseBody) + $chunkLen > self::MAX_RESPONSE_BYTES) {
+                    $exceededLimit = true;
+                    return 0;
+                }
+                $responseBody .= $chunk;
+                return $chunkLen;
+            });
+        }
+
+        if ($method === 'PUT' || $method === 'POST') {
             curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         }
 
-        $body = curl_exec($ch);
+        curl_exec($ch);
         $statusCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_error($ch);
-        curl_close($ch);
+        unset($ch);
 
         $this->lastStatusCode = $statusCode;
+
+        if ($exceededLimit) {
+            $this->lastError = 'Przekroczono maksymalny dopuszczalny rozmiar odpowiedzi z R2 (10 MB).';
+            return ['status' => 0, 'body' => $this->lastError];
+        }
 
         if ($curlError !== '') {
             $this->lastError = "cURL Error: {$curlError}";
             return ['status' => 0, 'body' => $curlError];
         }
 
-        return ['status' => $statusCode, 'body' => (string)$body];
+        return ['status' => $statusCode, 'body' => $responseBody];
     }
 }
