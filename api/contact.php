@@ -62,6 +62,8 @@ function detect_waf_l7_attack(array $fields): bool {
     $patterns = [
         '/\x00/',
         '/<\s*script\b/i',
+        '/<\s*iframe\b[^>]*\bsrcdoc\s*=/i',
+        '/mathlive#virtual-keyboard-message/i',
         '/javascript\s*:/i',
         '/\bon(?:error|load|click|mouseover|focus|submit|toggle)\s*=/i',
         '/<\s*(?:iframe|object|embed|applet|meta|base)\b/i',
@@ -285,10 +287,10 @@ $baseSubject = $messageRaw === ''
     ? "[TwojaStronaWWW.pl] SZYBKI TELEFON: {$plainName} ({$phone})"
     : "[TwojaStronaWWW.pl] Nowe zapytanie: {$plainName}";
 
-// 8. Rejestracja zgłoszenia w centralnym systemie ticketowym osTicket (wyłącznie HTTPS: https://hd.twojastronawww.pl/ticket_hook.php)
+// 8. Rejestracja zgłoszenia w centralnym systemie ticketowym osTicket (wyłącznie HTTPS: https://hd.twojastronawww.pl/ticket_hook.php + SSRF Guard 169.254.169.254)
 $osTicketApiKey = get_tsw_env('OSTICKET_API_KEY');
 $osTicketUrl = get_tsw_env('OSTICKET_URL', 'https://hd.twojastronawww.pl/ticket_hook.php');
-if (!filter_var($osTicketUrl, FILTER_VALIDATE_URL) || strpos($osTicketUrl, 'https://') !== 0) {
+if (!is_safe_outbound_url($osTicketUrl) || strpos($osTicketUrl, '169.254.169.254') !== false) {
     $osTicketUrl = 'https://hd.twojastronawww.pl/ticket_hook.php';
 }
 
@@ -347,7 +349,7 @@ if ($osTicketApiKey !== '' && function_exists('curl_init')) {
     $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
     unset($ch);
 
-    $resArr = is_string($apiResponse) ? json_decode($apiResponse, true, 8) : null;
+    $resArr = is_string($apiResponse) ? json_decode($apiResponse, true, 16) : null;
     if (($httpCode === 200 || $httpCode === 201) && !empty($resArr['success'])) {
         $ticketCreated = true;
         $ticketNum = (string)preg_replace('/[^a-zA-Z0-9_-]/', '', (string)($resArr['number'] ?? 'OK'));
@@ -381,10 +383,10 @@ $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
 @mail($centralEmail, $subject, $body, $headers, "-f{$fromSender}");
 
-// 10. Powiadomienie Push Ntfy (wsparcie self-hosted NTFY_BASE_URL + NTFY_TOKEN + sanityzacja Title/Actions)
+// 10. Powiadomienie Push Ntfy (wsparcie self-hosted NTFY_BASE_URL + NTFY_TOKEN + SSRF Guard 169.254.169.254 + sanityzacja Title/Actions)
 $ntfyTopic = (string)preg_replace('/[^a-zA-Z0-9_-]/', '', get_tsw_env('NTFY_TOPIC'));
 $ntfyBaseUrl = rtrim(get_tsw_env('NTFY_BASE_URL', 'https://ntfy.sh'), '/');
-if (!filter_var($ntfyBaseUrl, FILTER_VALIDATE_URL) || strpos($ntfyBaseUrl, 'https://') !== 0) {
+if (!is_safe_outbound_url($ntfyBaseUrl) || strpos($ntfyBaseUrl, '169.254.169.254') !== false) {
     $ntfyBaseUrl = 'https://ntfy.sh';
 }
 $ntfyToken = sanitize_ntfy_header_value(get_tsw_env('NTFY_TOKEN'));

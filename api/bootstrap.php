@@ -67,6 +67,50 @@ if (!defined('APP_PIN')) {
     define('APP_PIN', get_env_secret('ADMIN_PIN', ''));
 }
 
+/**
+ * [REF-05] SSRF Guard — weryfikuje, czy docelowy URL używa wyłącznie HTTPS i nie wskazuje
+ * na adresy prywatne, pętlę zwrotną (loopback) ani chmurowy serwis metadanych (169.254.169.254).
+ */
+if (!function_exists('is_safe_outbound_url')) {
+    function is_safe_outbound_url(string $url): bool {
+        if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return false;
+        }
+        $scheme = strtolower((string)parse_url($url, PHP_URL_SCHEME));
+        if ($scheme !== 'https') {
+            return false;
+        }
+        $host = strtolower(trim((string)parse_url($url, PHP_URL_HOST), '[]'));
+        if ($host === '') {
+            return false;
+        }
+        $blockedHosts = [
+            '169.254.169.254',
+            'fd00:ec2::254',
+            'metadata.google.internal',
+            'metadata',
+            'localhost',
+            '127.0.0.1',
+            '0.0.0.0',
+            '::1',
+        ];
+        if (in_array($host, $blockedHosts, true)
+            || str_ends_with($host, '.internal')
+            || str_ends_with($host, '.local')
+            || strpos($host, '169.254.') === 0
+            || strpos($host, '127.') === 0
+        ) {
+            return false;
+        }
+        if (filter_var($host, FILTER_VALIDATE_IP)) {
+            if (!filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
 function get_json_request(): array {
     $contentLength = isset($_SERVER['CONTENT_LENGTH']) ? (int)$_SERVER['CONTENT_LENGTH'] : 0;
     if ($contentLength > 65536) {

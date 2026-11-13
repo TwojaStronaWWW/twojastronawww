@@ -56,7 +56,7 @@ describe('Threat Protection, OWASP ASVS ([REF-05]) & Zero-Bloat Regression Suite
     assert.match(deletePhp, /HTTP_SEC_FETCH_SITE/);
   });
 
-  it('api/bootstrap.php i api/rate-limit.php egzekwują limit 65536 B (HTTP 413), json depth 16, cookie_secure, use_strict_mode, wrapper unregister i Zero-PII Penalty Box', () => {
+  it('api/bootstrap.php i api/rate-limit.php egzekwują limit 65536 B (HTTP 413), json depth 16, SSRF Guard (169.254.169.254), cookie_secure, use_strict_mode, wrapper unregister i Zero-PII Penalty Box', () => {
     const bootstrapPhp = readRepoFile('api/bootstrap.php');
     assert.match(bootstrapPhp, /65536/);
     assert.match(bootstrapPhp, /413/);
@@ -64,6 +64,8 @@ describe('Threat Protection, OWASP ASVS ([REF-05]) & Zero-Bloat Regression Suite
     assert.match(bootstrapPhp, /json_decode\s*\(\s*\$rawBody,\s*true,\s*16\s*\)/);
     assert.match(bootstrapPhp, /session\.cookie_secure/);
     assert.match(bootstrapPhp, /session\.use_strict_mode/);
+    assert.match(bootstrapPhp, /function\s+is_safe_outbound_url\s*\(/, 'Brak funkcji SSRF Guard is_safe_outbound_url() w api/bootstrap.php');
+    assert.match(bootstrapPhp, /169\.254\.169\.254/, 'SSRF Guard musi jawnie blokować adres metadanych chmurowych 169.254.169.254');
 
     const rateLimitPhp = readRepoFile('api/rate-limit.php');
     for (const wrapper of ['phar', 'ftp', 'ftps', 'expect']) {
@@ -73,12 +75,25 @@ describe('Threat Protection, OWASP ASVS ([REF-05]) & Zero-Bloat Regression Suite
     assert.match(rateLimitPhp, /function\s+ban_client_ip\s*\(/);
     assert.match(rateLimitPhp, /function\s+is_client_ip_banned\s*\(/);
     assert.match(rateLimitPhp, /rate_'\s*\.\s*\$action\s*\.\s*'_'/, 'Nazwy plików rate-limit muszą mieć format Zero-PII rate_<akcja>_<sha256>.json');
+
+    // Weryfikacja, że każde wywołanie json_decode w api/*.php posiada jawny limit głębokości 16
+    const apiDir = path.join(ROOT_DIR, 'api');
+    for (const file of fs.readdirSync(apiDir).filter((f) => f.endsWith('.php'))) {
+      const phpSrc = fs.readFileSync(path.join(apiDir, file), 'utf8');
+      const matches = phpSrc.match(/json_decode\s*\([^)]+\)/g) || [];
+      for (const call of matches) {
+        assert.match(call, /,\s*true\s*,\s*16\s*\)$/, `Wywołanie ${call} w api/${file} musi posiadać jawny limit głębokości 16`);
+      }
+    }
   });
 
-  it('api/contact.php i api/MediaService.php posiadają WAF L7 -> Penalty Box, ochronę CRLF telefonu, mask_ip, RFC 2047, NTFY_BASE_URL/NTFY_TOKEN, osTicket HTTPS i strażnika bomby GD', () => {
+  it('api/contact.php i api/MediaService.php posiadają WAF L7 -> Penalty Box, SSRF Guard (169.254.169.254), ochronę CRLF telefonu, mask_ip, RFC 2047, NTFY_BASE_URL/NTFY_TOKEN, osTicket HTTPS i strażnika bomby GD', () => {
     const contactPhp = readRepoFile('api/contact.php');
     assert.match(contactPhp, /detect_waf_l7_attack\s*\(/);
     assert.match(contactPhp, /ban_client_ip\s*\(\s*\$ip,\s*900/);
+    assert.match(contactPhp, /is_safe_outbound_url\s*\(\s*\$osTicketUrl\s*\)/);
+    assert.match(contactPhp, /is_safe_outbound_url\s*\(\s*\$ntfyBaseUrl\s*\)/);
+    assert.match(contactPhp, /169\.254\.169\.254/);
     assert.match(contactPhp, /preg_replace\s*\(\s*'\/\[\^0-9\+\\- \(\)\]\/'/);
     assert.doesNotMatch(contactPhp, /\[\^0-9\+\\s\\-\(\)\]/, 'Regex telefonu nie może zawierać \\s przepuszczającego \\r\\n (CRLF Injection)');
     assert.match(contactPhp, /mask_ip\s*\(\s*\$ip\s*\)/);
@@ -152,6 +167,16 @@ describe('Threat Protection, OWASP ASVS ([REF-05]) & Zero-Bloat Regression Suite
     assert.match(aiReviewYml, /COLLABORATOR/);
     assert.match(aiReviewYml, /gemini-3\.5-flash/);
     assert.doesNotMatch(aiReviewYml, /cache:\s*['"]?npm['"]?/);
+
+    // Weryfikacja RFC 9116 ([REF-06]) w .well-known/security.txt (Expires >= 2027-12-31T23:59:59.000Z)
+    const securityTxt = readRepoFile('.well-known/security.txt');
+    const expiresMatch = securityTxt.match(/^Expires:\s*(\S+)/m);
+    assert.ok(expiresMatch, 'Brak pola Expires: w .well-known/security.txt');
+    assert.ok(
+      Date.parse(expiresMatch[1]) >= Date.parse('2027-12-31T23:59:59.000Z'),
+      `Data Expires w .well-known/security.txt (${expiresMatch[1]}) musi wynosić min. 2027-12-31T23:59:59.000Z`
+    );
+    assert.match(securityTxt, /^Policy:\s*https:\/\/twojastronawww\.pl\//m, 'Brak pola Policy: w .well-known/security.txt');
 
     // Weryfikacja czystego LF (\n) w .githooks/* oraz ewentualnych *.sh
     const githooksDir = path.join(ROOT_DIR, '.githooks');

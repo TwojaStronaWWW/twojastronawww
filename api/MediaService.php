@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace TwojaStronaWWW\Api;
 
 require_once __DIR__ . '/R2Client.php';
+require_once __DIR__ . '/leads-store.php';
 
 /**
  * Serwis optymalizacji multimediów (ścisła walidacja MIME, ochrona Decompression Bomb, konwersja GD do WebP i wysyłka do Cloudflare R2).
@@ -19,13 +20,23 @@ class MediaService
 
     public function __construct(?R2Client $r2Client = null, string $cdnBaseUrl = '')
     {
+        if ($r2Client === null) {
+            $acc = \get_env_secret('R2_ACCOUNT_ID');
+            $key = \get_env_secret('R2_ACCESS_KEY_ID');
+            $sec = \get_env_secret('R2_SECRET_ACCESS_KEY');
+            $bkt = \get_env_secret('R2_BUCKET_NAME', 'twojastronawww-media');
+            if ($acc !== '' && $key !== '' && $sec !== '' && $bkt !== '') {
+                $r2Client = new R2Client($acc, $key, $sec, $bkt, 'auto');
+            }
+        }
         $this->r2Client = $r2Client;
-        $this->cdnBaseUrl = rtrim($cdnBaseUrl !== '' ? $cdnBaseUrl : (string)(getenv('CDN_BASE_URL') ?: 'https://media.twojadomena.pl'), '/');
+        $defaultCdn = \get_env_secret('R2_PUBLIC_URL', \get_env_secret('CDN_BASE_URL', 'https://media.twojastronawww.pl'));
+        $this->cdnBaseUrl = rtrim($cdnBaseUrl !== '' ? $cdnBaseUrl : $defaultCdn, '/');
     }
 
     /**
      * Waliduje plik tymczasowy, chroni przed bombą dekompresyjną obrazu (getimagesize przed GD),
-     * konwertuje obrazy (JPG/PNG/GIF/WEBP) do formatu WebP (max 1920px) i przesyła do Cloudflare R2.
+     * konwertuje obrazy (JPG/PNG/GIF/WEBP) do formatu WebP (max 1920px) i przesyła bezpośrednio do Cloudflare R2.
      */
     public function processAndUpload(string $tmpFilePath, string $originalName, string $target = 'gallery'): array
     {

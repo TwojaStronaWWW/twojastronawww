@@ -40,8 +40,12 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     }
   });
 
-  test('Formularz kontaktowy w index.html zawiera wymagane pola (name, email, message, honeypot) oraz wyrównany do lewej checkbox zgody', () => {
+  test('Formularz kontaktowy w index.html zawiera wymagane pola (name, email, message, honeypot), deklaratywne atrybuty WebMCP ([REF-07]) oraz wyrównany do lewej checkbox zgody', () => {
     assert.match(indexContent, /<form[^>]*id=["']contactForm["']/i, 'Brak formularza #contactForm w index.html');
+    assert.match(indexContent, /toolname=["']send_contact_inquiry["']/i, 'Brak deklaratywnego atrybutu WebMCP toolname="send_contact_inquiry" na #contactForm');
+    assert.match(indexContent, /tooldescription=["'][^"']+["']/i, 'Brak deklaratywnego atrybutu WebMCP tooldescription na #contactForm');
+    assert.match(indexContent, /toolparamdescription=["'][^"']+["']/i, 'Brak deklaratywnego atrybutu WebMCP toolparamdescription na polach formularza');
+    assert.doesNotMatch(indexContent, /toolautosubmit/i, 'Formularz #contactForm nie może posiadać toolautosubmit (ochrona Human-in-the-Loop [REF-07])');
     assert.match(indexContent, /name=["']name["']/i, 'Brak pola name w formularzu');
     assert.match(indexContent, /name=["']email["']/i, 'Brak pola email w formularzu');
     assert.match(indexContent, /name=["']message["']/i, 'Brak pola message w formularzu');
@@ -119,11 +123,24 @@ describe('Integralność semantyczna i standardy HTML5 (TwojaStronaWWW.pl)', () 
     assert.match(styleCssContent, /\.hero-btns\s*\{[^}]*flex-wrap:\s*wrap/is, '.hero-btns musi posiadać flex-wrap: wrap, aby przyciski nie rozpychały ekranu mobilnego w prawo');
   });
 
-  test('WCAG 2.2 AA ([REF-04]) i Portfolio: .skip-link, <main id="main">, role ARIA formularza oraz produkcyjny link raricart.pl', () => {
+  test('WCAG 2.2 AA ([REF-04]), Capo.js ([REF-02]), GEO ([REF-07]) i Portfolio: .skip-link, <main id="main">, kolejność <head>, speculationrules, brak href="#" i produkcyjny link raricart.pl', () => {
     for (const [name, content] of [['index.html', indexContent], ['jak-pracuje.html', jakPracujeContent]]) {
       assert.match(content, /<a[^>]+href=["']#main["'][^>]*class=["'][^"']*skip-link[^"']*["']/i, `Brak .skip-link prowadzącego do #main w ${name}`);
       assert.match(content, /<main[^>]+id=["']main["']/i, `Brak semantycznego kontenera <main id="main"> w ${name}`);
       assert.doesNotMatch(content, /\s(?:style|onclick|onsubmit)=["']/i, `Wykryto niedozwolony atrybut inline (style/onclick/onsubmit) w ${name}`);
+      assert.doesNotMatch(content, /href=["']#["']/i, `Wykryto pusty link href="#" w ${name}`);
+      assert.match(content, /<link\s+rel=["']alternate["']\s+type=["']text\/markdown["']\s+href=["']llms\.txt["']/i, `Brak linku rel="alternate" type="text/markdown" href="llms.txt" ([REF-07]) w ${name}`);
+      assert.match(content, /<script\s+type=["']speculationrules["']/i, `Brak <script type="speculationrules"> ([REF-02]) w ${name}`);
+      assert.match(content, /"not":\s*\{\s*"href_matches":\s*"\/api\/\*"\s*\}/, `Speculation Rules w ${name} muszą wykluczać /api/*`);
+      assert.match(content, /\[aria-hidden=\\"true\\"\],\s*\[data-bot-trap\]/, `Speculation Rules w ${name} muszą wykluczać pułapki anty-botowe [aria-hidden="true"], [data-bot-trap]`);
+
+      // [REF-02] Capo.js: <link rel="preconnect"> i <link rel="stylesheet"> muszą występować przed <meta name="description"> i <script type="application/ld+json">
+      const preconnectIdx = content.search(/<link\s+rel=["']preconnect["']/i);
+      const stylesheetIdx = content.search(/<link\s+rel=["']stylesheet["']\s+href=["']assets\/css\/style\.css/i);
+      const descIdx = content.search(/<meta\s+name=["']description["']/i);
+      const ldJsonIdx = content.search(/<script\s+type=["']application\/ld\+json["']/i);
+      assert.ok(preconnectIdx > 0 && preconnectIdx < descIdx, `W ${name} <link rel="preconnect"> powinien znajdować się przed <meta name="description"> (Capo.js [REF-02])`);
+      assert.ok(stylesheetIdx > 0 && stylesheetIdx < descIdx && stylesheetIdx < ldJsonIdx, `W ${name} główny arkusz stylów powinien znajdować się przed meta SEO i JSON-LD (Capo.js [REF-02])`);
     }
 
     assert.doesNotMatch(indexContent, /test\.raricart\.pl/i, 'W index.html nie może występować roboczy adres test.raricart.pl');

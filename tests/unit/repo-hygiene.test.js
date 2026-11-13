@@ -109,6 +109,25 @@ describe('Higiena repozytorium i bezpieczeństwo danych (ISO 27001)', () => {
     const robotsContent = fs.readFileSync(path.join(ROOT_DIR, 'robots.txt'), 'utf-8');
     assert.match(robotsContent, /User-agent:\s*\*/i);
     assert.match(robotsContent, /Disallow:\s*\/api\//i);
+    assert.match(robotsContent, /Disallow:\s*\/api\/bot-trap\.php/i);
+  });
+
+  it('Platform Core v2.4 (pii-guard.php, bot-trap.php, ai-json-healing.js, BLUEPRINT.md, WAF srcdoc/mathlive oraz metryki Lawsona i Moz 2026) są wdrożone', () => {
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'api', 'pii-guard.php')), 'Brak api/pii-guard.php');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'api', 'bot-trap.php')), 'Brak api/bot-trap.php');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'scripts', 'ai-json-healing.js')), 'Brak scripts/ai-json-healing.js');
+    assert.ok(fs.existsSync(path.join(ROOT_DIR, 'BLUEPRINT.md')), 'Brak BLUEPRINT.md');
+
+    const contactPhp = fs.readFileSync(path.join(ROOT_DIR, 'api', 'contact.php'), 'utf-8');
+    assert.match(contactPhp, /srcdoc/i, 'Brak reguły WAF blokującej iframe[srcdoc] w api/contact.php');
+    assert.match(contactPhp, /mathlive#virtual-keyboard-message/i, 'Brak reguły WAF blokującej mathlive#virtual-keyboard-message w api/contact.php');
+
+    for (const docName of ['llms.txt', 'AGENTS.md', 'BLUEPRINT.md']) {
+      const docContent = fs.readFileSync(path.join(ROOT_DIR, docName), 'utf-8');
+      assert.match(docContent, /WebMCP/i, `Brak standardu WebMCP w ${docName}`);
+      assert.match(docContent, /142\s*KiB/i, `Brak benchmarku Nolana Lawsona (142 KiB) w ${docName}`);
+      assert.match(docContent, /63,8%|63\.8%/, `Brak raportu Moz (63,8%) w ${docName}`);
+    }
   });
 
   it('pomocnik mock-dom (.tests/helpers/mock-dom.js) oraz szablon PR istnieją', () => {

@@ -152,7 +152,11 @@ export function initTelemetryChannelSelector() {
     channelBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.dataset.channelTarget;
-            channelBtns.forEach(b => b.classList.toggle('is-active', b === btn));
+            channelBtns.forEach(b => {
+                const isAct = b === btn;
+                b.classList.toggle('is-active', isAct);
+                b.setAttribute('aria-selected', String(isAct));
+            });
             channelCells.forEach(cell => {
                 cell.classList.toggle('is-active', cell.id === targetId);
             });

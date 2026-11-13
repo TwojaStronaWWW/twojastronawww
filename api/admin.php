@@ -53,7 +53,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? '') ==
 // 2. Obsługa POST (Logowanie chronione przez Rate Limit + 15-min IP Penalty Box + CSRF)
 $error = '';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && ($_POST['action'] ?? 'login') === 'login') {
-    if (!rate_limit('admin_login_' . $clientIp, 5, 300)) {
+    if (!rate_limit('admin_login_' . mask_ip($clientIp), 5, 300)) {
         ban_client_ip($clientIp, 900, 'admin_login_bruteforce');
         @session_write_close();
         http_response_code(429);
@@ -94,7 +94,7 @@ if (!empty($_SESSION['auth']) && $_SESSION['auth'] === true) {
     $authAt = isset($_SESSION['auth_at']) ? (int)$_SESSION['auth_at'] : 0;
     if ($authAt <= 0 || (time() - $authAt) > SESSION_TTL) {
         $_SESSION = [];
-        @session_destroy();
+        @session_regenerate_id(true);
         $error = 'Sesja wygasła po 30 minutach bezczynności. Zaloguj się ponownie.';
     } else {
         $_SESSION['auth_at'] = time();

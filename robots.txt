@@ -2,5 +2,6 @@ User-agent: *
 Allow: /
 Allow: /llms.txt
 Disallow: /api/
+Disallow: /api/bot-trap.php
 
 Sitemap: https://twojastronawww.pl/sitemap.xml

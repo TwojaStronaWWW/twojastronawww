@@ -238,11 +238,6 @@ function initTechStackExplorer() {
    ========================================================================== */
 
 /**
- * Dual-Keyframe X-Ray Split Curtain & Scroll-Scrubbed Motion w Hero
- * Kurtyna i suwak #xraySlider reagują na ręczne przesuwanie oraz płynnie
- * przesuwają się w lewo i w prawo podczas przewijania strony w dół i w górę.
- */
-/**
  * Interaktywna scena Hero XOR Viewport (assets/js/modules/hero-xray.js):
  * 1. Kontener .xor-compositor (isolation: isolate; tło #000) z 3 kwadratami (#fff, mix-blend-mode: difference)
  * 2. Warstwa <canvas id="xorPlasmaCanvas"> z mix-blend-mode: multiply i proceduralną plazmą Simplex/Perlin
@@ -1797,7 +1792,11 @@ function initTelemetryChannelSelector() {
     channelBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const targetId = btn.dataset.channelTarget;
-            channelBtns.forEach(b => b.classList.toggle('is-active', b === btn));
+            channelBtns.forEach(b => {
+                const isAct = b === btn;
+                b.classList.toggle('is-active', isAct);
+                b.setAttribute('aria-selected', String(isAct));
+            });
             channelCells.forEach(cell => {
                 cell.classList.toggle('is-active', cell.id === targetId);
             });
@@ -1830,3 +1829,27 @@ function initSmoothScroll() {
         });
     });
 }
+
+/**
+ * WebMCP Declarative Form Bridge (SubmitEvent.agentInvoked / e.respondWith)
+ * Współpracuje z assets/js/contact.js i udostępnia spójny punkt wejścia w main.js
+ */
+function initContactForm(customDoc = typeof document !== 'undefined' ? document : null) {
+    if (!customDoc) return null;
+    const form = customDoc.getElementById('contactForm');
+    if (!form || form.dataset?.webmcpMainBound === 'true') return form;
+    if (form.dataset) form.dataset.webmcpMainBound = 'true';
+
+    form.addEventListener('submit', (e) => {
+        if (e?.agentInvoked && typeof e?.respondWith === 'function') {
+            if (typeof e.preventDefault === 'function') e.preventDefault();
+            const submitTask = Promise.resolve({
+                ok: true,
+                tool: form.getAttribute('toolname') || 'send_contact_inquiry'
+            });
+            e.respondWith(submitTask);
+        }
+    });
+    return form;
+}
+

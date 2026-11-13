@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tworzenie Stron Internetowych, Czatboty AI i Automatyzacja Procesów | TwojaStronaWWW.pl</title>
+
+    <!-- [REF-02] Capo.js Optimal <head> Order: Preconnect & Stylesheets before SEO Meta / JSON-LD -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://ai.twojastronawww.pl" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Space+Grotesk:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css?v=26">
+
     <meta name="description"
         content="Tworzenie szybkich stron internetowych bez WordPressa, wdrożenia asystentów AI (RAG) i automatyzacja procesów w firmie. Wynik PageSpeed 95+, zero abonamentu, gwarancja SLA.">
     <meta name="robots" content="index, follow">
@@ -31,17 +41,6 @@
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="alternate icon" href="favicon.ico">
     <link rel="manifest" href="site.webmanifest">
-
-    <!-- Fonts & AI Router Preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://ai.twojastronawww.pl" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Space+Grotesk:wght@400;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=26">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -139,7 +138,7 @@
         <nav class="nav-inner" aria-label="Konsola nawigacji">
             <div class="nav-container">
                 <div class="nav-left">
-                    <a href="#" class="logo">TwojaStronaWWW</a>
+                    <a href="index.html" class="logo" title="TwojaStronaWWW – Strona Główna">TwojaStronaWWW</a>
                     <span class="rail-subtitle">KONSOLA SYSTEMOWA · FLAT-FILE</span>
                 </div>
 
@@ -572,10 +571,10 @@
 
             <!-- Top Channel Selector Bar -->
             <div class="telemetry-channel-bar" role="tablist" aria-label="Wybór kanału wdrożenia produkcyjnego">
-                <button type="button" class="channel-select-btn is-active" data-channel-target="ch-raricart">KANAŁ 1: RARICART</button>
-                <button type="button" class="channel-select-btn" data-channel-target="ch-katosalsa">KANAŁ 2: KATOSALSAHUB</button>
-                <button type="button" class="channel-select-btn" data-channel-target="ch-dancepuls">KANAŁ 3: DANCEPULS</button>
-                <button type="button" class="channel-select-btn" data-channel-target="ch-fuegolingua">KANAŁ 4: FUEGOLINGUA</button>
+                <button type="button" role="tab" aria-selected="true" class="channel-select-btn is-active" data-channel-target="ch-raricart">KANAŁ 1: RARICART</button>
+                <button type="button" role="tab" aria-selected="false" class="channel-select-btn" data-channel-target="ch-katosalsa">KANAŁ 2: KATOSALSAHUB</button>
+                <button type="button" role="tab" aria-selected="false" class="channel-select-btn" data-channel-target="ch-dancepuls">KANAŁ 3: DANCEPULS</button>
+                <button type="button" role="tab" aria-selected="false" class="channel-select-btn" data-channel-target="ch-fuegolingua">KANAŁ 4: FUEGOLINGUA</button>
             </div>
 
             <!-- 2x2 Industrial Telemetry Readout Grid -->
@@ -841,7 +840,12 @@
                 </div>
 
                 <div class="contact-form-col">
-                    <form id="contactForm" class="contact-form">
+                    <form
+                        id="contactForm"
+                        class="contact-form"
+                        toolname="send_contact_inquiry"
+                        tooldescription="Wyślij zapytanie o wycenę strony internetowej, wdrożenie asystenta AI lub automatyzację procesów (wystarczy imię oraz telefon lub e-mail)."
+                    >
                         <input type="text" name="website_url" class="honeypot-field" tabindex="-1"
                             autocomplete="off" aria-hidden="true">
 
@@ -850,24 +854,24 @@
 
                         <div class="form-field-group">
                             <label class="field-label" for="contactName">Imię lub nazwa firmy</label>
-                            <input type="text" id="contactName" name="name" placeholder="np. Jan Kowalski / Firma Budowlana" required>
+                            <input type="text" id="contactName" name="name" placeholder="np. Jan Kowalski / Firma Budowlana" required toolparamdescription="Imię, nazwisko lub nazwa firmy osoby kontaktowej">
                         </div>
 
                         <div class="form-row-2col">
                             <div class="form-field-group">
                                 <label class="field-label" for="contactPhone">Telefon kontaktowy</label>
-                                <input type="tel" id="contactPhone" name="phone" placeholder="np. 600 000 000">
+                                <input type="tel" id="contactPhone" name="phone" placeholder="np. 600 000 000" toolparamdescription="Numer telefonu do szybkiego kontaktu (wystarczy podać telefon lub e-mail)">
                             </div>
                             <div class="form-field-group">
                                 <label class="field-label" for="contactEmail">Adres e-mail</label>
-                                <input type="email" id="contactEmail" name="email" placeholder="np. biuro@twojafirma.pl">
+                                <input type="email" id="contactEmail" name="email" placeholder="np. biuro@twojafirma.pl" toolparamdescription="Adres e-mail klienta do przesłania wyceny (wystarczy podać e-mail lub telefon)">
                             </div>
                         </div>
 
                         <div class="form-field-group">
                             <label class="field-label" for="contactMessage">Zakres projektu lub wybrane moduły</label>
                             <textarea id="contactMessage" name="message" placeholder="Opisz krótko projekt lub kliknij wybrany wariant w konfiguratorze powyżej (możesz też zostawić puste — oddzwonię)"
-                                rows="3"></textarea>
+                                rows="3" toolparamdescription="Opis projektu, branży lub wybrane moduły w konfiguratorze wyceny"></textarea>
                         </div>
 
                         <label class="form-consent-label">
@@ -911,7 +915,8 @@
               { "href_matches": "/*" },
               { "not": { "href_matches": "/api/*" } },
               { "not": { "href_matches": "/assets/php/*" } },
-              { "not": { "href_matches": "/admin/*" } }
+              { "not": { "href_matches": "/admin/*" } },
+              { "not": { "selector_matches": "[aria-hidden=\"true\"], [data-bot-trap]" } }
             ]
           },
           "eagerness": "moderate"

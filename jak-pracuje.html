@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jak pracuję – Proces tworzenia, technologie i standardy SLA | TwojaStronaWWW.pl</title>
+
+    <!-- [REF-02] Capo.js Optimal <head> Order: Preconnect & Stylesheets before SEO Meta / JSON-LD -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://ai.twojastronawww.pl" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Space+Grotesk:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/style.css?v=26">
+
     <meta name="description"
         content="Poznaj transparentny proces tworzenia stron WWW i automatyzacji: od analizy biznesowej, przez dedykowany UX/UI, czysty kod Vanilla JS / PHP Flat-File, po bezpieczeństwo ISO 27001 i wyniki Lighthouse 95+.">
     <meta name="robots" content="index, follow">
@@ -31,17 +41,6 @@
     <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
     <link rel="alternate icon" href="favicon.ico">
     <link rel="manifest" href="site.webmanifest">
-
-    <!-- Fonts & AI Router Preconnect -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://ai.twojastronawww.pl" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Space+Grotesk:wght@400;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Styles -->
-    <link rel="stylesheet" href="assets/css/style.css?v=22">
 
     <!-- Structured Data (Schema.org) -->
     <script type="application/ld+json">
@@ -94,6 +93,7 @@
       ]
     }
     </script>
+    <link rel="alternate" type="text/markdown" href="llms.txt" title="Baza wiedzy dla asystentów AI (llms.txt)">
 </head>
 
 <body>
@@ -101,7 +101,7 @@
 
     <!-- Header & Navigation -->
     <header>
-        <nav class="nav-inner">
+        <nav class="nav-inner" aria-label="Nawigacja główna">
             <div class="nav-container">
                 <div class="nav-left">
                     <a href="index.html" class="logo" title="TwojaStronaWWW – Strona Główna">TwojaStronaWWW</a>
@@ -561,8 +561,26 @@
     </footer>
 
     <!-- Scripts -->
-    <script data-cfasync="false" src="assets/js/main.js?v=22"></script>
+    <script data-cfasync="false" src="assets/js/main.js?v=26"></script>
     <script data-cfasync="false" type="module" src="assets/js/ai-widget.js?v=4.5" data-site-id="twojastronawww" data-title="Asystent TwojaStronaWWW"></script>
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "where": {
+            "and": [
+              { "href_matches": "/*" },
+              { "not": { "href_matches": "/api/*" } },
+              { "not": { "href_matches": "/assets/php/*" } },
+              { "not": { "href_matches": "/admin/*" } },
+              { "not": { "selector_matches": "[aria-hidden=\"true\"], [data-bot-trap]" } }
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+    </script>
 </body>
 
 </html>

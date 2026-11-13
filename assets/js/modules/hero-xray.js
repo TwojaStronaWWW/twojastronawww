@@ -7,11 +7,6 @@
  */
 
 /**
- * Dual-Keyframe X-Ray Split Curtain & Scroll-Scrubbed Motion w Hero
- * Kurtyna i suwak #xraySlider reagują na ręczne przesuwanie oraz płynnie
- * przesuwają się w lewo i w prawo podczas przewijania strony w dół i w górę.
- */
-/**
  * Interaktywna scena Hero XOR Viewport (assets/js/modules/hero-xray.js):
  * 1. Kontener .xor-compositor (isolation: isolate; tło #000) z 3 kwadratami (#fff, mix-blend-mode: difference)
  * 2. Warstwa <canvas id="xorPlasmaCanvas"> z mix-blend-mode: multiply i proceduralną plazmą Simplex/Perlin

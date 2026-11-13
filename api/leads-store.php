@@ -2,279 +2,408 @@
 declare(strict_types=1);
 
 /**
- * Pobiera zmienną środowiskową z getenv(), $_ENV lub pliku .env poza katalogiem publicznym (ISO 27001)
+ * Lekki magazyn leadów oparty o plik CSV oraz powiadomienia Push (Ntfy.sh).
+ * Zawiera zabezpieczenie przed CSV Formula Injection (OWASP) oraz obsługę pliku .env.
+ *
+ * UWAGA ARCHITEKTONICZNA (Separation of Concerns):
+ * Niniejszy moduł odpowiada wyłącznie za formularz kontaktowy (zapis CSV + Ntfy.sh).
+ * Jest całkowicie niezależny od opcjonalnego modułu czatbota AI (`assets/js/ai-widget.js`),
+ * dzięki czemu wyłączenie lub usunięcie czatu AI nigdy nie wpływa na odbieranie leadów z formularza.
  */
-if (!function_exists('get_env_secret')) {
-    function get_env_secret(string $key, string $default = ''): string {
-        $val = getenv($key);
-        if ($val !== false && $val !== '') {
-            return (string)$val;
-        }
-        if (!empty($_ENV[$key])) {
-            return (string)$_ENV[$key];
-        }
-        $envPaths = [
-            __DIR__ . '/../../.env',
-            __DIR__ . '/../.env',
-        ];
-        foreach ($envPaths as $envPath) {
-            if (@is_readable($envPath)) {
-                $lines = @file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-                if (is_array($lines)) {
-                    foreach ($lines as $line) {
-                        $line = trim($line);
-                        if ($line === '' || strpos($line, '#') === 0 || strpos($line, '=') === false) {
-                            continue;
-                        }
-                        list($k, $v) = explode('=', $line, 2);
-                        if (trim($k) === $key) {
-                            return trim($v, " \t\n\r\0\x0B\"'");
-                        }
-                    }
-                }
-            }
-        }
-        return $default;
+
+const MAX_LEADS_STORAGE_BYTES = 10485760; // 10 MB
+
+/**
+ * Wczytuje zmienne środowiskowe z pliku .env (jeśli istnieje w katalogu głównym projektu).
+ *
+ * @return array<string, string>
+ */
+function parse_dotenv_file(?string $envFilePath = null): array
+{
+    static $cachedEnv = null;
+    if ($cachedEnv !== null && $envFilePath === null) {
+        return $cachedEnv;
     }
-}
 
-function csv_files(): array {
-    return glob(__DIR__ . '/leads_*.csv') ?: [];
-}
+    $path = $envFilePath ?? (dirname(__DIR__) . '/.env');
+    if (!is_file($path) || !is_readable($path)) {
+        if ($envFilePath === null) {
+            $cachedEnv = [];
+        }
+        return [];
+    }
 
-function is_draft_file(string $file): bool {
-    return strpos(basename($file), '_draft_') !== false;
+    $vars = [];
+    $lines = @file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!is_array($lines)) {
+        return [];
+    }
+
+    foreach ($lines as $line) {
+        $trimmed = trim($line);
+        if ($trimmed === '' || str_starts_with($trimmed, '#')) {
+            continue;
+        }
+        $eqPos = strpos($trimmed, '=');
+        if ($eqPos === false) {
+            continue;
+        }
+        $key = trim(substr($trimmed, 0, $eqPos));
+        $val = trim(substr($trimmed, $eqPos + 1));
+        if ($key === '') {
+            continue;
+        }
+        if (
+            (str_starts_with($val, '"') && str_ends_with($val, '"')) ||
+            (str_starts_with($val, "'") && str_ends_with($val, "'"))
+        ) {
+            $val = substr($val, 1, -1);
+        }
+        $vars[$key] = $val;
+    }
+
+    if ($envFilePath === null) {
+        $cachedEnv = $vars;
+    }
+
+    return $vars;
 }
 
 /**
- * Ochrona przed CSV Formula Injection (OWASP DDE) — neutralizuje znaki sterujące (=, +, -, @, TAB, CR)
+ * Pobiera sekret konfiguracyjny ze zmiennych środowiskowych lub pliku .env.
  */
-function sanitize_csv_cell(string $value): string {
-    $clean = trim((string)preg_replace('/[\r\n]+/', ' ', $value));
-    if ($clean !== '' && in_array($clean[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+function get_env_secret(string $key, string $default = ''): string
+{
+    $envVal = getenv($key);
+    if (is_string($envVal) && $envVal !== '') {
+        return $envVal;
+    }
+    if (!empty($_ENV[$key]) && is_string($_ENV[$key])) {
+        return $_ENV[$key];
+    }
+    $dotEnv = parse_dotenv_file();
+    if (isset($dotEnv[$key]) && $dotEnv[$key] !== '') {
+        return $dotEnv[$key];
+    }
+    return $default;
+}
+
+/**
+ * Neutralizuje potencjalne formuły arkuszy kalkulacyjnych (CSV Injection / DDE):
+ * poprzedza apostrofem ciągi zaczynające się od =, +, -, @, tabulatora lub znaku powrotu karetki,
+ * w tym poprzedzone białymi znakami.
+ */
+function sanitize_csv_field(string $value): string
+{
+    $clean = str_replace(["\r\n", "\r", "\n"], ' ', trim($value));
+    if ($clean !== '' && preg_match('/^[\s\x00-\x20]*[=+\-@|\t]/', $clean) === 1) {
         return "'" . $clean;
     }
     return $clean;
 }
 
 /**
- * Normalizuje wiersz CSV (kompatybilność wsteczna 6 kolumn -> 8 kolumn:
- * [0]=date, [1]=time, [2]=name, [3]=email, [4]=message, [5]=ip_hash, [6]=phone, [7]=newsletter)
+ * Alias kompatybilny z api/export-leads.php oraz testami higieny repozytorium.
  */
-function normalize_lead_row(array $row): ?array {
-    if (count($row) === 6) {
-        return [$row[0], $row[1], $row[2], $row[3], $row[4], $row[5], '-', 'NIE'];
-    }
-    if (count($row) >= 8) {
-        return array_slice($row, 0, 8);
-    }
-    return null;
+function sanitize_csv_cell(string $value): string
+{
+    return sanitize_csv_field($value);
 }
 
-function read_leads(bool $draft = false, int $limit = 200): array {
-    $rows = [];
-    $files = csv_files();
-    rsort($files);
-
-    foreach ($files as $file) {
-        if ($draft !== is_draft_file($file)) {
-            continue;
-        }
-
-        if (($h = @fopen($file, 'rb')) === false) {
-            continue;
-        }
-
-        $fileRows = [];
-        if (@flock($h, LOCK_SH)) {
-            fgetcsv($h, 0, ',', '"', '');
-
-            while (($row = fgetcsv($h, 0, ',', '"', '')) !== false) {
-                $normalized = normalize_lead_row($row);
-                if ($normalized !== null) {
-                    array_unshift($fileRows, $normalized);
-                }
-            }
-            @flock($h, LOCK_UN);
-        }
-        fclose($h);
-
-        foreach ($fileRows as $r) {
-            $rows[] = $r;
-            if (count($rows) >= $limit) {
-                break 2;
-            }
-        }
-
-        if (count($rows) >= $limit) {
-            break;
-        }
+/**
+ * Zwraca ścieżkę do pliku CSV z leadami (poza publicznym webrootem lub w chronionym katalogu).
+ */
+function get_leads_csv_path(): string
+{
+    $customPath = getenv('LEADS_CSV_PATH');
+    if (is_string($customPath) && $customPath !== '') {
+        return $customPath;
     }
-    return $rows;
+    return dirname(__DIR__) . '/storage/leads/leady.csv';
 }
 
-function lead_id(array $row): string {
-    $normalized = normalize_lead_row($row) ?? $row;
-    return hash('sha256', implode('|', array_slice($normalized, 0, 6)));
+/**
+ * Tworzy chroniony katalog dla pliku CSV (z blokadą .htaccess).
+ */
+function ensure_leads_storage(string $csvPath): bool
+{
+    $dir = dirname($csvPath);
+    if (!is_dir($dir)) {
+        if (!@mkdir($dir, 0750, true) && !is_dir($dir)) {
+            return false;
+        }
+    }
+
+    $htaccess = $dir . '/.htaccess';
+    if (!file_exists($htaccess)) {
+        @file_put_contents(
+            $htaccess,
+            "# Blokada bezposredniego dostepu HTTP do bazy leadow (RODO / ISO 27001)\n"
+            . "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n"
+            . "<IfModule !mod_authz_core.c>\n    Order deny,allow\n    Deny from all\n</IfModule>\n",
+            LOCK_EX
+        );
+    }
+
+    return is_writable($dir);
 }
 
-function save_lead(array $data, bool $draft = false): void {
-    if (count($data) < 6) {
-        return;
+/**
+ * Wysyła natychmiastowe powiadomienie Push (Ntfy.sh) z przyciskami akcji 1-Klik ("Zadzwoń teraz" / "Odpisz e-mail").
+ *
+ * @param array{name?: string, email?: string, phone?: string, subject?: string, message?: string, site?: string} $lead
+ */
+function send_ntfy_lead_alert(array $lead): bool
+{
+    $topic = trim(get_env_secret('NTFY_TOPIC'));
+    if ($topic === '' || !function_exists('curl_init')) {
+        return false;
     }
-    $normalized = normalize_lead_row($data);
-    if ($normalized === null) {
-        return;
+
+    $server = rtrim(get_env_secret('NTFY_SERVER', 'https://ntfy.sh'), '/');
+    $token = trim(get_env_secret('NTFY_TOKEN'));
+
+    // [REF-05] SSRF Guard — wymuszamy wyłącznie protokół HTTPS i blokujemy adresy lokalne/metadanych
+    $parsedUrl = parse_url($server);
+    $scheme = strtolower((string)($parsedUrl['scheme'] ?? ''));
+    $host = strtolower((string)($parsedUrl['host'] ?? ''));
+    if (
+        $scheme !== 'https' ||
+        $host === '' ||
+        $host === 'localhost' ||
+        str_starts_with($host, '127.') ||
+        str_starts_with($host, '10.') ||
+        str_starts_with($host, '192.168.') ||
+        str_starts_with($host, '169.254.')
+    ) {
+        return false;
     }
-    $sanitizedRow = array_map(static function ($cell): string {
-        return sanitize_csv_cell((string)$cell);
-    }, $normalized);
 
-    $suffix = $draft ? '_draft' : '';
-    $file = __DIR__ . '/leads' . $suffix . '_' . date('Y-m') . '.csv';
+    $name = trim((string)($lead['name'] ?? 'Klient'));
+    $email = trim((string)($lead['email'] ?? ''));
+    $phone = trim((string)($lead['phone'] ?? ''));
+    $subject = trim((string)($lead['subject'] ?? 'Zapytanie z formularza'));
+    $message = trim((string)($lead['message'] ?? ''));
+    $site = trim((string)($lead['site'] ?? ($_SERVER['HTTP_HOST'] ?? 'TwojaStronaWWW')));
 
-    $fp = @fopen($file, 'a+b');
-    if (!$fp) return;
+    $cleanPhoneDial = preg_replace('/[^0-9+]/', '', $phone) ?: '';
+    $contactQuick = $phone !== '' && $email !== ''
+        ? "{$phone} | {$email}"
+        : ($phone !== '' ? $phone : ($email !== '' ? $email : 'Brak'));
 
-    if (@flock($fp, LOCK_EX)) {
-        clearstatcache(true, $file);
+    $titleHeader = "Lead ({$site}): {$name}" . ($phone !== '' ? " [{$phone}]" : '');
+    $titleHeader = preg_replace('/[\r\n]+/', ' ', $titleHeader) ?: 'Nowy Lead';
+
+    $lines = [
+        '📞 TELEFON: ' . ($phone !== '' ? $phone : 'Nie podano'),
+        '✉️ E-MAIL: ' . ($email !== '' ? $email : 'Nie podano'),
+        '👤 Imię: ' . $name,
+        '📋 Temat: ' . $subject,
+        '🌐 Strona: ' . $site,
+        '---',
+        mb_substr($message, 0, 600),
+    ];
+    $body = implode("\n", $lines);
+
+    $actions = [];
+    if ($cleanPhoneDial !== '') {
+        $actions[] = "view, Zadzwoń ({$cleanPhoneDial}), tel:{$cleanPhoneDial}, clear=true";
+    }
+    if ($email !== '') {
+        $replySubject = rawurlencode("Re: {$subject} ({$site})");
+        $actions[] = "view, Napisz e-mail, mailto:{$email}?subject={$replySubject}, clear=true";
+    }
+
+    $headers = [
+        'Title: ' . $titleHeader,
+        'Priority: high',
+        'Tags: incoming_envelope,telephone_receiver,sparkles',
+    ];
+    if ($actions !== []) {
+        $headers[] = 'Actions: ' . implode('; ', $actions);
+    }
+    if ($token !== '') {
+        $headers[] = 'Authorization: Bearer ' . $token;
+    }
+
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        @session_write_close();
+    }
+
+    $url = $server . '/' . rawurlencode($topic);
+    $ch = curl_init($url);
+    if ($ch === false) {
+        return false;
+    }
+
+    curl_setopt_array($ch, [
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => $body,
+        CURLOPT_HTTPHEADER     => $headers,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT        => 5,
+        CURLOPT_FOLLOWLOCATION => false,
+        CURLOPT_MAXREDIRS      => 0,
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_SSL_VERIFYHOST => 2,
+    ]);
+    if (defined('CURLPROTO_HTTPS')) {
+        curl_setopt($ch, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+        curl_setopt($ch, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTPS);
+    }
+
+    curl_exec($ch);
+    $code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    unset($ch);
+
+    return $code >= 200 && $code < 300;
+}
+
+/**
+ * Dopisuje nowego leada do pliku CSV z użyciem blokady wyłącznej (flock LOCK_EX).
+ * Automatycznie tworzy plik .htaccess blokujący dostęp z sieci.
+ *
+ * @param array{name: string, email: string, phone?: string, subject?: string, message: string, ip_masked?: string} $lead
+ */
+function append_lead_csv(array $lead, ?string $customPath = null): bool
+{
+    $csvPath = $customPath ?? get_leads_csv_path();
+    if (!ensure_leads_storage($csvPath)) {
+        return false;
+    }
+
+    if (file_exists($csvPath)) {
+        $currentSize = @filesize($csvPath);
+        if (is_int($currentSize) && $currentSize >= MAX_LEADS_STORAGE_BYTES) {
+            return false;
+        }
+    }
+
+    $isNew = !file_exists($csvPath) || filesize($csvPath) === 0;
+    $fp = @fopen($csvPath, 'ab');
+    if ($fp === false) {
+        return false;
+    }
+
+    $written = false;
+    if (flock($fp, LOCK_EX)) {
         $stat = fstat($fp);
-        $isNew = ($stat === false || ($stat['size'] ?? 0) === 0);
-        if ($isNew) {
-            fputcsv($fp, ['date', 'time', 'name', 'email', 'message', 'ip_hash', 'phone', 'newsletter'], ',', '"', '');
+        if (is_array($stat) && isset($stat['size']) && (int)$stat['size'] === 0) {
+            fwrite($fp, "\xEF\xBB\xBF");
+            fputcsv($fp, ['Data', 'Imie_Nazwisko', 'Email', 'Telefon', 'Temat', 'Wiadomosc', 'IP_Masked'], ';');
         }
-        fputcsv($fp, $sanitizedRow, ',', '"', '');
+
+        $row = [
+            date('Y-m-d H:i:s'),
+            sanitize_csv_field((string)($lead['name'] ?? '')),
+            sanitize_csv_field((string)($lead['email'] ?? '')),
+            sanitize_csv_field((string)($lead['phone'] ?? '')),
+            sanitize_csv_field((string)($lead['subject'] ?? '')),
+            sanitize_csv_field((string)($lead['message'] ?? '')),
+            sanitize_csv_field((string)($lead['ip_masked'] ?? '')),
+        ];
+
+        $written = fputcsv($fp, $row, ';') !== false;
+        fflush($fp);
+        flock($fp, LOCK_UN);
+    }
+
+    fclose($fp);
+    return $written;
+}
+
+/**
+ * Dopisuje nowego leada do pliku CSV (z limitem 10 MB i nagłówkiem UTF-8 BOM) — kompatybilność z api/contact.php.
+ *
+ * @param array{name: string, email?: string, phone?: string, contact?: string, message: string, ip_masked?: string, user_agent?: string} $lead
+ */
+function append_lead(array $lead, ?string $customPath = null): bool
+{
+    $csvPath = $customPath ?? get_leads_csv_path();
+    if (!ensure_leads_storage($csvPath)) {
+        return false;
+    }
+
+    if (file_exists($csvPath)) {
+        $currentSize = @filesize($csvPath);
+        if (is_int($currentSize) && $currentSize >= MAX_LEADS_STORAGE_BYTES) {
+            return false;
+        }
+    }
+
+    $isNewFile = !file_exists($csvPath) || (int)@filesize($csvPath) === 0;
+    $fp = @fopen($csvPath, 'ab');
+    if ($fp === false) {
+        return false;
+    }
+
+    $success = false;
+    if (@flock($fp, LOCK_EX)) {
+        if ($isNewFile) {
+            fwrite($fp, "\xEF\xBB\xBF");
+            fputcsv($fp, ['ID', 'Data_UTC', 'Imie', 'Kontakt', 'Telefon', 'Email', 'Wiadomosc', 'IP_Maskowane'], ';');
+        }
+
+        $id = bin2hex(random_bytes(6));
+        $row = [
+            $id,
+            gmdate('Y-m-d H:i:s'),
+            sanitize_csv_field((string)($lead['name'] ?? '')),
+            sanitize_csv_field((string)($lead['contact'] ?? '')),
+            sanitize_csv_field((string)($lead['phone'] ?? '')),
+            sanitize_csv_field((string)($lead['email'] ?? '')),
+            sanitize_csv_field((string)($lead['message'] ?? '')),
+            sanitize_csv_field((string)($lead['ip_masked'] ?? '0.0.0.xxx')),
+        ];
+
+        $res = fputcsv($fp, $row, ';');
         fflush($fp);
         @flock($fp, LOCK_UN);
+        $success = ($res !== false);
     }
-    fclose($fp);
 
-    if (!$draft && is_readable(__DIR__ . '/PrivateStorageService.php')) {
-        $privBucket = get_env_secret('R2_PRIVATE_BUCKET_NAME');
-        if ($privBucket !== '') {
-            require_once __DIR__ . '/PrivateStorageService.php';
-            $storage = new \TwojaStronaWWW\Api\PrivateStorageService(
-                get_env_secret('R2_ACCOUNT_ID'),
-                get_env_secret('R2_ACCESS_KEY_ID'),
-                get_env_secret('R2_SECRET_ACCESS_KEY'),
-                $privBucket
-            );
-            if ($storage->isAvailable()) {
-                @$storage->backupLeads($file);
-            }
-        }
-    }
+    @fclose($fp);
+    return $success;
 }
 
-function delete_lead_by_id(string $targetId): bool {
-    if ($targetId === '') return false;
-    $deleted = false;
-
-    foreach (csv_files() as $file) {
-        $fp = @fopen($file, 'c+b');
-        if (!$fp) continue;
-
-        if (@flock($fp, LOCK_EX)) {
-            rewind($fp);
-            $header = fgetcsv($fp, 0, ',', '"', '');
-            $keptRows = [];
-            $foundInFile = false;
-
-            while (($row = fgetcsv($fp, 0, ',', '"', '')) !== false) {
-                if (lead_id($row) === $targetId) {
-                    $foundInFile = true;
-                    $deleted = true;
-                } else {
-                    $keptRows[] = $row;
-                }
-            }
-
-            if ($foundInFile) {
-                ftruncate($fp, 0);
-                rewind($fp);
-                fputcsv($fp, is_array($header) ? $header : ['date', 'time', 'name', 'email', 'message', 'ip_hash', 'phone', 'newsletter'], ',', '"', '');
-                foreach ($keptRows as $r) {
-                    fputcsv($fp, $r, ',', '"', '');
-                }
-                fflush($fp);
-            }
-
-            @flock($fp, LOCK_UN);
-        }
-        fclose($fp);
+/**
+ * Odczytuje listę leadów z pliku CSV (od najnowszych) — kompatybilność z api/admin.php.
+ *
+ * @return array<int, array<string, string>>
+ */
+function read_all_leads(?string $customPath = null, int $limit = 200): array
+{
+    $csvPath = $customPath ?? get_leads_csv_path();
+    if (!file_exists($csvPath) || !is_readable($csvPath)) {
+        return [];
     }
 
-    return $deleted;
-}
+    $fp = @fopen($csvPath, 'rb');
+    if ($fp === false) {
+        return [];
+    }
 
-function read_json_file(string $file): array {
-    if (!file_exists($file)) return [];
-    $fp = @fopen($file, 'rb');
-    if (!$fp) return [];
-    $content = '';
+    $rows = [];
     if (@flock($fp, LOCK_SH)) {
-        clearstatcache(true, $file);
-        $size = (int)@filesize($file);
-        if ($size > 0) {
-            $content = (string)fread($fp, $size);
+        $header = fgetcsv($fp, 4096, ';');
+        if (is_array($header)) {
+            $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', (string)$header[0]);
+            while (($line = fgetcsv($fp, 8192, ';')) !== false) {
+                if (count($line) < 2) {
+                    continue;
+                }
+                $item = [];
+                foreach ($header as $idx => $colName) {
+                    $item[(string)$colName] = isset($line[$idx]) ? (string)$line[$idx] : '';
+                }
+                $rows[] = $item;
+            }
         }
         @flock($fp, LOCK_UN);
     }
-    fclose($fp);
-    if ($content === '') return [];
-    $data = json_decode($content, true);
-    return is_array($data) ? $data : [];
-}
+    @fclose($fp);
 
-function update_json_file(string $file, callable $mutator, bool $purgeCache = true): array {
-    $fp = @fopen($file, 'c+b');
-    if (!$fp) {
-        return ['ok' => false, 'result' => null];
-    }
-
-    if (!@flock($fp, LOCK_EX)) {
-        fclose($fp);
-        return ['ok' => false, 'result' => null];
-    }
-
-    rewind($fp);
-    $existingContent = stream_get_contents($fp);
-    $data = [];
-    if ($existingContent !== false && $existingContent !== '') {
-        $decoded = json_decode($existingContent, true);
-        if (is_array($decoded)) {
-            $data = $decoded;
-        }
-    }
-
-    $mutationResult = $mutator($data);
-    if ($mutationResult === false) {
-        @flock($fp, LOCK_UN);
-        fclose($fp);
-        return ['ok' => false, 'result' => null];
-    }
-
-    $encoded = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    if ($encoded === false) {
-        @flock($fp, LOCK_UN);
-        fclose($fp);
-        return ['ok' => false, 'result' => null];
-    }
-
-    if ($existingContent !== false && strlen($existingContent) > 0) {
-        @file_put_contents($file . '.bak', $existingContent, LOCK_EX);
-    }
-
-    ftruncate($fp, 0);
-    rewind($fp);
-    $written = fwrite($fp, $encoded);
-    fflush($fp);
-    @flock($fp, LOCK_UN);
-    fclose($fp);
-
-    if ($written !== false && $purgeCache && !headers_sent()) {
-        header("X-LiteSpeed-Purge: *");
-    }
-
-    return ['ok' => $written !== false, 'result' => $mutationResult];
+    $rows = array_reverse($rows);
+    return array_slice($rows, 0, max(1, $limit));
 }

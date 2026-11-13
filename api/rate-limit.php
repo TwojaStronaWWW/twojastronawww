@@ -1,217 +1,261 @@
 <?php
 declare(strict_types=1);
 
-// [REF-05 / OWASP PHP2Shell Guard]: Wyrejestrowanie niebezpiecznych wrapperów strumieniowych i blokada CGI injection
-foreach (['phar', 'ftp', 'ftps', 'expect'] as $__unsafeWrapper) {
-    if (in_array($__unsafeWrapper, stream_get_wrappers(), true)) {
-        @stream_wrapper_unregister($__unsafeWrapper);
+/**
+ * Zero-PII File-based IP Rate Limiter & 15-Min Penalty Box (OWASP ASVS / RODO).
+ *
+ * Gwarancje bezpieczeństwa:
+ * 1. Zero-PII na dysku: adres IP nigdy nie jest zapisywany w nazwie pliku ani w treści JSON.
+ *    Kluczem jest wyłącznie nieskorelowany skrót `hash_hmac('sha256', $ip . '|' . $action, $salt)`.
+ * 2. 15-Minutowy IP Penalty Box: wywołanie `ban_client_ip($action, 900)` blokuje IP na 15 minut
+ *    po wykryciu ataku WAF L7 (XSS, SQLi, Path Traversal, Prompt Injection) lub Honeypot.
+ * 3. Atomowość I/O: wszystkie odczyty i zapisy używają wyłącznej blokady `flock($fp, LOCK_EX)`.
+ */
+
+const RATE_LIMIT_PENALTY_SECONDS = 900; // 15 minut
+
+foreach (['phar', 'ftp', 'ftps', 'expect'] as $__tswWrapper) {
+    if (in_array($__tswWrapper, stream_get_wrappers(), true)) {
+        @stream_wrapper_unregister($__tswWrapper);
     }
 }
-$__rawQs = (string)($_SERVER['QUERY_STRING'] ?? '');
-if ($__rawQs !== '' && preg_match('/(^|&)(%2d|%ad|-)(d|n|s|w)\b|allow_url_include|auto_prepend_file|auto_append_file|php:\/\/|phar:\/\/|expect:\/\//i', $__rawQs)) {
-    http_response_code(403);
-    exit('Forbidden');
-}
+unset($__tswWrapper);
 
 /**
- * Zwraca zweryfikowany adres IP klienta (ochrona przed spoofingiem HTTP_CF_CONNECTING_IP poza Cloudflare).
+ * Zwraca adres IP klienta z uwzględnieniem nagłówka Cloudflare Zero Trust / Proxy.
  */
-if (!function_exists('get_client_ip')) {
-    function get_client_ip(): string {
-        $remoteAddr = trim((string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0'));
-        $cfIp = trim((string)($_SERVER['HTTP_CF_CONNECTING_IP'] ?? ''));
+function get_client_ip(): string
+{
+    $candidates = [
+        $_SERVER['HTTP_CF_CONNECTING_IP'] ?? null,
+        $_SERVER['REMOTE_ADDR'] ?? null,
+    ];
 
-        if ($cfIp !== '' && filter_var($cfIp, FILTER_VALIDATE_IP)) {
-            if (!empty($_SERVER['HTTP_CF_RAY']) || $remoteAddr === '' || $remoteAddr === '127.0.0.1' || $remoteAddr === '::1') {
-                return $cfIp;
+    foreach ($candidates as $ip) {
+        if (is_string($ip) && $ip !== '') {
+            $clean = trim(explode(',', $ip)[0]);
+            if (filter_var($clean, FILTER_VALIDATE_IP)) {
+                return $clean;
             }
         }
-
-        return filter_var($remoteAddr, FILTER_VALIDATE_IP) ? $remoteAddr : '0.0.0.0';
     }
+
+    return '0.0.0.0';
 }
 
 /**
- * Anonimizacja adresu IP zgodna z RODO (maskowanie ostatniego oktetu IPv4 lub sufiksu /48 IPv6).
+ * Alias dla kompatybilności wstecznej.
  */
-if (!function_exists('mask_ip')) {
-    function mask_ip(string $ip): string {
-        $trimmed = trim($ip);
-        if (filter_var($trimmed, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
-            return (string)preg_replace('/\.\d+$/', '.0', $trimmed);
-        }
-        if (filter_var($trimmed, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
-            $packed = @inet_pton($trimmed);
-            if ($packed !== false && strlen($packed) === 16) {
-                $masked = substr($packed, 0, 6) . str_repeat("\x00", 10);
-                $unpacked = @inet_ntop($masked);
-                if ($unpacked !== false) {
-                    return $unpacked;
-                }
+function resolve_client_ip(): string
+{
+    return get_client_ip();
+}
+
+/**
+ * Maskuje ostatni oktet IPv4 lub końcówkę IPv6 (zgodność z RODO w logach pamięciowych).
+ */
+function mask_ip(string $ip): string
+{
+    if (str_contains($ip, ':')) {
+        $parts = explode(':', $ip);
+        return implode(':', array_slice($parts, 0, 3)) . '::xxxx';
+    }
+    $parts = explode('.', $ip);
+    if (count($parts) === 4) {
+        return "{$parts[0]}.{$parts[1]}.{$parts[2]}.xxx";
+    }
+    return '0.0.0.0';
+}
+
+/**
+ * Wylicza deterministyczny skrót Zero-PII SHA-256 z solą dla pary (akcja, IP).
+ */
+function compute_zero_pii_ip_hash(string $action, ?string $ip = null): string
+{
+    $clientIp = $ip ?? get_client_ip();
+    $envSalt = getenv('RATE_LIMIT_SALT');
+    $salt = (is_string($envSalt) && strlen($envSalt) >= 16)
+        ? $envSalt
+        : hash('sha256', __DIR__ . '|tsw-zero-pii-rate-limit-salt-v2');
+
+    return hash_hmac('sha256', $action . '|' . $clientIp, $salt);
+}
+
+/**
+ * Zwraca ścieżkę do pliku licznika Rate Limit dla danej akcji i skrótu IP.
+ */
+function resolve_rate_limit_file(string $action, ?string $ip = null, ?string $storageDir = null): string
+{
+    $dir = $storageDir ?? (getenv('TSW_RATE_LIMIT_DIR') ?: (sys_get_temp_dir() . '/tsw_ratelimits'));
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0700, true);
+    }
+    $action = preg_replace('/[^a-zA-Z0-9_-]/', '', $action) ?: 'default';
+    $digest = compute_zero_pii_ip_hash($action, $ip);
+
+    return rtrim($dir, '/\\') . '/rate_' . $action . '_' . $digest . '.json';
+}
+
+/**
+ * Sprawdza, czy dany adres IP znajduje się obecnie w 15-minutowym Penalty Boxie.
+ */
+function is_ip_banned_in_penalty_box(string $action = 'contact', ?string $storageDir = null, ?string $ip = null): bool
+{
+    $file = resolve_rate_limit_file($action, $ip, $storageDir);
+    if (!is_file($file)) {
+        return false;
+    }
+
+    $fp = @fopen($file, 'rb');
+    if ($fp === false) {
+        return false;
+    }
+
+    $banned = false;
+    if (@flock($fp, LOCK_SH)) {
+        $raw = (string)stream_get_contents($fp);
+        $decoded = json_decode($raw, true, 16);
+        if (is_array($decoded)) {
+            $bannedUntil = (int)($decoded['banned_until'] ?? 0);
+            if ($bannedUntil > time()) {
+                $banned = true;
             }
         }
-        return '0.0.0.0';
+        @flock($fp, LOCK_UN);
     }
+    @fclose($fp);
+
+    return $banned;
 }
 
 /**
- * Zwraca ścieżkę do chronionego katalogu liczników rate-limit i Penalty Box.
+ * Alias dla kompatybilności z api/contact.php oraz testami jednostkowymi.
  */
-function rate_limits_storage_dir(): string {
-    $dir = __DIR__ . '/rate_limits';
-    if (!file_exists($dir)) {
-        if (!@mkdir($dir, 0755, true)) {
-            return sys_get_temp_dir();
-        }
-        @file_put_contents($dir . '/.htaccess', "Deny from all\n");
-        @file_put_contents($dir . '/index.html', '');
-    }
-    return $dir;
+function is_client_ip_banned(string $action = 'contact', ?string $ip = null): bool
+{
+    return is_ip_banned_in_penalty_box($action, null, $ip);
 }
 
 /**
- * 15-minutowy IP Penalty Box (blokada agresywnych adresów IP po wykryciu ataku WAF L7 lub brute-force).
+ * Nakłada natychmiastową blokadę IP (domyślnie 15 minut = 900s) w Penalty Boxie.
+ * Zero-PII: w pliku zapisywane są wyłącznie znaczniki czasu i licznik naruszeń.
  */
-function ban_client_ip(string $ip, int $ttlSeconds = 900, string $reason = 'security_blocked'): void {
-    $dir = rate_limits_storage_dir();
-    $cleanIp = filter_var(trim($ip), FILTER_VALIDATE_IP) ? trim($ip) : '0.0.0.0';
-    $file = $dir . '/rate_penalty_' . hash('sha256', 'penalty|' . $cleanIp) . '.json';
+function ban_client_ip(string $action = 'contact', int $banSeconds = RATE_LIMIT_PENALTY_SECONDS, ?string $storageDir = null, ?string $ip = null): void
+{
+    $file = resolve_rate_limit_file($action, $ip, $storageDir);
+    $now = time();
+    $banUntil = $now + max(60, $banSeconds);
 
     $fp = @fopen($file, 'c+b');
-    if (!$fp) {
+    if ($fp === false) {
         return;
     }
 
     if (@flock($fp, LOCK_EX)) {
+        $raw = (string)stream_get_contents($fp);
+        $decoded = json_decode($raw, true, 16);
+        $hits = (is_array($decoded) && isset($decoded['hits']) && is_array($decoded['hits']))
+            ? array_values(array_filter($decoded['hits'], static fn($ts): bool => is_int($ts) && ($now - $ts) < 3600))
+            : [];
+        $violations = (is_array($decoded) && isset($decoded['violations']) && is_int($decoded['violations']))
+            ? $decoded['violations'] + 1
+            : 1;
+
         $payload = [
-            'banned_until' => time() + max(60, $ttlSeconds),
-            'reason' => substr((string)preg_replace('/[^a-zA-Z0-9_-]/', '', $reason), 0, 48),
-            'created_at' => time(),
+            'banned_until' => $banUntil,
+            'violations'   => $violations,
+            'hits'         => $hits,
+            'updated_at'   => $now,
         ];
+
         ftruncate($fp, 0);
         rewind($fp);
         fwrite($fp, (string)json_encode($payload));
         fflush($fp);
         @flock($fp, LOCK_UN);
     }
-    fclose($fp);
+    @fclose($fp);
 }
 
 /**
- * Sprawdza, czy dany adres IP znajduje się obecnie w aktywnym 15-minutowym IP Penalty Box.
+ * Sprawdza i inkrementuje licznik zapytań w oknie czasowym.
+ * Jeśli przekroczono limit `$maxRequests` w `$windowSeconds`, automatycznie nakłada
+ * 15-minutowy ban w Penalty Boxie (`RATE_LIMIT_PENALTY_SECONDS`).
  */
-function is_client_ip_banned(string $ip): bool {
-    $dir = rate_limits_storage_dir();
-    $cleanIp = filter_var(trim($ip), FILTER_VALIDATE_IP) ? trim($ip) : '0.0.0.0';
-    $file = $dir . '/rate_penalty_' . hash('sha256', 'penalty|' . $cleanIp) . '.json';
-
-    if (!file_exists($file)) {
-        return false;
-    }
-
-    $fp = @fopen($file, 'rb');
-    if (!$fp) {
-        return false;
-    }
-
-    $isBanned = false;
-    if (@flock($fp, LOCK_SH)) {
-        $content = stream_get_contents($fp);
-        if (is_string($content) && $content !== '') {
-            $decoded = json_decode($content, true, 8);
-            if (is_array($decoded) && isset($decoded['banned_until']) && (int)$decoded['banned_until'] > time()) {
-                $isBanned = true;
-            }
-        }
-        @flock($fp, LOCK_UN);
-    }
-    fclose($fp);
-
-    if (!$isBanned) {
-        @unlink($file);
-    }
-
-    return $isBanned;
-}
-
-/**
- * Mechanizm Rate Limiting oparty na blokadzie plikowej i Garbage Collectorze (ISO 27001 / Zero-PII).
- * Nazwa pliku ma postać: rate_<akcja>_<sha256>.json (brak oktetów IP na dysku — 100% RODO).
- */
-function rate_limit(string $key, int $limit, int $seconds): bool {
-    $dir = rate_limits_storage_dir();
-
-    $action = 'req';
-    if (preg_match('/^([a-zA-Z]+(?:_[a-zA-Z]+)*)/', $key, $matches)) {
-        $action = strtolower(substr($matches[1], 0, 24));
-    }
-    $file = $dir . '/rate_' . $action . '_' . hash('sha256', $key) . '.json';
-
-    // Garbage Collector (1% prawdopodobieństwa, bezpieczne usuwanie z LOCK_EX | LOCK_NB)
-    if (random_int(1, 100) === 1) {
-        $files = glob($dir . '/rate_*.json');
-        if (is_array($files)) {
-            $now = time();
-            foreach ($files as $f) {
-                if ($now - (int)@filemtime($f) > 3600) {
-                    $gcFp = @fopen($f, 'c+b');
-                    if ($gcFp) {
-                        if (@flock($gcFp, LOCK_EX | LOCK_NB)) {
-                            @flock($gcFp, LOCK_UN);
-                            fclose($gcFp);
-                            @unlink($f);
-                        } else {
-                            fclose($gcFp);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    $fp = @fopen($file, 'c+b');
-    if (!$fp) {
-        return true;
-    }
-
-    if (!@flock($fp, LOCK_EX)) {
-        fclose($fp);
-        return true;
-    }
-
-    $current = [];
-    $content = stream_get_contents($fp);
-    if ($content !== false && $content !== '') {
-        $decoded = json_decode($content, true, 8);
-        if (is_array($decoded)) {
-            $current = $decoded;
-        }
-    }
-
+function check_rate_limit(
+    string $action,
+    int $maxRequests = 5,
+    int $windowSeconds = 60,
+    ?string $storageDir = null,
+    ?string $ip = null
+): bool {
+    $file = resolve_rate_limit_file($action, $ip, $storageDir);
     $now = time();
 
-    if (!isset($current['start_time']) || ($now - (int)$current['start_time'] > $seconds)) {
-        $current = [
-            'start_time' => $now,
-            'count' => 0,
+    $fp = @fopen($file, 'c+b');
+    if ($fp === false) {
+        return true; // Fail-open w przypadku braku uprawnień do katalogu tymczasowego
+    }
+
+    $allowed = true;
+
+    if (@flock($fp, LOCK_EX)) {
+        $raw = (string)stream_get_contents($fp);
+        $decoded = json_decode($raw, true, 16);
+
+        $bannedUntil = is_array($decoded) ? (int)($decoded['banned_until'] ?? 0) : 0;
+        $violations = is_array($decoded) ? (int)($decoded['violations'] ?? 0) : 0;
+
+        if ($bannedUntil > $now) {
+            @flock($fp, LOCK_UN);
+            @fclose($fp);
+            return false;
+        }
+
+        $hits = [];
+        if (is_array($decoded) && isset($decoded['hits']) && is_array($decoded['hits'])) {
+            $hits = array_values(array_filter(
+                $decoded['hits'],
+                static fn($ts): bool => is_int($ts) && ($now - $ts) < $windowSeconds
+            ));
+        } elseif (is_array($decoded)) {
+            $hits = array_values(array_filter(
+                $decoded,
+                static fn($ts): bool => is_int($ts) && ($now - $ts) < $windowSeconds
+            ));
+        }
+
+        if (count($hits) >= $maxRequests) {
+            $allowed = false;
+            $bannedUntil = $now + RATE_LIMIT_PENALTY_SECONDS;
+            $violations++;
+        } else {
+            $hits[] = $now;
+            $bannedUntil = 0;
+        }
+
+        $payload = [
+            'banned_until' => $bannedUntil,
+            'violations'   => $violations,
+            'hits'         => $hits,
+            'updated_at'   => $now,
         ];
-    }
 
-    if ((int)$current['count'] >= $limit) {
+        ftruncate($fp, 0);
+        rewind($fp);
+        fwrite($fp, (string)json_encode($payload));
+        fflush($fp);
         @flock($fp, LOCK_UN);
-        fclose($fp);
-        return false;
     }
 
-    $current['count'] = (int)$current['count'] + 1;
+    @fclose($fp);
+    return $allowed;
+}
 
-    ftruncate($fp, 0);
-    rewind($fp);
-    fwrite($fp, (string)json_encode($current));
-    fflush($fp);
-
-    @flock($fp, LOCK_UN);
-    fclose($fp);
-
-    return true;
+/**
+ * Alias kompatybilny wstecznie.
+ */
+function rate_limit_check(string $action = 'default', int $maxAttempts = 5, int $windowSeconds = 60): bool
+{
+    return check_rate_limit($action, $maxAttempts, $windowSeconds);
 }

@@ -1,7 +1,7 @@
 /**
  * TwojaStronaWWW — Uniwersalny Moduł Asystenta AI (Single Source of Truth v4.0)
  *
- * Architektura Platform-First & Zero-Bloat (Vanilla ES6+, ISO 27001, WCAG 2.1 AA):
+ * Architektura Platform-First & Zero-Bloat (Vanilla ES6+, ISO 27001, WCAG 2.2 AA):
  * - Jedno Źródło Prawdy (Single Source of Truth): wspólna geometria, szerokości, odstępy,
  *   klikalność, dostępność (ARIA), dyktowanie głosowe (Web Speech API), Response Cache i analityka
  * - Warstwa Kolorów oparta o CSS Custom Properties (--tsw-ai-*), dziedzicząca z lokalnego CSS strony,
@@ -12,7 +12,8 @@
  * - Dynamiczne Centrum Wiedzy ze strony i bazy JSON/Wiki (np. Salsopedia) z wyszukiwaniem fleksyjnym
  * - Dwupoziomowy Response Cache z automatyczną inwalidacją po zmianie wersji wiedzy (kbVersion)
  * - Bezpieczny mikro-parser Markdown (100% odporny na XSS) z obsługą list i linków wewnętrznych
- * - Automatyczne zamykanie okna czatu po kliknięciu w kotwicę (#kontakt) lub poza oknem czatu
+ * - Bezciasteczkowa analityka ruchu WWW (100% Cookieless RODO / Zero-PII) aktywna również przy wyłączonym UI czatu
+ * - Automatyczne zamykanie okna czatu po kliknięciu w kotwicę (#kontakt) lub klawiszem Escape
  */
 
 export const QUICK_PROMPTS_MAP = {
@@ -35,10 +36,10 @@ export const QUICK_PROMPTS_MAP = {
     'Wyjaśnij figury: Dile Que No, Enchufla i Setenta'
   ],
   raricart: [
-    'Ile kosztują stacje Live Food (Lody, Pancakes, Sery)?',
-    'Jak działają pakiety łączone 2 i 3 stanowisk z rabatem?',
-    'Jak wygląda dojazd i montaż stacji na weselu lub evencie?',
-    'Jak sprawdzić wolny termin i zarezerwować datę?'
+    'Jak wygląda wycena i rezerwacja terminu?',
+    'Czy można połączyć kilka stoisk na jednym przyjęciu?',
+    'Czego potrzebujecie na miejscu, aby rozstawić stoisko?',
+    'Czy dojeżdżacie poza Śląsk i Małopolskę?'
   ],
   dancepuls: [
     'Czym jest aplikacja DancePuls?',
@@ -117,6 +118,8 @@ export const THEME_PRESETS = {
   }
 };
 
+export const MAX_CACHE_ENTRIES = 50;
+
 const CATEGORY_LABELS_PL = {
   steps: 'Kroki (Podstawy)',
   figures: 'Figury (Casino / Rueda)',
@@ -142,6 +145,124 @@ const KSH_CORE_CONTEXT = [
   '- DANCEPULS (https://dancepuls.katosalsahub.pl/): Tworzymy cotygodniowy radar i agregator imprez tanecznych, warsztatów i festiwali na Śląsku i w Krakowie, publikowany co tydzień z ankietą na naszej grupie FB (https://www.facebook.com/groups/519446499987373), fanpage\'u FB (https://www.facebook.com/KatoSalsaHub) oraz Instagramie (https://www.instagram.com/katosalsahub/). Formularz zgłaszania imprez: https://tiny.pl/2bc8z7649.',
   '- INTEGRACJE, SPOTKANIA COMIESIĘCZNE I WYJAZDY: Organizujemy comiesięczne spotkania grupowe społeczności z systemem opasek (Leaders/Followers), grupy zniżkowe KSH na festiwale oraz wielki wiosenny Wyjazd Integracyjny Kato Salsa Hub (9–11 kwietnia, do 100 osób).'
 ].join('\n');
+
+/**
+ * Escapuje znaki specjalne HTML (ochrona przed DOM XSS w atrybutach i treściach)
+ * @param {string} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Waliduje polski numer PESEL (11 cyfr, wagi [1,3,7,9,1,3,7,9,1,3] mod 10 oraz poprawność miesiąca i dnia).
+ * @param {string} raw
+ * @returns {boolean}
+ */
+export function isValidPesel(raw) {
+  const s = String(raw ?? '').replace(/[\s-]+/g, '');
+  if (!/^\d{11}$/.test(s)) return false;
+
+  const month = Number(s.slice(2, 4)) % 20;
+  const day = Number(s.slice(4, 6));
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+
+  const weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
+  let sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += Number(s[i]) * weights[i];
+  }
+  const check = (10 - (sum % 10)) % 10;
+  return check === Number(s[10]);
+}
+
+/**
+ * Maskuje wrażliwe polskie identyfikatory PII (PESEL oraz numer dowodu osobistego po słowie kluczowym)
+ * przed wysyłką zapytania do zewnętrznego routera LLM, zachowując numery telefonów i e-maile dla detektora leadów.
+ * @param {string} text
+ * @returns {string}
+ */
+export function maskSensitivePlPii(text) {
+  if (!text) return '';
+  let out = String(text);
+
+  // 1. 11 cyfr bezpośrednio po słowie PESEL (nawet z błędną sumą kontrolną)
+  out = out.replace(/\b(pesel[\s:#=-]{0,10})\d{11}\b/gi, '$1[PESEL-ZAMASKOWANY]');
+
+  // 2. Dowolny 11-cyfrowy ciąg przechodzący deterministyczną sumę kontrolną PESEL (z wykluczeniem +48...)
+  out = out.replace(/(?<![+\d])\b\d{11}\b/g, (match) => (
+    isValidPesel(match) ? '[PESEL-ZAMASKOWANY]' : match
+  ));
+
+  // 3. Seria i numer dowodu osobistego po słowie "dowód" / "seria"
+  out = out.replace(
+    /\b((?:dow[oó]d(?:\s+osobisty)?|nr\s+dowodu|seri[ai])[\s:#=-]{0,12})[A-Z]{3}\s?\d{6}\b/gi,
+    '$1[DOWOD-ZAMASKOWANY]'
+  );
+
+  return out;
+}
+
+/**
+ * [REF-07] Rejestruje imperatywne narzędzie WebMCP (W3C document.modelContext / navigator.modelContext)
+ * umożliwiające natywnym agentom przeglądarkowym zadanie pytania asystentowi AI serwisu.
+ * @param {Document} doc
+ * @param {Object} widgetInstance
+ * @param {string} [siteId='twojastronawww']
+ * @returns {{ supported: boolean, abort?: Function }}
+ */
+export function registerWebMcpTools(doc = typeof document !== 'undefined' ? document : null, widgetInstance = null, siteId = 'twojastronawww') {
+  const mc = doc?.modelContext || globalThis.navigator?.modelContext;
+  if (!mc || typeof mc.registerTool !== 'function' || !widgetInstance || typeof widgetInstance.sendQuestion !== 'function') {
+    return { supported: false };
+  }
+
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  try {
+    mc.registerTool(
+      {
+        name: 'ask_site_assistant',
+        description: 'Zadaj pytanie asystentowi AI serwisu o ofertę, cennik, dostępność lub bazę wiedzy.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            question: {
+              type: 'string',
+              description: 'Pytanie do asystenta w języku polskim.'
+            }
+          },
+          required: ['question']
+        },
+        annotations: {
+          readOnlyHint: true,
+          untrustedContentHint: false,
+          consequentialHint: false
+        },
+        async execute(args) {
+          const res = await widgetInstance.sendQuestion(args?.question || '');
+          return JSON.stringify({
+            siteId,
+            answer: res?.answer || '',
+            cached: Boolean(res?.cached)
+          });
+        }
+      },
+      controller ? { signal: controller.signal } : undefined
+    );
+    return {
+      supported: true,
+      abort: () => controller?.abort?.()
+    };
+  } catch (_) {
+    return { supported: false };
+  }
+}
 
 /**
  * Normalizuje tekst zapytania do klucza pamięci podręcznej (Response Cache)
@@ -340,84 +461,14 @@ export function buildDynamicContext(question, entries) {
   );
 }
 
-export const MAX_CACHE_ENTRIES = 50;
-
 /**
- * Bezpieczne escapowanie encji HTML (ochrona przed DOM XSS w atrybutach i treściach)
- * @param {unknown} str
- * @returns {string}
- */
-export function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-/**
- * Sprawdza, czy analityka powinna zignorować bieżącą sesję (właściciel, localhost, WebDriver, flaga opt-out)
- * @param {Window} [win]
- * @returns {boolean}
- */
-export function isOwnerAnalyticsIgnored(win = globalThis.window) {
-  try {
-    if (!win) return true;
-    const nav = win.navigator;
-    if (nav && nav.webdriver === true) return true;
-
-    const loc = win.location;
-    const host = String(loc?.hostname || '').toLowerCase();
-    if (
-      !host ||
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      host === '::1' ||
-      host === '[::1]' ||
-      host.endsWith('.local') ||
-      host.endsWith('.localhost') ||
-      host.endsWith('.trycloudflare.com')
-    ) {
-      return true;
-    }
-
-    const storage = win.localStorage;
-    const params = new URLSearchParams(String(loc?.search || ''));
-    const toggleParam = params.get('ignore_analytics') ?? params.get('tsw_ignore');
-    if (toggleParam === '1' || toggleParam === 'true') {
-      try {
-        storage?.setItem?.('tsw_ignore_analytics', '1');
-      } catch (_) {}
-      return true;
-    }
-    if (toggleParam === '0' || toggleParam === 'false') {
-      try {
-        storage?.removeItem?.('tsw_ignore_analytics');
-      } catch (_) {}
-    }
-
-    if (
-      storage?.getItem?.('tsw_ignore_analytics') === '1' ||
-      storage?.getItem?.('tsw_owner_ignore') === '1'
-    ) {
-      return true;
-    }
-  } catch (_) {
-    return false;
-  }
-  return false;
-}
-
-/**
- * Bezpieczny mikro-parser Markdown (100% odporny na XSS)
+ * Bezpieczny mikro-parser Markdown (100% odporny na XSS i kolizje "@" w linkach URL)
  * @param {string} rawText
  * @returns {string}
  */
 export function formatMarkdown(rawText) {
   if (!rawText) return '';
-  let safe = escapeHtml(rawText);
+  let safe = escapeHtml(String(rawText).replace(/\0/g, ''));
 
   // Pogrubienia **tekst**
   safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -425,21 +476,21 @@ export function formatMarkdown(rawText) {
   // Kursywa *tekst*
   safe = safe.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
 
-  // Klikalne adresy URL (https://...) — izolowane przed linkifierem '@' i kotwicami
-  const urlPlaceholders = [];
+  // Tokenizacja klikalnych adresów URL (https://..., w tym profili z "@", np. https://youtube.com/@...)
+  const urlTokens = [];
   safe = safe.replace(
     /(https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g,
     (match) => {
-      const token = `\x00TSWURL${urlPlaceholders.length}\x00`;
-      urlPlaceholders.push(`<a href="${match}" target="_blank" rel="noopener noreferrer" class="tsw-ai-link">${match}</a>`);
-      return token;
+      const idx = urlTokens.length;
+      urlTokens.push(`<a href="${match}" target="_blank" rel="noopener noreferrer" class="tsw-ai-link">${match}</a>`);
+      return `\x00TSWURL${idx}\x00`;
     }
   );
 
-  // Klikalne adresy e-mail oraz linki wewnętrzne (#kontakt, salsopedia.html, grafik.html, cennik.html, /pakiety)
+  // Klikalne adresy e-mail oraz linki wewnętrzne (#kontakt, salsopedia.html, grafik.html, cennik.html)
   safe = safe.replace(
-    /(^|[\s(>:,;])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})(?=$|[\s)<.,:;!?\]])/g,
-    '$1<a href="mailto:$2" class="tsw-ai-link">$2</a>'
+    /(?<![">/@\w.-])([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g,
+    '<a href="mailto:$1" class="tsw-ai-link">$1</a>'
   );
   safe = safe.replace(
     /(^|\s)(#[a-zA-Z0-9_-]+)\b/g,
@@ -450,9 +501,8 @@ export function formatMarkdown(rawText) {
     '$1<a href="$2" class="tsw-ai-link">$2</a>'
   );
 
-  for (let idx = 0; idx < urlPlaceholders.length; idx++) {
-    safe = safe.replace(`\x00TSWURL${idx}\x00`, urlPlaceholders[idx]);
-  }
+  // Przywrócenie stokenizowanych linków zewnętrznych URL
+  safe = safe.replace(/\x00TSWURL(\d+)\x00/g, (_, idx) => urlTokens[Number(idx)] || '');
 
   const lines = safe.split(/\r?\n/);
   let html = '';
@@ -509,16 +559,33 @@ function resolveSiteIdContext(explicitSiteId) {
 
 /**
  * Lokalna odpowiedź awaryjna (Zero-Downtime Fallback) dopasowana do projektu
- * oraz dynamicznej bazy wiedzy ze strony (np. Salsopedii).
+ * oraz dynamicznej bazy wiedzy ze strony (np. Salsopedii lub tenantConfig.fallbackFaq).
  * @param {string} question
  * @param {string} [siteId]
  * @param {Array<Object>} [knowledgeEntries=[]]
+ * @param {Array<Object>} [customFallbackFaq]
  * @returns {string}
  */
-export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) {
+export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = [], customFallbackFaq = null) {
   const resolvedSiteId = resolveSiteIdContext(siteId);
   const q = String(question || '').toLowerCase();
   const qNorm = normalizeSearchText(question);
+
+  // Obsługa niestandardowego fallbackFaq z konfiguracji tenanta (assets/data/ai-config.json)
+  const faqList = Array.isArray(customFallbackFaq)
+    ? customFallbackFaq
+    : (Array.isArray(globalThis.window?.__TSW_AI_CONFIG__?.fallbackFaq) ? globalThis.window.__TSW_AI_CONFIG__.fallbackFaq : null);
+  if (Array.isArray(faqList) && faqList.length > 0 && qNorm) {
+    for (const item of faqList) {
+      if (!item || typeof item.answer !== 'string' || !item.answer.trim()) continue;
+      if (Array.isArray(item.keywords) && item.keywords.some((kw) => kw && qNorm.includes(normalizeSearchText(kw)))) {
+        return item.answer;
+      }
+      if (typeof item.question === 'string' && normalizeSearchText(item.question) === qNorm) {
+        return item.answer;
+      }
+    }
+  }
 
   // ===========================================================================
   // 1. KATO SALSA HUB & SALSOPEDIA
@@ -677,37 +744,58 @@ export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) 
   }
 
   // ===========================================================================
-  // 2. RARICART (Mobilne Live Food Stations na wesela i eventy)
+  // 2. RARICART (Mobilne Stanowiska Kulinarne na wesela i przyjęcia)
   // ===========================================================================
   if (resolvedSiteId === 'raricart') {
-    if (q.includes('pakiet') || q.includes('rabat') || q.includes('łącz') || q.includes('lacz') || q.includes('2 ') || q.includes('3 ') || q.includes('kompleks')) {
+    if (q.includes('cen') || q.includes('koszt') || q.includes('ile ') || q.includes('wycen') || q.includes('rezerwacj') || q.includes('termin') || q.includes('zaliczk')) {
       return (
-        `Oferujemy **pakiety łączone z rabatem** (logistyka i dojazd do 50 km liczone tylko raz):\n` +
-        `- **2 stanowiska (rabat -5%)**: np. *Mini Pancakes + Lody Włoskie*: 50 os. **6 250 zł** | 100 os. **8 720 zł** | 150 os. **11 240 zł** | 200 os. **13 710 zł**\n` +
-        `- **Pakiet Kompleksowy — 3 stanowiska (rabat -10%, Pancakes + Lody + Deska Serów)**: 50 os. **8 870 zł** | 100 os. **12 560 zł** | 150 os. **16 340 zł** | 200 os. **20 030 zł**\n` +
-        `Pełny konfigurator znajdziesz na https://raricart.pl/pakiety lub w sekcji **#kontakt**!`
+        `**Każdą wycenę przygotowujemy indywidualnie** – obejmuje ona pełny koszt usługi, bez ukrytych opłat. Kwota zależy od wybranego stoiska, liczby gości, czasu pracy oraz miejsca przyjęcia.\n` +
+        `Po wysłaniu formularza kontaktowego (**#kontakt**) w ciągu **24 godzin** otrzymasz od nas konkretną ofertę, a sam termin rezerwujemy po jej akceptacji i wpłacie zaliczki.`
       );
     }
-    if (q.includes('cen') || q.includes('koszt') || q.includes('ile ') || q.includes('lody') || q.includes('pancake') || q.includes('ser')) {
+    if (q.includes('pakiet') || q.includes('łącz') || q.includes('lacz') || q.includes('kilk') || q.includes('2 ') || q.includes('3 ') || q.includes('dwa') || q.includes('trzy')) {
       return (
-        `Cennik pojedynczych mobilnych stacji **Raricart Live Food Station** (pełna aranżacja + obsługa na żywo):\n` +
-        `- **Lody Włoskie Live Station**: do 50 os. **3 000 zł** | do 100 os. **4 250 zł** | do 150 os. **5 550 zł**\n` +
-        `- **Mini Pancakes Live Station**: do 50 os. **3 150 zł** | do 100 os. **4 500 zł** | do 150 os. **5 850 zł**\n` +
-        `- **Deska Serów Live Station (12 włoskich serów i wędlin)**: do 50 os. **3 250 zł** | do 100 os. **4 750 zł** | do 150 os. **6 300 zł**\n` +
-        `Sprawdź dostępne terminy w formularzu **#kontakt** lub zadzwoń: **+48 883 392 688**.`
+        `Tak, możesz **dowolnie połączyć dwa lub trzy stoiska** na jednym przyjęciu, zestawiając propozycje słodkie z wytrawnymi (**Mini pancakes**, **Lody włoskie**, **Deska serów i wędlin**).\n` +
+        `Wszystkie nasze stanowiska są utrzymane w tej samej jasnej stylistyce, dzięki czemu ustawione obok siebie tworzą spójną i elegancką całość. Napisz do nas przez formularz **#kontakt**, a przygotujemy indywidualną wycenę!`
       );
     }
-    if (q.includes('dojazd') || q.includes('montaż') || q.includes('montaz') || q.includes('prąd') || q.includes('prad') || q.includes('wymaga') || q.includes('gdzie')) {
+    if (q.includes('dojazd') || q.includes('śląsk') || q.includes('slask') || q.includes('małopol') || q.includes('malopol') || q.includes('polsk') || q.includes('transport') || q.includes('gdzie')) {
       return (
-        `Logistyka i montaż stanowisk **Raricart** są po naszej stronie:\n` +
-        `- **Dojazd do 50 km w cenie pakietu** (powyżej 50 km dopłata wynosi tylko **+2 zł/km**)\n` +
-        `- **Wymagania na miejscu**: standardowe gniazdko **230V** i kawałek miejsca na sali lub w plenerze pod zadaszeniem\n` +
-        `- Przyjeżdżamy odpowiednio wcześniej, rozkładamy stację i po serwisie zostawiamy idealny porządek.`
+        `Tak, **realizujemy zamówienia w całej Polsce**. Na co dzień działamy głównie na Śląsku i w Małopolsce, ale regularnie pojawiamy się również na przyjęciach we Wrocławiu, Warszawie, Łodzi, Poznaniu oraz w mniejszych miejscowościach.\n` +
+        `Koszt transportu zawsze obliczamy indywidualnie na podstawie lokalizacji i od razu uwzględniamy go w wycenie.`
+      );
+    }
+    if (q.includes('prąd') || q.includes('prad') || q.includes('miejsc') || q.includes('wymaga') || q.includes('rozstaw') || q.includes('wod') || q.includes('230')) {
+      return (
+        `Wystarczy nam około **2 × 2 m lub 3 × 3 m równej powierzchni** – w sali, na tarasie, pod namiotem lub w ogrodzie – oraz dostęp do standardowego **gniazdka 230 V**.\n` +
+        `Nie wymagamy zaplecza kuchennego ani dostępu do bieżącej wody, ponieważ nasze stanowiska są w pełni samowystarczalne.`
+      );
+    }
+    if (q.includes('gośc') || q.includes('gosc') || q.includes('osób') || q.includes('osob') || q.includes('kolejk')) {
+      return (
+        `Obsługujemy zarówno **kameralne przyjęcia na 20–30 osób**, jak i **duże wesela oraz spotkania firmowe**. Nasze stoiska są przystosowane do sprawnej pracy na żywo, dzięki czemu wydawanie porcji przebiega płynnie, a goście nie czekają w kolejkach.\n` +
+        `Czas trwania serwisu oraz zakres oferty zawsze dopasowujemy indywidualnie do planowanej liczby uczestników.`
+      );
+    }
+    if (q.includes('godzin') || q.includes('montaż') || q.includes('montaz') || q.includes('wesel') || q.includes('poprawin') || q.includes('obsług') || q.includes('obslug') || q.includes('naczyn') || q.includes('sprząt') || q.includes('sprzat')) {
+      return (
+        `Kompleksowo dbamy o cały przebieg serwisu:\n` +
+        `- **Godziny i montaż**: dobieramy wspólnie do harmonogramu uroczystości (popołudnie, wieczór lub drugi dzień wesela). Przygotowanie stanowiska przebiega cicho i dyskretnie, bez zakłócania przyjęcia.\n` +
+        `- **W cenie zapewniamy**: transport, montaż stoiska, obsługę przez cały czas trwania wydarzenia, wszystkie składniki i dodatki, a także estetyczne naczynia, sztućce oraz serwetki i nienaganny porządek po zakończeniu pracy.`
+      );
+    }
+    if (q.includes('lody') || q.includes('pancake') || q.includes('ser') || q.includes('ofert') || q.includes('stois') || q.includes('stacj')) {
+      return (
+        `Do wyboru masz **3 autorskie stanowiska kulinarne** przygotowywane na żywo (**#oferta**):\n` +
+        `- **Mini pancakes (NA SŁODKO)** – gorące, puszyste placuszki wypiekane na miejscu ze świeżymi owocami, sosami, polewami i posypkami\n` +
+        `- **Lody włoskie (ORZEŹWIENIE)** – aksamitne lody śmietankowe kręcone na bieżąco w wafelkach lub kubeczkach ze strefą dodatków\n` +
+        `- **Deska serów i wędlin (WYTRAWNIE)** – wyselekcjonowane sery, dojrzewające włoskie wędliny, owoce, orzechy, oliwki i konfitury.\n` +
+        `Opowiedz nam o swoim przyjęciu w formularzu **#kontakt**, a w 24h przygotujemy indywidualną ofertę!`
       );
     }
     return (
-      `Cześć! 🥞🍦🧀 Jestem wirtualnym doradcą **Raricart Live Food Station**. Tworzymy mobilne stacje kulinarne na żywo na wesela i eventy (**Lody Włoskie, Mini Pancakes, Deski Serów**).\n` +
-      `Zapytaj mnie o cennik na 50–200 gości, pakiety łączone lub zostaw datę przyjęcia i numer telefonu — potwierdzimy dostępność terminu (tel. **+48 883 392 688**, kontakt@raricart.pl)!`
+      `Cześć! 🥞🍦🧀 Jestem wirtualnym doradcą **Raricart**. Tworzymy mobilne stanowiska kulinarne na żywo na wesela, eventy firmowe i przyjęcia (**Mini pancakes, Lody włoskie, Deska serów i wędlin**).\n` +
+      `Każdą wycenę przygotowujemy indywidualnie w ciągu 24 godzin. Zapytaj mnie o szczegóły organizacji, łączenie stoisk lub przejdź do formularza **#kontakt** (tel. **+48 883 392 688**, kontakt@raricart.pl)!`
     );
   }
 
@@ -776,7 +864,7 @@ export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) 
   }
 
   if (q.includes('ai') || q.includes('czat') || q.includes('bot') || q.includes('asystent') || q.includes('rag')) {
-    return 'Wdrażamy dedykowanych **Asystentów AI z bazą wiedzy firmy (RAG)** korzystających z centralnej **15-modelowej kaskady** High-Availability (15 modeli LLM, pamięć podręczna zapytań `< 5 ms`):\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na telefon (z numerem telefonu i e-mailem na samej górze wiadomości), gdy klient zostawi namiar kontaktowy.';
+    return 'Wdrażamy dedykowanych **Asystentów AI z bazą wiedzy firmy (RAG)** korzystających z centralnej **15-modelowej kaskady** High-Availability (15 modeli LLM u 7 dostawców, pamięć podręczna zapytań `< 5 ms`):\n- Koszt wdrożenia: **od 900 PLN netto** (jednorazowa konfiguracja)\n- Działa **24/7**, odpowiada w ułamku sekundy z pamięci podręcznej i korzysta z darmowych pul API\n- Automatycznie przesyła powiadomienia na telefon (z numerem telefonu i e-mailem na samej górze wiadomości), gdy klient zostawi namiar kontaktowy.';
   }
 
   if (q.includes('współprac') || q.includes('wspolprac') || q.includes('krok') || q.includes('proces') || q.includes('etap') || q.includes('czas') || q.includes('ile trwa') || q.includes('jak wygląda')) {
@@ -798,27 +886,91 @@ export function getLocalFallbackAnswer(question, siteId, knowledgeEntries = []) 
   return `Jestem wirtualnym doradcą serwisu **${resolvedSiteId}**. Chętnie odpowiem na pytania o ofertę, wycenę, wdrożenie asystenta AI lub przebieg współpracy. Możesz też zostawić wiadomość w formularzu kontaktowym na dole strony!`;
 }
 
+/**
+ * Sprawdza, czy analityka dla właściciela / administratora jest wyłączona lokalnie
+ * (obsługa parametru URL ?ignore_analytics=1 / 0 oraz localStorage 'tsw_ignore_analytics').
+ * @param {Window} [win]
+ * @returns {boolean}
+ */
+export function isOwnerAnalyticsIgnored(win = typeof window !== 'undefined' ? window : globalThis.window) {
+  try {
+    const loc = win?.location || {};
+    const host = String(loc.hostname || '').toLowerCase();
+    const params = new URLSearchParams(loc.search || '');
+    const toggle = params.get('ignore_analytics');
+    if (toggle === '1' || toggle === 'true') {
+      win?.localStorage?.setItem('tsw_ignore_analytics', '1');
+      return true;
+    }
+    if (toggle === '0' || toggle === 'false') {
+      win?.localStorage?.removeItem('tsw_ignore_analytics');
+      return false;
+    }
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+      return true;
+    }
+    if (win?.navigator?.webdriver === true) {
+      return true;
+    }
+    return win?.localStorage?.getItem('tsw_ignore_analytics') === '1';
+  } catch (_) {
+    return false;
+  }
+}
+
+/**
+ * Automatycznie pobiera konfigurację tenanta (assets/data/ai-config.json) w runtime,
+ * gdy obiekt window.__TSW_AI_CONFIG__ nie został wstrzyknięty inline.
+ * @param {Window} [win]
+ * @param {string} [configUrl='assets/data/ai-config.json']
+ * @returns {Promise<Object|null>}
+ */
+export async function loadRuntimeAiConfig(
+  win = typeof window !== 'undefined' ? window : globalThis.window,
+  configUrl = 'assets/data/ai-config.json'
+) {
+  if (win?.__TSW_AI_CONFIG__ && typeof win.__TSW_AI_CONFIG__ === 'object' && !Array.isArray(win.__TSW_AI_CONFIG__)) {
+    return win.__TSW_AI_CONFIG__;
+  }
+  const fetchFn = win?.fetch || globalThis.fetch;
+  if (typeof fetchFn !== 'function') return null;
+
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 4000) : null;
+  if (timeoutId && typeof timeoutId.unref === 'function') timeoutId.unref();
+
+  try {
+    const fetchOpts = { cache: 'no-cache' };
+    if (controller) fetchOpts.signal = controller.signal;
+    const res = await fetchFn(configUrl, fetchOpts);
+    if (!res || !res.ok) return null;
+    const parsed = await res.json();
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      if (win) {
+        win.__TSW_AI_CONFIG__ = parsed;
+      }
+      return parsed;
+    }
+  } catch (_) {
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+  return null;
+}
+
 function sanitizeCssVarValue(val, fallback = '') {
   if (!val || typeof val !== 'string') return fallback;
   return val.replace(/[;<>{}\r\n]/g, '').trim() || fallback;
 }
 
 /**
- * Inicjalizuje widget czatu AI w drzewie DOM
+ * Inicjalizuje widget czatu AI w drzewie DOM oraz bezciasteczkową analitykę ruchu WWW
  * @param {Document} doc
  * @param {Window} win
  * @param {Object} options
  */
 export function initAiWidget(doc = document, win = globalThis.window, options = {}) {
   if (!doc || !doc.body) return null;
-  const aiConfig = options.aiConfig || win?.__TSW_AI_CONFIG__ || null;
-  if (aiConfig && aiConfig.enabled === false) return null;
-
-  const existingRoot = doc.getElementById('tsw-ai-widget-root');
-  if (existingRoot && !options.forceReinit) return null;
-  if (existingRoot && options.forceReinit && existingRoot.parentNode) {
-    existingRoot.parentNode.removeChild(existingRoot);
-  }
 
   const scriptEl =
     doc.currentScript ||
@@ -826,10 +978,16 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     doc.querySelector('script[src*="ai-widget.js"]') ||
     doc.querySelector('script[src*="widget.js"]');
 
+  const tenantConfig =
+    (options.tenantConfig && typeof options.tenantConfig === 'object' ? options.tenantConfig : null) ||
+    (options.aiConfig && typeof options.aiConfig === 'object' ? options.aiConfig : null) ||
+    (win?.__TSW_AI_CONFIG__ && typeof win.__TSW_AI_CONFIG__ === 'object' ? win.__TSW_AI_CONFIG__ : null) ||
+    {};
+
   const siteId = (
     options.siteId ||
+    tenantConfig.siteId ||
     scriptEl?.getAttribute('data-site-id') ||
-    aiConfig?.siteId ||
     'twojastronawww'
   ).toLowerCase();
 
@@ -839,29 +997,193 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     ? 'http://localhost:8085/chat-router.php'
     : 'https://ai.twojastronawww.pl/chat-router.php';
   const routerUrl =
-    options.routerUrl || scriptEl?.getAttribute('data-router-url') || aiConfig?.routerUrl || defaultRouterUrl;
-  const title =
-    options.title || scriptEl?.getAttribute('data-title') || aiConfig?.title || 'Asystent AI';
+    options.routerUrl ||
+    tenantConfig.routerUrl ||
+    scriptEl?.getAttribute('data-router-url') ||
+    defaultRouterUrl;
+  const analyticsUrl = routerUrl.replace(/\/chat-router\.php.*$/, '/analytics');
+
+  if (win) {
+    win.__TSW_ANALYTICS_CONTEXT__ = { siteId, analyticsUrl };
+  }
+
+  function sendAnalyticsBeacon(extra) {
+    try {
+      if (isOwnerAnalyticsIgnored(win)) return;
+      const ctx = win?.__TSW_ANALYTICS_CONTEXT__ || { siteId, analyticsUrl };
+      const nav = win?.navigator || (typeof navigator !== 'undefined' ? navigator : null);
+      const loc = win?.location || {};
+      const params = new URLSearchParams(loc.search || '');
+      const rawPath = (loc.pathname || '/') + (loc.hash || '');
+      const payload = Object.assign({
+        site_id: ctx.siteId || siteId,
+        type: 'pageview',
+        path: rawPath || '/',
+        referrer: doc?.referrer || '',
+        utm_source: params.get('utm_source') || '',
+        utm_term: params.get('utm_term') || params.get('q') || ''
+      }, extra || {});
+      const body = JSON.stringify(payload);
+      const targetUrl = ctx.analyticsUrl || analyticsUrl;
+      let sent = false;
+      if (nav && typeof nav.sendBeacon === 'function') {
+        try {
+          sent = nav.sendBeacon(targetUrl, body);
+        } catch (_) {}
+      }
+      const fetchFn = win?.fetch || globalThis.fetch;
+      if (!sent && typeof fetchFn === 'function') {
+        fetchFn(targetUrl, {
+          method: 'POST',
+          body,
+          keepalive: true,
+          mode: 'cors',
+          credentials: 'omit'
+        }).catch(() => {});
+      }
+    } catch (_) {}
+  }
+
+  function initCookielessAnalytics() {
+    if (!win || win.__TSW_ANALYTICS_ACTIVE__) return;
+    if (typeof win.navigator?.sendBeacon !== 'function' && typeof win.fetch !== 'function') return;
+
+    win.__TSW_ANALYTICS_ACTIVE__ = true;
+    let lcpMeasured = 0;
+    try {
+      const PerfObs = win.PerformanceObserver || (typeof PerformanceObserver !== 'undefined' ? PerformanceObserver : undefined);
+      if (typeof PerfObs === 'function' && doc.visibilityState !== 'hidden') {
+        const po = new PerfObs((list) => {
+          if (doc.visibilityState === 'hidden') return;
+          const entries = list.getEntries();
+          if (entries && entries.length > 0) {
+            const lcpMs = Math.round(entries[entries.length - 1].startTime || 0);
+            if (lcpMs >= 50 && lcpMs <= 8000) {
+              lcpMeasured = lcpMs;
+            }
+          }
+        });
+        po.observe({ type: 'largest-contentful-paint', buffered: true });
+      }
+    } catch (_) {}
+
+    const pageviewTimer = setTimeout(() => {
+      sendAnalyticsBeacon(lcpMeasured > 0 ? { type: 'pageview', lcp_ms: lcpMeasured } : { type: 'pageview' });
+    }, 600);
+    if (pageviewTimer && typeof pageviewTimer.unref === 'function') pageviewTimer.unref();
+
+    win.addEventListener?.('hashchange', () => {
+      sendAnalyticsBeacon({ type: 'pageview' });
+    });
+
+    doc.addEventListener?.('page:loaded', () => {
+      sendAnalyticsBeacon({ type: 'pageview' });
+    });
+
+    let lastTrackedSearch = '';
+    win.trackCookielessSearch = function (term) {
+      const clean = String(term || '').trim().slice(0, 80);
+      if (clean.length < 2 || clean.toLowerCase() === lastTrackedSearch.toLowerCase()) return;
+      lastTrackedSearch = clean;
+      sendAnalyticsBeacon({ type: 'search', term: clean });
+    };
+
+    const engagedTimer = setTimeout(() => {
+      if (doc.visibilityState !== 'hidden') {
+        sendAnalyticsBeacon({ type: 'engaged' });
+      }
+    }, 15000);
+    if (engagedTimer && typeof engagedTimer.unref === 'function') engagedTimer.unref();
+
+    doc.addEventListener?.('click', (e) => {
+      const target = e?.target?.closest ? e.target : null;
+      if (!target) return;
+      const link = target.closest('a[href]');
+      if (link) {
+        const href = String(link.getAttribute('href') || '');
+        if (href.startsWith('tel:')) {
+          sendAnalyticsBeacon({ type: 'event', event: 'cta_phone_click' });
+        } else if (href.startsWith('mailto:')) {
+          sendAnalyticsBeacon({ type: 'event', event: 'cta_email_click' });
+        }
+      }
+      const radioBtn = target.closest('#radio-toggle, .radio-toggle, [data-radio-toggle], #radioPlayBtn');
+      if (radioBtn) {
+        sendAnalyticsBeacon({ type: 'event', event: 'radio_play' });
+      }
+    });
+
+    doc.addEventListener?.('submit', (e) => {
+      const form = e?.target;
+      if (form && form.id !== 'tswAiForm' && form.id !== 'tsw-ai-form' && (form.id === 'contactForm' || form.classList?.contains?.('contact-form'))) {
+        sendAnalyticsBeacon({ type: 'event', event: 'contact_form_submit' });
+      }
+    });
+  }
+
+  // Enterprise Feature Toggle (Opt-In / Opt-Out):
+  // Gdy czatbot jest wyłączony (enabled === false / data-enabled="false"),
+  // ukrywamy/usuwamy UI czatu, ale NADAL inicjalizujemy bezciasteczkową analitykę ruchu WWW!
+  const dataEnabledAttr = scriptEl?.getAttribute('data-enabled');
+  const isChatDisabled =
+    options.enabled === false ||
+    tenantConfig.enabled === false ||
+    (typeof dataEnabledAttr === 'string' && dataEnabledAttr.toLowerCase() === 'false');
+
+  if (isChatDisabled) {
+    const existingRootToHide = doc.getElementById('tsw-ai-widget-root');
+    if (existingRootToHide) {
+      if (typeof existingRootToHide.remove === 'function') existingRootToHide.remove();
+      else if (existingRootToHide.parentNode) existingRootToHide.parentNode.removeChild(existingRootToHide);
+    }
+    const existingStyleToHide = doc.getElementById('tsw-ai-widget-styles');
+    if (existingStyleToHide) {
+      if (typeof existingStyleToHide.remove === 'function') existingStyleToHide.remove();
+      else if (existingStyleToHide.parentNode) existingStyleToHide.parentNode.removeChild(existingStyleToHide);
+    }
+    initCookielessAnalytics();
+    return null;
+  }
+
+  const existingRoot = doc.getElementById('tsw-ai-widget-root');
+  if (existingRoot && !options.forceReinit) return null;
+  if (existingRoot && options.forceReinit) {
+    if (typeof existingRoot.remove === 'function') existingRoot.remove();
+    else if (existingRoot.parentNode) existingRoot.parentNode.removeChild(existingRoot);
+  }
+
+  const rawTitle =
+    options.title ||
+    tenantConfig.title ||
+    scriptEl?.getAttribute('data-title') ||
+    'Asystent AI';
+  const title = escapeHtml(rawTitle);
+
   const kbUrl =
     options.kbUrl ||
+    tenantConfig.kbUrl ||
     scriptEl?.getAttribute('data-kb-url') ||
     (siteId === 'katosalsahub' ? 'assets/data/salsopedia.json' : '');
   const kbApiUrl =
     options.kbApiUrl ||
+    tenantConfig.kbApiUrl ||
     scriptEl?.getAttribute('data-kb-api') ||
     (siteId === 'katosalsahub' ? 'assets/php/wiki.php?action=list' : '');
+  const customFallbackFaq = Array.isArray(tenantConfig.fallbackFaq) ? tenantConfig.fallbackFaq : null;
 
-  // Konfiguracja kolorów: atrybuty HTML data-* -> opcje JS -> ai-config.json -> THEME_PRESETS[siteId]
-  const preset = THEME_PRESETS[siteId] || THEME_PRESETS.twojastronawww;
-  const cfgTheme = aiConfig?.theme && typeof aiConfig.theme === 'object' ? aiConfig.theme : {};
-  const themePrimary = sanitizeCssVarValue(options.primaryColor || scriptEl?.getAttribute('data-primary') || cfgTheme.primary || preset.primary, preset.primary);
-  const themeAccent = sanitizeCssVarValue(options.accentColor || scriptEl?.getAttribute('data-accent') || cfgTheme.accent || preset.accent, preset.accent);
-  const themeHighlight = sanitizeCssVarValue(options.highlightColor || scriptEl?.getAttribute('data-highlight') || cfgTheme.highlight || preset.highlight, preset.highlight);
-  const themeBg = sanitizeCssVarValue(options.bgColor || scriptEl?.getAttribute('data-bg') || cfgTheme.bg || preset.bg, preset.bg);
-  const themeSurface = sanitizeCssVarValue(options.surfaceColor || scriptEl?.getAttribute('data-surface') || cfgTheme.surface || preset.surface, preset.surface);
-  const themeText = sanitizeCssVarValue(options.textColor || scriptEl?.getAttribute('data-text') || cfgTheme.text || preset.text, preset.text);
-  const themeMuted = sanitizeCssVarValue(options.mutedColor || scriptEl?.getAttribute('data-muted') || cfgTheme.muted || preset.muted, preset.muted);
-  const themeOnPrimary = sanitizeCssVarValue(options.onPrimaryColor || scriptEl?.getAttribute('data-on-primary') || cfgTheme.onPrimary || preset.onPrimary, preset.onPrimary);
+  // Konfiguracja kolorów: atrybuty HTML data-* -> opcje JS / tenantConfig -> THEME_PRESETS[siteId] -> zmienne CSS strony
+  const preset = {
+    ...(THEME_PRESETS[siteId] || THEME_PRESETS.twojastronawww),
+    ...(tenantConfig.theme && typeof tenantConfig.theme === 'object' ? tenantConfig.theme : {})
+  };
+  const themePrimary = sanitizeCssVarValue(options.primaryColor || scriptEl?.getAttribute('data-primary') || preset.primary, preset.primary);
+  const themeAccent = sanitizeCssVarValue(options.accentColor || scriptEl?.getAttribute('data-accent') || preset.accent, preset.accent);
+  const themeHighlight = sanitizeCssVarValue(options.highlightColor || scriptEl?.getAttribute('data-highlight') || preset.highlight, preset.highlight);
+  const themeBg = sanitizeCssVarValue(options.bgColor || scriptEl?.getAttribute('data-bg') || preset.bg, preset.bg);
+  const themeSurface = sanitizeCssVarValue(options.surfaceColor || scriptEl?.getAttribute('data-surface') || preset.surface, preset.surface);
+  const themeText = sanitizeCssVarValue(options.textColor || scriptEl?.getAttribute('data-text') || preset.text, preset.text);
+  const themeMuted = sanitizeCssVarValue(options.mutedColor || scriptEl?.getAttribute('data-muted') || preset.muted, preset.muted);
+  const themeOnPrimary = sanitizeCssVarValue(options.onPrimaryColor || scriptEl?.getAttribute('data-on-primary') || preset.onPrimary, preset.onPrimary);
 
   // Automatyczne wykrycie, czy na stronie jest pływający przycisk CTA (np. #floatingCta na Raricart)
   const hasFloatingCta = Boolean(doc.getElementById('floatingCta') || doc.querySelector('.floating-cta'));
@@ -869,11 +1191,11 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   const storageKey = 'tsw_ai_history_' + siteId;
   const cacheStorageKey = 'tsw_ai_cache_' + siteId;
   const cacheTtlMs = Number(options.cacheTtlMs) || 24 * 60 * 60 * 1000;
-  const quickPrompts = Array.isArray(options.quickPrompts) && options.quickPrompts.length > 0
-    ? options.quickPrompts
-    : Array.isArray(aiConfig?.quickPrompts) && aiConfig.quickPrompts.length > 0
-    ? aiConfig.quickPrompts
-    : (QUICK_PROMPTS_MAP[siteId] || QUICK_PROMPTS_MAP.twojastronawww);
+  const quickPrompts =
+    (Array.isArray(options.quickPrompts) && options.quickPrompts.length > 0 ? options.quickPrompts : null) ||
+    (Array.isArray(tenantConfig.quickPrompts) && tenantConfig.quickPrompts.length > 0 ? tenantConfig.quickPrompts : null) ||
+    QUICK_PROMPTS_MAP[siteId] ||
+    QUICK_PROMPTS_MAP.twojastronawww;
 
   const existingGlobalTerms = Array.isArray(win?.__SALSOPEDIA_TERMS__) && win.__SALSOPEDIA_TERMS__.length > 0
     ? win.__SALSOPEDIA_TERMS__
@@ -1010,8 +1332,9 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       responseCache = { kbVersion, entries: {} };
     }
     responseCache.kbVersion = kbVersion;
-    if (Object.prototype.hasOwnProperty.call(responseCache.entries, normQ)) {
-      delete responseCache.entries[normQ];
+    const existingKeys = Object.keys(responseCache.entries);
+    if (existingKeys.length >= MAX_CACHE_ENTRIES && !(normQ in responseCache.entries)) {
+      delete responseCache.entries[existingKeys[0]];
     }
     responseCache.entries[normQ] = {
       answer: String(answer),
@@ -1020,7 +1343,6 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       ts: Date.now(),
       monotonicMs: getMonotonicTimeMs()
     };
-    pruneCacheEntries();
     saveResponseCache();
   }
 
@@ -1388,16 +1710,20 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   (doc.head || doc.documentElement || doc.body).appendChild(style);
   // @tsw-css-end
 
-  const placeholderText =
+  const rawPlaceholderText =
     options.placeholder ||
-    aiConfig?.placeholder ||
+    tenantConfig.placeholder ||
+    scriptEl?.getAttribute('data-placeholder') ||
     (siteId === 'katosalsahub'
       ? 'Zapytaj o hasło z Salsopedii, style, radio lub eventy...'
       : siteId === 'fuegolingua'
       ? 'Napisz pytanie o kurs lub cennik...'
       : siteId === 'raricart'
-      ? 'Zapytaj o stacje Live Food, pakiety lub wolny termin...'
+      ? 'Zapytaj o nasze stoiska, wycenę lub wolny termin...'
+      : siteId === 'radar-p1'
+      ? 'Zapytaj o procedury awaryjne P1, eWUŚ, ZUS lub KSeF...'
       : 'Napisz pytanie o ofertę lub wycenę...');
+  const placeholderText = escapeHtml(rawPlaceholderText);
 
   const root = doc.createElement('div');
   root.id = 'tsw-ai-widget-root';
@@ -1408,11 +1734,11 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       <span class="tsw-ai-btn-badge" aria-hidden="true">AI</span>
     </button>
 
-    <div class="tsw-ai-window" id="tswAiWindow" role="dialog" aria-label="${escapeHtml(title)}">
+    <div class="tsw-ai-window" id="tswAiWindow" role="dialog" aria-label="${title}">
       <div class="tsw-ai-header">
         <div class="tsw-ai-header-title tsw-ai-title">
           <span class="tsw-ai-status-dot tsw-ai-dot" aria-hidden="true"></span>
-          <span>${escapeHtml(title)}</span>
+          <span>${title}</span>
         </div>
         <div class="tsw-ai-header-actions tsw-ai-actions">
           <button type="button" class="tsw-ai-icon-btn" id="tswAiClearBtn" title="Nowa rozmowa" aria-label="Nowa rozmowa">&#x21bb;</button>
@@ -1424,7 +1750,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       <div class="tsw-ai-chips" id="tswAiChips"></div>
 
       <form class="tsw-ai-input-bar tsw-ai-form" id="tswAiForm">
-        <input type="text" class="tsw-ai-input" id="tswAiInput" placeholder="${escapeHtml(placeholderText)}" aria-label="Zadaj pytanie asystentowi" maxlength="500" required autocomplete="off" />
+        <input type="text" class="tsw-ai-input" id="tswAiInput" placeholder="${placeholderText}" aria-label="Zadaj pytanie asystentowi" maxlength="500" required autocomplete="off" />
         <button type="button" class="tsw-ai-voice-btn" id="tswAiVoiceBtn" title="Zadaj pytanie głosem (mikrofon)" aria-label="Zadaj pytanie głosem" aria-pressed="false">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
         </button>
@@ -1446,7 +1772,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   const sendBtn = doc.getElementById('tswAiSendBtn');
 
   // Obsługa dyktowania głosowego (Web Speech API — Tryb Bezpieczny)
-  const defaultPlaceholder = chatInput?.getAttribute('placeholder') || placeholderText;
+  const defaultPlaceholder = String(rawPlaceholderText);
   const SpeechRecognitionCtor = win?.SpeechRecognition || win?.webkitSpeechRecognition || null;
   let recognition = null;
   let isListening = false;
@@ -1602,7 +1928,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
           const userQ = conversationHistory[i].text;
           const matched = searchKnowledgeEntries(userQ, knowledgeEntries, 1);
           if (matched.length > 0) {
-            const refreshedAnswer = getLocalFallbackAnswer(userQ, siteId, knowledgeEntries);
+            const refreshedAnswer = getLocalFallbackAnswer(userQ, siteId, knowledgeEntries, customFallbackFaq);
             if (conversationHistory[i + 1].text !== refreshedAnswer) {
               conversationHistory[i + 1].text = refreshedAnswer;
               setCachedAnswer(userQ, refreshedAnswer, 'kb_live_sync');
@@ -1630,8 +1956,13 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
 
     const urlsToTry = [kbApiUrl, kbUrl].filter(Boolean);
     for (const url of urlsToTry) {
+      const controller = typeof AbortController === 'function' ? new AbortController() : null;
+      const timeoutId = controller ? setTimeout(() => controller.abort(), 5000) : null;
+      if (timeoutId && typeof timeoutId.unref === 'function') timeoutId.unref();
       try {
-        const res = await fetchFn(url, { cache: 'no-store' });
+        const fetchOpts = { cache: 'no-store' };
+        if (controller) fetchOpts.signal = controller.signal;
+        const res = await fetchFn(url, fetchOpts);
         if (res && res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -1639,7 +1970,10 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
             break;
           }
         }
-      } catch (_) {}
+      } catch (_) {
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
     }
     return kbVersion;
   }
@@ -1661,43 +1995,6 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   function setChipsVisible(visible) {
     if (!chipsContainer) return;
     chipsContainer.classList?.toggle('tsw-hidden', !visible);
-  }
-
-  const analyticsUrl = routerUrl.replace(/\/chat-router\.php.*$/, '/analytics');
-
-  function sendAnalyticsBeacon(extra) {
-    try {
-      if (isOwnerAnalyticsIgnored(win)) return;
-      const nav = win?.navigator || (typeof navigator !== 'undefined' ? navigator : null);
-      const loc = win?.location || {};
-      const params = new URLSearchParams(loc.search || '');
-      const rawPath = (loc.pathname || '/') + (loc.hash || '');
-      const payload = Object.assign({
-        site_id: siteId,
-        type: 'pageview',
-        path: rawPath || '/',
-        referrer: doc?.referrer || '',
-        utm_source: params.get('utm_source') || '',
-        utm_term: params.get('utm_term') || params.get('q') || ''
-      }, extra || {});
-      const body = JSON.stringify(payload);
-      let sent = false;
-      if (nav && typeof nav.sendBeacon === 'function') {
-        try {
-          sent = nav.sendBeacon(analyticsUrl, body);
-        } catch (_) {}
-      }
-      const fetchFn = win?.fetch || globalThis.fetch;
-      if (!sent && typeof fetchFn === 'function') {
-        fetchFn(analyticsUrl, {
-          method: 'POST',
-          body,
-          keepalive: true,
-          mode: 'cors',
-          credentials: 'omit'
-        }).catch(() => {});
-      }
-    } catch (_) {}
   }
 
   function renderChips() {
@@ -1724,16 +2021,17 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   function renderInitialView() {
     if (!messagesContainer) return;
     messagesContainer.innerHTML = '';
+    const safeWelcomeTitle = String(rawTitle);
     const welcomeText =
       siteId === 'katosalsahub'
-        ? `Cześć! 💃🕺 Jestem wirtualnym asystentem **${title}**. Moim głównym centrum wiedzy jest **Salsopedia**, ale odpowiem też na wszystkie pytania o nasze potańcówki w Katowicach, style tańca, **Radio Timba Nation** i **DancePuls**. O co chcesz zapytać?`
+        ? `Cześć! 💃🕺 Jestem wirtualnym asystentem **${safeWelcomeTitle}**. Moim głównym centrum wiedzy jest **Salsopedia**, ale odpowiem też na wszystkie pytania o nasze potańcówki w Katowicach, style tańca, **Radio Timba Nation** i **DancePuls**. O co chcesz zapytać?`
         : siteId === 'fuegolingua'
         ? '¡Hola! 💃 Jestem wirtualnym doradcą **Fuego Lingua**. W czym mogę Ci pomóc? Zapytaj o bezpłatną lekcję próbną, cennik lub kursy hiszpańskiego!'
         : siteId === 'raricart'
-        ? 'Cześć! 🥞🍦🧀 Jestem wirtualnym doradcą **Raricart Live Food Station**. Zapytaj o cennik stacji na żywo (Lody Włoskie, Mini Pancakes, Deska Serów), pakiety łączone lub dostępność terminu na Twoje wesele czy event!'
+        ? 'Cześć! 🥞🍦🧀 Jestem wirtualnym doradcą **Raricart**. Odpowiem na pytania o nasze mobilne stanowiska (**Mini pancakes, Lody włoskie, Deska serów i wędlin**), organizację serwisu na przyjęciu oraz indywidualną wycenę i rezerwację terminu!'
         : siteId === 'radar-p1'
         ? 'Cześć! 📡 Jestem niezależnym informatorem **Radaru Systemów e-Zdrowia (P1 / NFZ / ZUS / KSeF)**. Zapytaj o procedury awaryjne dla e-Recepty, e-Skierowania, eWUŚ, e-ZLA lub KSeF!'
-        : `Cześć! 👋 Jestem wirtualnym doradcą **${title}**. W czym mogę Ci pomóc? Zapytaj o ofertę, wycenę lub współpracę!`;
+        : `Cześć! 👋 Jestem wirtualnym doradcą **${safeWelcomeTitle}**. W czym mogę Ci pomóc? Zapytaj o ofertę, wycenę lub współpracę!`;
 
     appendMessageElement('model', welcomeText);
     for (let i = 0; i < conversationHistory.length; i++) {
@@ -1854,7 +2152,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
         ...(controller ? { signal: controller.signal } : {}),
         body: JSON.stringify({
           site_id: siteId,
-          question: trimmed,
+          question: maskSensitivePlPii(trimmed),
           kb_version: kbVersion,
           dynamic_context: dynamicContext,
           history: conversationHistory.slice(-8)
@@ -1873,7 +2171,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
         saveHistory();
         return { answer: data.answer, cached: Boolean(data.cached), kbVersion };
       } else {
-        const fallback = getLocalFallbackAnswer(trimmed, siteId, knowledgeEntries);
+        const fallback = getLocalFallbackAnswer(trimmed, siteId, knowledgeEntries, customFallbackFaq);
         appendMessageElement('model', fallback);
         setCachedAnswer(trimmed, fallback, 'fallback');
         conversationHistory.push({ role: 'user', text: trimmed });
@@ -1884,7 +2182,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
       }
     } catch (_) {
       typingMsg.remove?.();
-      const fallback = getLocalFallbackAnswer(trimmed, siteId, knowledgeEntries);
+      const fallback = getLocalFallbackAnswer(trimmed, siteId, knowledgeEntries, customFallbackFaq);
       appendMessageElement('model', fallback);
       setCachedAnswer(trimmed, fallback, 'fallback');
       conversationHistory.push({ role: 'user', text: trimmed });
@@ -1905,79 +2203,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   });
 
   renderInitialView();
-
-  if (win && !win.__TSW_ANALYTICS_ACTIVE__ && (typeof win.navigator?.sendBeacon === 'function' || typeof win.fetch === 'function')) {
-    win.__TSW_ANALYTICS_ACTIVE__ = true;
-    let lcpMeasured = 0;
-    try {
-      if (typeof PerformanceObserver !== 'undefined') {
-        const po = new PerformanceObserver((list) => {
-          const entries = list.getEntries();
-          if (entries && entries.length > 0) {
-            lcpMeasured = Math.round(entries[entries.length - 1].startTime || 0);
-          }
-        });
-        po.observe({ type: 'largest-contentful-paint', buffered: true });
-      }
-    } catch (_) {}
-
-    setTimeout(() => {
-      const validLcp = lcpMeasured >= 50 && lcpMeasured <= 8000;
-      sendAnalyticsBeacon(validLcp ? { type: 'pageview', lcp_ms: lcpMeasured } : { type: 'pageview' });
-    }, 600);
-
-    win.addEventListener?.('hashchange', () => {
-      sendAnalyticsBeacon({ type: 'pageview' });
-    });
-
-    doc.addEventListener?.('page:loaded', () => {
-      sendAnalyticsBeacon({ type: 'pageview' });
-    });
-
-    let lastTrackedSearch = '';
-    win.trackCookielessSearch = function (term) {
-      const clean = String(term || '').trim().slice(0, 80);
-      if (clean.length < 2 || clean.toLowerCase() === lastTrackedSearch.toLowerCase()) return;
-      lastTrackedSearch = clean;
-      sendAnalyticsBeacon({ type: 'search', term: clean });
-    };
-
-    setTimeout(() => {
-      if (doc.visibilityState !== 'hidden') {
-        sendAnalyticsBeacon({ type: 'engaged' });
-      }
-    }, 15000);
-
-    doc.addEventListener?.('click', (e) => {
-      const target = e?.target?.closest ? e.target : null;
-      if (!target) return;
-      const link = target.closest('a[href]');
-      if (link) {
-        const href = String(link.getAttribute('href') || '');
-        if (href.startsWith('tel:')) {
-          sendAnalyticsBeacon({ type: 'event', event: 'cta_phone_click' });
-        } else if (href.startsWith('mailto:')) {
-          sendAnalyticsBeacon({ type: 'event', event: 'cta_email_click' });
-        }
-      }
-      const radioBtn = target.closest('#radio-toggle, .radio-toggle, [data-radio-toggle], #radioPlayBtn');
-      if (radioBtn) {
-        sendAnalyticsBeacon({ type: 'event', event: 'radio_play' });
-      }
-    });
-
-    doc.addEventListener?.('submit', (e) => {
-      const form = e?.target;
-      if (
-        form &&
-        form.id !== 'tswAiForm' &&
-        form.id !== 'tsw-ai-form' &&
-        (form.id === 'contactForm' || form.classList?.contains?.('contact-form'))
-      ) {
-        sendAnalyticsBeacon({ type: 'event', event: 'contact_form_submit' });
-      }
-    });
-  }
+  initCookielessAnalytics();
 
   function openAndAsk(promptText) {
     const cleanPrompt = String(promptText || '').trim();
@@ -2005,6 +2231,8 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     refreshKnowledge();
   }
 
+  let webMcpHandle = null;
+
   const instance = {
     root,
     toggleBtn,
@@ -2021,6 +2249,7 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     closeChat,
     sendQuestion,
     openAndAsk,
+    sendAnalyticsBeacon,
     toggleVoiceRecognition,
     stopVoiceRecognition,
     isVoiceListening: () => isListening,
@@ -2034,8 +2263,11 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
     clearCache: () => {
       responseCache = { kbVersion, entries: {} };
       saveResponseCache();
-    }
+    },
+    unregisterWebMcpTools: () => webMcpHandle?.abort?.()
   };
+
+  webMcpHandle = registerWebMcpTools(doc, instance, siteId);
 
   if (win) {
     win.TSWAiWidget = instance;
@@ -2044,31 +2276,32 @@ export function initAiWidget(doc = document, win = globalThis.window, options = 
   return instance;
 }
 
-let autoInitInProgress = false;
+let autoInitPending = false;
 
 async function autoInitAiWidget() {
   if (typeof document === 'undefined' || !document.body) return;
-  if (document.getElementById('tsw-ai-widget-root') || autoInitInProgress) return;
-  autoInitInProgress = true;
-  try {
-    const win = globalThis.window;
-    let aiConfig = win?.__TSW_AI_CONFIG__ || null;
-    const isBrowserEnv = Boolean(win?.location?.protocol && /^https?:$/i.test(win.location.protocol));
-    if (!aiConfig && isBrowserEnv && typeof win?.fetch === 'function') {
-      try {
-        const res = await win.fetch('assets/data/ai-config.json', { credentials: 'same-origin' });
-        if (res && res.ok) {
-          aiConfig = await res.json();
-          if (win) win.__TSW_AI_CONFIG__ = aiConfig;
-        }
-      } catch (_) {}
+  if (document.getElementById('tsw-ai-widget-root') || autoInitPending) return;
+
+  const win = typeof window !== 'undefined' ? window : globalThis.window;
+  const scriptEl =
+    document.currentScript ||
+    document.querySelector('script[data-site-id]') ||
+    document.querySelector('script[src*="ai-widget.js"]') ||
+    document.querySelector('script[src*="widget.js"]');
+  const configUrl = scriptEl?.getAttribute?.('data-config-url') || 'assets/data/ai-config.json';
+
+  if (win && !win.__TSW_AI_CONFIG__ && typeof win.fetch === 'function' && win.fetch.name !== 'forbiddenFetch') {
+    autoInitPending = true;
+    try {
+      const cfg = await loadRuntimeAiConfig(win, configUrl);
+      if (!document.getElementById('tsw-ai-widget-root')) {
+        initAiWidget(document, win, cfg ? { tenantConfig: cfg } : {});
+      }
+    } finally {
+      autoInitPending = false;
     }
-    if (aiConfig && aiConfig.enabled === false) return;
-    if (!document.getElementById('tsw-ai-widget-root') && document.body) {
-      initAiWidget(document, win, aiConfig ? { aiConfig } : {});
-    }
-  } finally {
-    autoInitInProgress = false;
+  } else {
+    initAiWidget(document, win);
   }
 }
 

@@ -22,8 +22,13 @@ function getMonotonicMs() {
 }
 
 async function loadCsrfToken() {
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 8000) : null;
     try {
-        const response = await fetch(API_BASE + 'get-csrf-token.php');
+        const response = await fetch(API_BASE + 'get-csrf-token.php', {
+            credentials: 'same-origin',
+            signal: controller ? controller.signal : undefined
+        });
         if (!response || !response.ok) return;
         const data = await response.json();
         if (data && data.token) {
@@ -31,6 +36,8 @@ async function loadCsrfToken() {
         }
     } catch (_) {
         // W statycznym serwerze deweloperskim (bez silnika PHP) endpoint CSRF jest pomijany
+    } finally {
+        if (timeoutId) clearTimeout(timeoutId);
     }
 }
 
@@ -135,65 +142,89 @@ function initContactForm() {
         input.addEventListener('change', () => saveLocalDraft(form));
     });
 
-    // 4. Obsługa wysyłki formularza
-    form.addEventListener('submit', async (e) => {
+    // 4. Obsługa wysyłki formularza (z obsługą WebMCP SubmitEvent.agentInvoked / e.respondWith)
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
-        clearError();
-        if (successMsg) successMsg.style.display = 'none';
 
-        if (btn) {
-            btn.textContent = 'Wysyłanie...';
-            btn.disabled = true;
-        }
+        const submitTask = (async () => {
+            clearError();
+            if (successMsg) successMsg.style.display = 'none';
 
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-
-        // Uwzględnij stan checkboxa newsletter_consent
-        const consentEl = form.elements['newsletter_consent'];
-        data.newsletter_consent = consentEl && consentEl.checked ? '1' : '0';
-
-        // Zabezpieczenia Anty-Bot (ujednolicone z _site-template: zegar monotoniczny)
-        data.js_check = '1';
-        const rawElapsed = (getMonotonicMs() - formInitTime) / 1000;
-        data.submission_seconds = (isStrictFiniteNumber(rawElapsed) && rawElapsed >= 0 ? rawElapsed : 0).toFixed(2);
-
-        if (CSRF_TOKEN) {
-            data.csrf_token = CSRF_TOKEN;
-        }
-
-        try {
-            const response = await fetch(API_BASE + 'contact.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'same-origin',
-                body: JSON.stringify(data)
-            });
-
-            const result = await response.json().catch(() => ({ status: 'error', message: 'Błąd serwera.' }));
-
-            if (response.ok && (result.status === 'success' || result.success === true)) {
-                if (successMsg) {
-                    successMsg.style.display = 'block';
-                    successMsg.textContent = result.message || 'Wiadomość wysłana pomyślnie!';
-                } else {
-                    alert(result.message || 'Wiadomość wysłana pomyślnie!');
-                }
-                form.reset();
-                clearLocalDraft();
-                loadCsrfToken();
-            } else {
-                showError(result.message || 'Wystąpił błąd. Spróbuj ponownie.');
-                if (response.status === 403) loadCsrfToken();
-            }
-        } catch (error) {
-            console.error(error);
-            showError('Błąd połączenia. Sprawdź internet.');
-        } finally {
             if (btn) {
-                btn.textContent = originalBtnText;
-                btn.disabled = false;
+                btn.textContent = 'Wysyłanie...';
+                btn.disabled = true;
             }
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Uwzględnij stan checkboxa newsletter_consent
+            const consentEl = form.elements['newsletter_consent'];
+            data.newsletter_consent = consentEl && consentEl.checked ? '1' : '0';
+
+            // Zabezpieczenia Anty-Bot (ujednolicone z _site-template: zegar monotoniczny)
+            data.js_check = '1';
+            const rawElapsed = (getMonotonicMs() - formInitTime) / 1000;
+            data.submission_seconds = (isStrictFiniteNumber(rawElapsed) && rawElapsed >= 0 ? rawElapsed : 0).toFixed(2);
+
+            if (CSRF_TOKEN) {
+                data.csrf_token = CSRF_TOKEN;
+            }
+
+            const controller = typeof AbortController === 'function' ? new AbortController() : null;
+            const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
+
+            try {
+                const response = await fetch(API_BASE + 'contact.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(data),
+                    signal: controller ? controller.signal : undefined
+                });
+
+                const result = await response.json().catch(() => ({ status: 'error', message: 'Błąd serwera.' }));
+
+                if (response.ok && (result.status === 'success' || result.success === true)) {
+                    const msgText = result.message || 'Wiadomość wysłana pomyślnie!';
+                    if (successMsg) {
+                        successMsg.style.display = 'block';
+                        successMsg.textContent = msgText;
+                    } else {
+                        alert(msgText);
+                    }
+                    form.reset();
+                    clearLocalDraft();
+                    loadCsrfToken();
+                    return { ok: true, message: msgText };
+                } else {
+                    const errText = result.message || 'Wystąpił błąd. Spróbuj ponownie.';
+                    showError(errText);
+                    if (response.status === 403) loadCsrfToken();
+                    return { ok: false, error: errText };
+                }
+            } catch (error) {
+                console.error(error);
+                if (error && error.name === 'AbortError') {
+                    const errText = 'Przekroczono czas oczekiwania na odpowiedź serwera. Spróbuj ponownie.';
+                    showError(errText);
+                    return { ok: false, error: errText };
+                } else {
+                    const errText = 'Błąd połączenia. Sprawdź internet.';
+                    showError(errText);
+                    return { ok: false, error: errText };
+                }
+            } finally {
+                if (timeoutId) clearTimeout(timeoutId);
+                if (btn) {
+                    btn.textContent = originalBtnText;
+                    btn.disabled = false;
+                }
+            }
+        })();
+
+        if (e?.agentInvoked && typeof e?.respondWith === 'function') {
+            e.respondWith(submitTask);
         }
     });
 }

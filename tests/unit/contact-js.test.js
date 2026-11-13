@@ -20,9 +20,10 @@ describe('Weryfikacja skryptu obsługi formularza (assets/js/contact.js)', () =>
     assert.match(jsContent, /get-csrf-token\.php/i, 'contact.js powinien pobierać token CSRF przed wysłaniem formularza');
   });
 
-  test('Obsługuje wysyłanie formularza metodą POST w formacie JSON z nagłówkiem Content-Type', () => {
+  test('Obsługuje wysyłanie formularza metodą POST w formacie JSON z nagłówkiem Content-Type i timeoutem AbortController', () => {
     assert.match(jsContent, /fetch\s*\(\s*API_BASE\s*\+\s*['"]contact\.php['"]/i, 'contact.js powinien wysyłać zapytanie do API_BASE + contact.php');
     assert.match(jsContent, /Content-Type['"]?\s*:\s*['"]application\/json['"]/i, 'Powinien deklarować Content-Type application/json');
+    assert.match(jsContent, /AbortController/, 'contact.js powinien zabezpieczać wywołania fetch timeoutem AbortController');
   });
 
   test('Obsługuje zgodny z RODO zapis szkicu w localStorage oraz blokadę podwójnego kliknięcia (disabled button)', () => {
@@ -30,5 +31,13 @@ describe('Weryfikacja skryptu obsługi formularza (assets/js/contact.js)', () =>
     assert.match(jsContent, /localStorage\.getItem/i, 'contact.js powinien przywracać szkic formularza z localStorage');
     assert.match(jsContent, /submission_seconds/i, 'contact.js powinien mierzyć czas interakcji submission_seconds (ochrona Anty-Bot)');
     assert.match(jsContent, /disabled\s*=\s*true/i, 'Przycisk submit powinien być blokowany podczas wysyłania zapytania');
+    assert.match(jsContent, /e\?\.agentInvoked/, 'contact.js powinien obsługiwać zdarzenie WebMCP e?.agentInvoked ([REF-07])');
+    assert.match(jsContent, /e\?\.respondWith/, 'contact.js powinien przekazywać Promise do e?.respondWith ([REF-07])');
+
+    const mainJsPath = path.join(ROOT_DIR, 'assets', 'js', 'main.js');
+    const mainJsContent = fs.readFileSync(mainJsPath, 'utf8');
+    assert.match(mainJsContent, /function\s+initContactForm/, 'main.js powinien definiować initContactForm');
+    assert.match(mainJsContent, /e\?\.agentInvoked/, 'main.js powinien obsługiwać e?.agentInvoked w initContactForm ([REF-07])');
+    assert.match(mainJsContent, /e\?\.respondWith/, 'main.js powinien obsługiwać e?.respondWith w initContactForm ([REF-07])');
   });
 });

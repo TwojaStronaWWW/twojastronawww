@@ -4,6 +4,9 @@ import { setupMockDom } from '../helpers/mock-dom.js';
 import {
   MAX_CACHE_ENTRIES,
   escapeHtml,
+  isValidPesel,
+  maskSensitivePlPii,
+  registerWebMcpTools,
   isOwnerAnalyticsIgnored,
   formatMarkdown,
   getLocalFallbackAnswer,
@@ -44,7 +47,7 @@ describe('Uniwersalny Widget Asystenta AI v3.0 (assets/js/ai-widget.js)', () => 
     assert.match(getLocalFallbackAnswer('Jak wygląda współpraca?'), /3 prostych krokach/i);
     assert.match(getLocalFallbackAnswer('Jak się skontaktować?'), /formularz/i);
     assert.match(getLocalFallbackAnswer('Dzień dobry!', 'twojastronawww'), /twojastronawww/i);
-    assert.match(getLocalFallbackAnswer('Ile kosztują lody włoskie i mini pancakes?', 'raricart'), /3 000 zł/);
+    assert.match(getLocalFallbackAnswer('Ile kosztują lody włoskie i mini pancakes?', 'raricart'), /indywidualnie|wycen/i);
     assert.match(getLocalFallbackAnswer('Bezpłatna lekcja próbna', 'fuegolingua'), /bezpłatna/i);
     assert.match(getLocalFallbackAnswer('Co zrobić gdy nie działa e-Recepta P1?', 'radar-p1'), /gabinet\.gov\.pl/i);
     assert.match(getLocalFallbackAnswer('Nie działa eWUŚ w rejestracji', 'radar-p1'), /oświadczenia pacjenta/i);
@@ -308,6 +311,36 @@ describe('Uniwersalny Widget Asystenta AI v3.0 (assets/js/ai-widget.js)', () => 
       true
     );
     assert.equal(prodStorage.getItem('tsw_ignore_analytics'), '1');
+  });
+
+  test('PII Guard (isValidPesel, maskSensitivePlPii) oraz imperatywny rejestrator WebMCP (registerWebMcpTools [REF-07]) działają deterministycznie', async () => {
+    assert.equal(isValidPesel('44051401359'), true);
+    assert.equal(isValidPesel('44051401358'), false);
+    const masked = maskSensitivePlPii('Mój PESEL: 44051401359, dowód osobisty ABC123456, tel +48 600 700 800');
+    assert.ok(masked.includes('[PESEL-ZAMASKOWANY]'));
+    assert.ok(masked.includes('[DOWOD-ZAMASKOWANY]'));
+    assert.ok(masked.includes('+48 600 700 800'));
+
+    let registeredTool = null;
+    const mockDoc = {
+      modelContext: {
+        registerTool(toolDef) {
+          registeredTool = toolDef;
+        }
+      }
+    };
+    const mockWidget = {
+      async sendQuestion(q) {
+        return { answer: `Echo: ${q}`, cached: true };
+      }
+    };
+    const reg = registerWebMcpTools(mockDoc, mockWidget, 'twojastronawww');
+    assert.equal(reg.supported, true);
+    assert.equal(registeredTool.name, 'ask_site_assistant');
+    const execResult = JSON.parse(await registeredTool.execute({ question: 'Cennik' }));
+    assert.equal(execResult.siteId, 'twojastronawww');
+    assert.equal(execResult.answer, 'Echo: Cennik');
+    assert.equal(execResult.cached, true);
   });
 });
 
